@@ -1,0 +1,755 @@
+
+Running 299 tests using 5 workers
+
+[1A[2K[1/299] [chromium] › tests/ai-features.spec.ts:28:9 › AI Features › AI Features Overview Page › should display Diagnostics link
+[1A[2K[2/299] [chromium] › tests/ai-features.spec.ts:20:9 › AI Features › AI Features Overview Page › should display Dispatch Optimizer link
+[1A[2K[3/299] [chromium] › tests/ai-features.spec.ts:15:9 › AI Features › AI Features Overview Page › should display AI feature cards
+[1A[2K[4/299] [chromium] › tests/ai-features.spec.ts:24:9 › AI Features › AI Features Overview Page › should display Quote Generator link
+[1A[2K[5/299] [chromium] › tests/ai-features.spec.ts:11:9 › AI Features › AI Features Overview Page › should display AI Features page title
+[1A[2K[6/299] [chromium] › tests/ai-features.spec.ts:32:9 › AI Features › AI Features Overview Page › should display Job Summary link
+[1A[2K[7/299] [chromium] › tests/ai-features.spec.ts:36:9 › AI Features › AI Features Overview Page › should display Smart Scheduling link
+[1A[2K[8/299] [chromium] › tests/ai-features.spec.ts:40:9 › AI Features › AI Features Overview Page › should display Predictive Maintenance link
+[1A[2K[9/299] [chromium] › tests/ai-features.spec.ts:44:9 › AI Features › AI Features Overview Page › should display Customer Insights link
+[1A[2K[10/299] [chromium] › tests/ai-features.spec.ts:48:9 › AI Features › AI Features Overview Page › should display Inventory Forecast link
+[1A[2K[11/299] [chromium] › tests/ai-features.spec.ts:54:9 › AI Features › Dispatch Optimizer Page › navigates to dispatch optimizer
+[1A[2K[12/299] [chromium] › tests/ai-features.spec.ts:59:9 › AI Features › Dispatch Optimizer Page › dispatch optimizer page displays form
+[1A[2K[13/299] [chromium] › tests/ai-features.spec.ts:64:9 › AI Features › Dispatch Optimizer Page › dispatch optimizer has back button
+[1A[2K[14/299] [chromium] › tests/ai-features.spec.ts:75:9 › AI Features › Quote Generator Page › navigates to quote generator
+[1A[2K[15/299] [chromium] › tests/ai-features.spec.ts:80:9 › AI Features › Quote Generator Page › quote generator page displays form
+[1A[2K[16/299] [chromium] › tests/ai-features.spec.ts:85:9 › AI Features › Quote Generator Page › quote generator has job type selection
+[1A[2K[17/299] [chromium] › tests/ai-features.spec.ts:93:9 › AI Features › Quote Generator Page › quote generator has generate button
+[1A[2K[18/299] [chromium] › tests/ai-features.spec.ts:105:9 › AI Features › Diagnostics Page › navigates to diagnostics
+[1A[2K[19/299] [chromium] › tests/ai-features.spec.ts:110:9 › AI Features › Diagnostics Page › diagnostics page displays form
+[1A[2K[20/299] [chromium] › tests/ai-features.spec.ts:115:9 › AI Features › Diagnostics Page › diagnostics has equipment type selection
+[1A[2K[21/299] [chromium] › tests/ai-features.spec.ts:123:9 › AI Features › Diagnostics Page › diagnostics has symptoms input
+[1A[2K[22/299] [chromium] › tests/ai-features.spec.ts:131:9 › AI Features › Diagnostics Page › diagnostics has analyze button
+[1A[2K[23/299] [chromium] › tests/ai-features.spec.ts:143:9 › AI Features › Job Summary Page › navigates to job summary
+[1A[2K[24/299] [chromium] › tests/ai-features.spec.ts:148:9 › AI Features › Job Summary Page › job summary page displays form
+[1A[2K[25/299] [chromium] › tests/ai-features.spec.ts:153:9 › AI Features › Job Summary Page › job summary has notes input
+[1A[2K[26/299] [chromium] › tests/ai-features.spec.ts:161:9 › AI Features › Job Summary Page › job summary has generate button
+[1A[2K[27/299] [chromium] › tests/ai-features.spec.ts:173:9 › AI Features › Smart Scheduling Page › navigates to smart scheduling
+[1A[2K[28/299] [chromium] › tests/ai-features.spec.ts:178:9 › AI Features › Smart Scheduling Page › smart scheduling page displays
+[1A[2K[29/299] [chromium] › tests/ai-features.spec.ts:185:9 › AI Features › Predictive Maintenance Page › navigates to predictive maintenance
+[1A[2K[30/299] [chromium] › tests/ai-features.spec.ts:190:9 › AI Features › Predictive Maintenance Page › predictive maintenance page displays
+[1A[2K[31/299] [chromium] › tests/ai-features.spec.ts:197:9 › AI Features › Customer Insights Page › navigates to customer insights
+[1A[2K[32/299] [chromium] › tests/ai-features.spec.ts:202:9 › AI Features › Customer Insights Page › customer insights page displays
+[1A[2K[33/299] [chromium] › tests/ai-features.spec.ts:209:9 › AI Features › Inventory Forecast Page › navigates to inventory forecast
+[1A[2K[34/299] [chromium] › tests/ai-features.spec.ts:214:9 › AI Features › Inventory Forecast Page › inventory forecast page displays
+[1A[2K[35/299] [chromium] › tests/auth.spec.ts:6:9 › Authentication › Landing Page › should display landing page with login/signup buttons
+[1A[2K[36/299] [chromium] › tests/auth.spec.ts:12:9 › Authentication › Landing Page › should navigate to login page
+[1A[2K[37/299] [chromium] › tests/auth.spec.ts:18:9 › Authentication › Landing Page › should navigate to register page
+[1A[2K[38/299] [chromium] › tests/auth.spec.ts:30:9 › Authentication › Login Page › should display login form
+[1A[2K[39/299] [chromium] › tests/auth.spec.ts:37:9 › Authentication › Login Page › should display demo credentials
+[1A[2K[40/299] [chromium] › tests/auth.spec.ts:42:9 › Authentication › Login Page › should show link to register page
+[1A[2K[41/299] [chromium] › tests/auth.spec.ts:46:9 › Authentication › Login Page › should login with valid credentials and redirect to dashboard
+[1A[2K[42/299] [chromium] › tests/auth.spec.ts:53:9 › Authentication › Login Page › should show error with invalid credentials
+[1A[2K[43/299] [chromium] › tests/auth.spec.ts:66:9 › Authentication › Register Page › should display register form
+[1A[2K[44/299] [chromium] › tests/auth.spec.ts:70:9 › Authentication › Register Page › should have link to login page
+[1A[2K[45/299] [chromium] › tests/auth.spec.ts:76:9 › Authentication › Logout › should logout from dashboard
+[1A[2K[46/299] [chromium] › tests/customers.spec.ts:11:9 › Customers › Customers List Page › should display customers page title
+[1A[2K[47/299] [chromium] › tests/customers.spec.ts:15:9 › Customers › Customers List Page › should display New Customer button
+[1A[2K[48/299] [chromium] › tests/customers.spec.ts:19:9 › Customers › Customers List Page › New Customer button navigates to new customer page
+[1A[2K[49/299] [chromium] › tests/customers.spec.ts:24:9 › Customers › Customers List Page › should display search/filter functionality
+[1A[2K[50/299] [chromium] › tests/customers.spec.ts:33:9 › Customers › Customers List Page › should display customer list or empty state
+[1A[2K[51/299] [chromium] › tests/customers.spec.ts:47:9 › Customers › New Customer Page › should display new customer form
+[1A[2K[52/299] [chromium] › tests/customers.spec.ts:51:9 › Customers › New Customer Page › should display customer type selection
+[1A[2K[53/299] [chromium] › tests/customers.spec.ts:58:9 › Customers › New Customer Page › should display name fields
+[1A[2K[54/299] [chromium] › tests/customers.spec.ts:65:9 › Customers › New Customer Page › should display contact fields
+[1A[2K  1) [chromium] › tests/customers.spec.ts:51:9 › Customers › New Customer Page › should display customer type selection 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      53 |       const hasTypeSelect = await page.locator('select, input[type="radio"], [role="radiogroup"]').count() > 0
+      54 |       const hasForm = await page.locator('form, .card').count() > 0
+    > 55 |       expect(hasTypeSelect || hasForm).toBeTruthy()
+         |                                        ^
+      56 |     })
+      57 |
+      58 |     test('should display name fields', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/customers.spec.ts:55:40
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/customers-Customers-New-Cu-e731c-lay-customer-type-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/customers-Customers-New-Cu-e731c-lay-customer-type-selection-chromium/error-context.md
+
+
+[1A[2K[55/299] [chromium] › tests/customers.spec.ts:79:9 › Customers › New Customer Page › should display save/create button
+[1A[2K  2) [chromium] › tests/customers.spec.ts:58:9 › Customers › New Customer Page › should display name fields 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      60 |       const nameFields = await page.locator('input[name*="name" i], input[placeholder*="name" i], input[id*="name" i]').count()
+      61 |       const hasNameLabel = await page.locator('text=/first name|last name|name/i').count() > 0
+    > 62 |       expect(nameFields > 0 || hasNameLabel).toBeTruthy()
+         |                                              ^
+      63 |     })
+      64 |
+      65 |     test('should display contact fields', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/customers.spec.ts:62:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/customers-Customers-New-Cu-c9bc7--should-display-name-fields-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/customers-Customers-New-Cu-c9bc7--should-display-name-fields-chromium/error-context.md
+
+
+[1A[2K[56/299] [chromium] › tests/customers.spec.ts:87:9 › Customers › New Customer Page › Cancel button navigates back to customers list
+[1A[2K  3) [chromium] › tests/customers.spec.ts:65:9 › Customers › New Customer Page › should display contact fields 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      68 |       const hasPhone = await page.locator('input[type="tel"], input[name*="phone" i]').count() > 0
+      69 |       const hasContactLabel = await page.locator('text=/email|phone/i').count() > 0
+    > 70 |       expect(hasEmail || hasPhone || hasContactLabel).toBeTruthy()
+         |                                                       ^
+      71 |     })
+      72 |
+      73 |     test('should display address fields', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/customers.spec.ts:70:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/customers-Customers-New-Cu-e5f61-ould-display-contact-fields-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/customers-Customers-New-Cu-e5f61-ould-display-contact-fields-chromium/error-context.md
+
+
+[1A[2K[57/299] [chromium] › tests/customers.spec.ts:73:9 › Customers › New Customer Page › should display address fields
+[1A[2K[58/299] [chromium] › tests/customers.spec.ts:83:9 › Customers › New Customer Page › should display cancel button
+[1A[2K[59/299] [chromium] › tests/customers.spec.ts:92:9 › Customers › New Customer Page › Back arrow navigates to customers list
+[1A[2K[60/299] [chromium] › tests/customers.spec.ts:100:9 › Customers › New Customer Page › should validate required fields
+[1A[2K[61/299] [chromium] › tests/customers.spec.ts:109:9 › Customers › New Customer Page › should create customer with valid data
+[1A[2K[62/299] [chromium] › tests/customers.spec.ts:127:9 › Customers › Customer Detail Page › clicking on customer navigates to detail page
+[1A[2K  4) [chromium] › tests/customers.spec.ts:73:9 › Customers › New Customer Page › should display address fields 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      74 |       const hasAddress = await page.locator('input[name*="address" i], input[name*="street" i], input[placeholder*="address" i]').count() > 0
+      75 |       const hasAddressLabel = await page.locator('text=/address/i').count() > 0
+    > 76 |       expect(hasAddress || hasAddressLabel).toBeTruthy()
+         |                                             ^
+      77 |     })
+      78 |
+      79 |     test('should display save/create button', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/customers.spec.ts:76:45
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/customers-Customers-New-Cu-ddffe-ould-display-address-fields-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/customers-Customers-New-Cu-ddffe-ould-display-address-fields-chromium/error-context.md
+
+
+[1A[2K[63/299] [chromium] › tests/dashboard.spec.ts:10:9 › Dashboard › Layout › should display sidebar
+[1A[2K[64/299] [chromium] › tests/customers.spec.ts:140:7 › Customer CRUD Operations › full customer lifecycle: create, view, edit
+[1A[2K[65/299] [chromium] › tests/dashboard.spec.ts:14:9 › Dashboard › Layout › should display logo in sidebar
+[1A[2K[66/299] [chromium] › tests/dashboard.spec.ts:18:9 › Dashboard › Layout › should display user info in sidebar
+[1A[2K[67/299] [chromium] › tests/dashboard.spec.ts:24:9 › Dashboard › Sidebar Navigation › Dashboard link is active and navigates correctly
+[1A[2K[68/299] [chromium] › tests/dashboard.spec.ts:29:9 › Dashboard › Sidebar Navigation › Customers link navigates to customers page
+[1A[2K[69/299] [chromium] › tests/dashboard.spec.ts:34:9 › Dashboard › Sidebar Navigation › Jobs link navigates to jobs page
+[1A[2K[70/299] [chromium] › tests/dashboard.spec.ts:39:9 › Dashboard › Sidebar Navigation › Dispatch link navigates to dispatch page
+[1A[2K[71/299] [chromium] › tests/dashboard.spec.ts:44:9 › Dashboard › Sidebar Navigation › Schedule link navigates to schedule page
+[1A[2K[72/299] [chromium] › tests/dashboard.spec.ts:49:9 › Dashboard › Sidebar Navigation › Estimates link navigates to estimates page
+[1A[2K[73/299] [chromium] › tests/dashboard.spec.ts:54:9 › Dashboard › Sidebar Navigation › Invoices link navigates to invoices page
+[1A[2K[74/299] [chromium] › tests/dashboard.spec.ts:59:9 › Dashboard › Sidebar Navigation › Inventory link navigates to inventory page
+[1A[2K[75/299] [chromium] › tests/dashboard.spec.ts:64:9 › Dashboard › Sidebar Navigation › Agreements link navigates to agreements page
+[1A[2K[76/299] [chromium] › tests/dashboard.spec.ts:69:9 › Dashboard › Sidebar Navigation › Technicians link navigates to technicians page
+[1A[2K[77/299] [chromium] › tests/dashboard.spec.ts:74:9 › Dashboard › Sidebar Navigation › Reports link navigates to reports page
+[1A[2K[78/299] [chromium] › tests/dashboard.spec.ts:79:9 › Dashboard › Sidebar Navigation › AI Features link navigates to AI page
+[1A[2K[79/299] [chromium] › tests/dashboard.spec.ts:84:9 › Dashboard › Sidebar Navigation › Settings link navigates to settings page
+[1A[2K[80/299] [chromium] › tests/dashboard.spec.ts:89:9 › Dashboard › Sidebar Navigation › Technician App link navigates to tech app
+[1A[2K[81/299] [chromium] › tests/dashboard.spec.ts:96:9 › Dashboard › Dashboard Content › should display dashboard title
+[1A[2K[82/299] [chromium] › tests/dashboard.spec.ts:100:9 › Dashboard › Dashboard Content › should display New Job button
+[1A[2K[83/299] [chromium] › tests/dashboard.spec.ts:104:9 › Dashboard › Dashboard Content › New Job button navigates to new job page
+[1A[2K[84/299] [chromium] › tests/dashboard.spec.ts:109:9 › Dashboard › Dashboard Content › should display stat cards
+[1A[2K[85/299] [chromium] › tests/dashboard.spec.ts:116:9 › Dashboard › Dashboard Content › should display revenue overview section
+[1A[2K[86/299] [chromium] › tests/dashboard.spec.ts:128:9 › Dashboard › Dashboard Content › View All jobs link navigates to jobs page
+[1A[2K[87/299] [chromium] › tests/dashboard.spec.ts:123:9 › Dashboard › Dashboard Content › should display recent jobs section
+[1A[2K[88/299] [chromium] › tests/dashboard.spec.ts:133:9 › Dashboard › Dashboard Content › should display alerts section
+[1A[2K[89/299] [chromium] › tests/dashboard.spec.ts:140:9 › Dashboard › Dashboard Content › should display quick actions section
+[1A[2K[90/299] [chromium] › tests/dashboard.spec.ts:144:9 › Dashboard › Dashboard Content › Quick Action: New Job navigates correctly
+[1A[2K  5) [chromium] › tests/dashboard.spec.ts:116:9 › Dashboard › Dashboard Content › should display revenue overview section 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('text=Today')
+    Expected: visible
+    Error: strict mode violation: locator('text=Today') resolved to 3 elements:
+        1) <p class="text-sm font-medium text-gray-600">Today's Jobs</p> aka getByRole('link', { name: 'Today\'s Jobs' })
+        2) <p class="text-sm font-medium text-gray-600">Completed Today</p> aka getByRole('link', { name: 'Completed Today' })
+        3) <p class="text-sm text-gray-600">Today</p> aka getByText('Today', { exact: true })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('text=Today')[22m
+
+
+      116 |     test('should display revenue overview section', async ({ page }) => {
+      117 |       await expect(page.locator('text=Revenue Overview')).toBeVisible()
+    > 118 |       await expect(page.locator('text=Today')).toBeVisible()
+          |                                                ^
+      119 |       await expect(page.locator('text=This Week')).toBeVisible()
+      120 |       await expect(page.locator('text=This Month')).toBeVisible()
+      121 |     })
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/dashboard.spec.ts:118:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/dashboard-Dashboard-Dashbo-65972-ay-revenue-overview-section-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/dashboard-Dashboard-Dashbo-65972-ay-revenue-overview-section-chromium/error-context.md
+
+
+[1A[2K[91/299] [chromium] › tests/dashboard.spec.ts:154:9 › Dashboard › Dashboard Content › Quick Action: New Estimate navigates correctly
+[1A[2K[92/299] [chromium] › tests/dashboard.spec.ts:149:9 › Dashboard › Dashboard Content › Quick Action: New Customer navigates correctly
+[1A[2K[93/299] [chromium] › tests/dashboard.spec.ts:159:9 › Dashboard › Dashboard Content › Quick Action: Dispatch Board navigates correctly
+[1A[2K[94/299] [chromium] › tests/dashboard.spec.ts:166:9 › Dashboard › Stat Card Navigation › Today's Jobs card navigates to filtered jobs
+[1A[2K[95/299] [chromium] › tests/dashboard.spec.ts:171:9 › Dashboard › Stat Card Navigation › Pending Jobs card navigates to filtered jobs
+[1A[2K[96/299] [chromium] › tests/dashboard.spec.ts:176:9 › Dashboard › Stat Card Navigation › Techs Available card navigates to technicians
+[1A[2K[97/299] [chromium] › tests/dashboard.spec.ts:183:9 › Dashboard › Alert Card Navigation › Open Estimates alert navigates to estimates
+[1A[2K[98/299] [chromium] › tests/dashboard.spec.ts:188:9 › Dashboard › Alert Card Navigation › Overdue Invoices alert navigates to invoices
+[1A[2K[99/299] [chromium] › tests/dashboard.spec.ts:193:9 › Dashboard › Alert Card Navigation › Expiring Agreements alert navigates to agreements
+[1A[2K[100/299] [chromium] › tests/dispatch.spec.ts:11:9 › Dispatch › Dispatch Board Page › should display dispatch page title
+[1A[2K[101/299] [chromium] › tests/dispatch.spec.ts:15:9 › Dispatch › Dispatch Board Page › should display date selector
+[1A[2K[102/299] [chromium] › tests/dispatch.spec.ts:22:9 › Dispatch › Dispatch Board Page › should display unassigned jobs section
+[1A[2K[103/299] [chromium] › tests/dispatch.spec.ts:26:9 › Dispatch › Dispatch Board Page › should display technician columns
+[1A[2K[104/299] [chromium] › tests/dispatch.spec.ts:33:9 › Dispatch › Dispatch Board Page › should display map view link
+[1A[2K[105/299] [chromium] › tests/dispatch.spec.ts:40:9 › Dispatch › Dispatch Board Page › Map view link navigates correctly
+[1A[2K[106/299] [chromium] › tests/dispatch.spec.ts:50:9 › Dispatch › Dispatch Map Page › should display map page
+[1A[2K[107/299] [chromium] › tests/dispatch.spec.ts:56:9 › Dispatch › Dispatch Map Page › should display map container
+[1A[2K[108/299] [chromium] › tests/dispatch.spec.ts:65:9 › Dispatch › Dispatch Map Page › should have back to board link
+[1A[2K[109/299] [chromium] › tests/dispatch.spec.ts:83:9 › Schedule › Schedule Page › should display schedule page title
+[1A[2K[110/299] [chromium] › tests/dispatch.spec.ts:87:9 › Schedule › Schedule Page › should display calendar or schedule view
+[1A[2K[111/299] [chromium] › tests/dispatch.spec.ts:94:9 › Schedule › Schedule Page › should display New Job button
+[1A[2K[112/299] [chromium] › tests/dispatch.spec.ts:98:9 › Schedule › Schedule Page › New Job button navigates correctly
+[1A[2K[113/299] [chromium] › tests/dispatch.spec.ts:103:9 › Schedule › Schedule Page › should display date navigation
+[1A[2K[114/299] [chromium] › tests/dispatch.spec.ts:113:9 › Schedule › Schedule Page › should display view options
+[1A[2K[115/299] [chromium] › tests/dispatch.spec.ts:129:9 › Agreements › Agreements List Page › should display agreements page title
+[1A[2K[116/299] [chromium] › tests/dispatch.spec.ts:133:9 › Agreements › Agreements List Page › should display New Agreement button
+[1A[2K[117/299] [chromium] › tests/dispatch.spec.ts:137:9 › Agreements › Agreements List Page › New Agreement button navigates correctly
+[1A[2K[118/299] [chromium] › tests/dispatch.spec.ts:142:9 › Agreements › Agreements List Page › should display agreements list or empty state
+[1A[2K[119/299] [chromium] › tests/dispatch.spec.ts:151:9 › Agreements › Agreements List Page › should display status filter
+[1A[2K[120/299] [chromium] › tests/dispatch.spec.ts:164:9 › Agreements › New Agreement Page › should display new agreement form
+[1A[2K[121/299] [chromium] › tests/dispatch.spec.ts:168:9 › Agreements › New Agreement Page › should display customer selection
+[1A[2K[122/299] [chromium] › tests/dispatch.spec.ts:174:9 › Agreements › New Agreement Page › should display plan selection
+[1A[2K[123/299] [chromium] › tests/dispatch.spec.ts:181:9 › Agreements › New Agreement Page › should display start date field
+[1A[2K[124/299] [chromium] › tests/dispatch.spec.ts:188:9 › Agreements › New Agreement Page › should display Create button
+[1A[2K[125/299] [chromium] › tests/dispatch.spec.ts:192:9 › Agreements › New Agreement Page › should display Cancel button
+[1A[2K  6) [chromium] › tests/dispatch.spec.ts:168:9 › Agreements › New Agreement Page › should display customer selection 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      169 |       const customerSelect = page.locator('select[name="customerId"], #customerId, select').first()
+      170 |       const hasLabel = await page.locator('text=/customer/i').count() > 0
+    > 171 |       expect(await customerSelect.count() > 0 || hasLabel).toBeTruthy()
+          |                                                            ^
+      172 |     })
+      173 |
+      174 |     test('should display plan selection', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/dispatch.spec.ts:171:60
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/dispatch-Agreements-New-Ag-e82b8--display-customer-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/dispatch-Agreements-New-Ag-e82b8--display-customer-selection-chromium/error-context.md
+
+
+[1A[2K[126/299] [chromium] › tests/dispatch.spec.ts:196:9 › Agreements › New Agreement Page › Cancel button navigates back
+[1A[2K[127/299] [chromium] › tests/dispatch.spec.ts:210:9 › Reports › Reports Overview Page › should display reports page title
+[1A[2K[128/299] [chromium] › tests/dispatch.spec.ts:214:9 › Reports › Reports Overview Page › should display report cards/links
+[1A[2K[129/299] [chromium] › tests/dispatch.spec.ts:219:9 › Reports › Reports Overview Page › should display Daily Report link
+[1A[2K[130/299] [chromium] › tests/dispatch.spec.ts:223:9 › Reports › Reports Overview Page › should display Technician Report link
+[1A[2K[131/299] [chromium] › tests/dispatch.spec.ts:229:9 › Reports › Reports Overview Page › should display Services Report link
+[1A[2K[132/299] [chromium] › tests/dispatch.spec.ts:233:9 › Reports › Reports Overview Page › should display Aging Report link
+[1A[2K[133/299] [chromium] › tests/dispatch.spec.ts:237:9 › Reports › Reports Overview Page › Daily Report link navigates correctly
+[1A[2K[134/299] [chromium] › tests/dispatch.spec.ts:242:9 › Reports › Reports Overview Page › Technician Report link navigates correctly
+[1A[2K  7) [chromium] › tests/dispatch.spec.ts:223:9 › Reports › Reports Overview Page › should display Technician Report link 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      224 |       const techLink = page.getByRole('link', { name: /technician/i })
+      225 |       const hasCard = await page.locator('.card, [data-testid="report-card"]').count() > 0
+    > 226 |       expect(await techLink.count() > 0 || hasCard).toBeTruthy()
+          |                                                     ^
+      227 |     })
+      228 |
+      229 |     test('should display Services Report link', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/dispatch.spec.ts:226:53
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/dispatch-Reports-Reports-O-306e0-play-Technician-Report-link-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/dispatch-Reports-Reports-O-306e0-play-Technician-Report-link-chromium/error-context.md
+
+
+[1A[2K[135/299] [chromium] › tests/dispatch.spec.ts:254:9 › Reports › Reports Overview Page › Services Report link navigates correctly
+[1A[2K[136/299] [chromium] › tests/dispatch.spec.ts:259:9 › Reports › Reports Overview Page › Aging Report link navigates correctly
+[1A[2K[137/299] [chromium] › tests/dispatch.spec.ts:266:9 › Reports › Individual Report Pages › Daily report page displays
+[1A[2K[138/299] [chromium] › tests/dispatch.spec.ts:273:9 › Reports › Individual Report Pages › Technician report page displays
+[1A[2K[139/299] [chromium] › tests/dispatch.spec.ts:280:9 › Reports › Individual Report Pages › Services report page displays
+[1A[2K[140/299] [chromium] › tests/dispatch.spec.ts:285:9 › Reports › Individual Report Pages › Aging report page displays
+[1A[2K[141/299] [chromium] › tests/dispatch.spec.ts:290:9 › Reports › Individual Report Pages › Report pages have back button
+[1A[2K[142/299] [chromium] › tests/dispatch.spec.ts:300:9 › Reports › Individual Report Pages › Report pages have date filter
+[1A[2K[143/299] [chromium] › tests/estimates.spec.ts:11:9 › Estimates › Estimates List Page › should display estimates page title
+[1A[2K[144/299] [chromium] › tests/estimates.spec.ts:15:9 › Estimates › Estimates List Page › should display New Estimate button
+[1A[2K[145/299] [chromium] › tests/estimates.spec.ts:19:9 › Estimates › Estimates List Page › New Estimate button navigates to new estimate page
+[1A[2K[146/299] [chromium] › tests/estimates.spec.ts:24:9 › Estimates › Estimates List Page › should display estimates table or empty state
+[1A[2K[147/299] [chromium] › tests/estimates.spec.ts:33:9 › Estimates › Estimates List Page › should display status filter
+[1A[2K[148/299] [chromium] › tests/estimates.spec.ts:46:9 › Estimates › New Estimate Page › should display new estimate form
+[1A[2K[149/299] [chromium] › tests/estimates.spec.ts:50:9 › Estimates › New Estimate Page › should display customer selection
+[1A[2K[150/299] [chromium] › tests/estimates.spec.ts:56:9 › Estimates › New Estimate Page › should display job selection
+[1A[2K[151/299] [chromium] › tests/estimates.spec.ts:64:9 › Estimates › New Estimate Page › should display estimate title field
+[1A[2K[152/299] [chromium] › tests/estimates.spec.ts:70:9 › Estimates › New Estimate Page › should display expiration date field
+[1A[2K  8) [chromium] › tests/estimates.spec.ts:50:9 › Estimates › New Estimate Page › should display customer selection 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      51 |       const customerSelect = page.locator('select[name="customerId"], #customerId, select').first()
+      52 |       const hasLabel = await page.locator('text=/customer/i').count() > 0
+    > 53 |       expect(await customerSelect.count() > 0 || hasLabel).toBeTruthy()
+         |                                                            ^
+      54 |     })
+      55 |
+      56 |     test('should display job selection', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/estimates.spec.ts:53:60
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/estimates-Estimates-New-Es-9c1ab--display-customer-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/estimates-Estimates-New-Es-9c1ab--display-customer-selection-chromium/error-context.md
+
+
+[1A[2K[153/299] [chromium] › tests/estimates.spec.ts:83:9 › Estimates › New Estimate Page › should display add line item button
+[1A[2K[154/299] [chromium] › tests/estimates.spec.ts:77:9 › Estimates › New Estimate Page › should display line items section
+[1A[2K[155/299] [chromium] › tests/estimates.spec.ts:87:9 › Estimates › New Estimate Page › should display Save/Create button
+[1A[2K  9) [chromium] › tests/estimates.spec.ts:64:9 › Estimates › New Estimate Page › should display estimate title field 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      65 |       const titleField = page.locator('input[name="title"], input[placeholder*="title" i]')
+      66 |       const hasLabel = await page.locator('text=/title|name/i').count() > 0
+    > 67 |       expect(await titleField.count() > 0 || hasLabel).toBeTruthy()
+         |                                                        ^
+      68 |     })
+      69 |
+      70 |     test('should display expiration date field', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/estimates.spec.ts:67:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/estimates-Estimates-New-Es-c3978-isplay-estimate-title-field-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/estimates-Estimates-New-Es-c3978-isplay-estimate-title-field-chromium/error-context.md
+
+
+[1A[2K[156/299] [chromium] › tests/estimates.spec.ts:95:9 › Estimates › New Estimate Page › Cancel button navigates back to estimates list
+[1A[2K[157/299] [chromium] › tests/estimates.spec.ts:102:9 › Estimates › Estimate Detail Page › clicking on estimate navigates to detail page
+[1A[2K[158/299] [chromium] › tests/estimates.spec.ts:91:9 › Estimates › New Estimate Page › should display Cancel button
+[1A[2K  10) [chromium] › tests/estimates.spec.ts:77:9 › Estimates › New Estimate Page › should display line items section 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      78 |       const hasLineItems = await page.locator('text=/line items|items|services/i').count() > 0
+      79 |       const hasForm = await page.locator('form, .card').count() > 0
+    > 80 |       expect(hasLineItems || hasForm).toBeTruthy()
+         |                                       ^
+      81 |     })
+      82 |
+      83 |     test('should display add line item button', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/estimates.spec.ts:80:39
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/estimates-Estimates-New-Es-10eeb--display-line-items-section-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/estimates-Estimates-New-Es-10eeb--display-line-items-section-chromium/error-context.md
+
+
+[1A[2K[159/299] [chromium] › tests/estimates.spec.ts:118:7 › Estimate Actions › estimate detail page should show send button
+[1A[2K[160/299] [chromium] › tests/estimates.spec.ts:134:7 › Estimate Actions › estimate detail page should show status
+[1A[2K[161/299] [chromium] › tests/inventory.spec.ts:11:9 › Inventory Management › Inventory Overview Page › should display inventory page title
+[1A[2K[162/299] [chromium] › tests/inventory.spec.ts:15:9 › Inventory Management › Inventory Overview Page › should display parts link/tab
+[1A[2K[163/299] [chromium] › tests/inventory.spec.ts:19:9 › Inventory Management › Inventory Overview Page › should display trucks link/tab
+[1A[2K[164/299] [chromium] › tests/inventory.spec.ts:23:9 › Inventory Management › Inventory Overview Page › Parts link navigates to parts page
+[1A[2K[165/299] [chromium] › tests/inventory.spec.ts:28:9 › Inventory Management › Inventory Overview Page › Trucks link navigates to trucks page
+[1A[2K[166/299] [chromium] › tests/inventory.spec.ts:39:9 › Inventory Management › Parts Page › should display parts page
+[1A[2K[167/299] [chromium] › tests/inventory.spec.ts:43:9 › Inventory Management › Parts Page › should display New Part button
+[1A[2K[168/299] [chromium] › tests/inventory.spec.ts:48:9 › Inventory Management › Parts Page › New Part button navigates to new part page
+[1A[2K[169/299] [chromium] › tests/inventory.spec.ts:66:9 › Inventory Management › Parts Page › should display search functionality
+[1A[2K[170/299] [chromium] › tests/inventory.spec.ts:58:9 › Inventory Management › Parts Page › should display parts list or empty state
+[1A[2K[171/299] [chromium] › tests/inventory.spec.ts:79:9 › Inventory Management › Trucks Page › should display trucks page
+[1A[2K[172/299] [chromium] › tests/inventory.spec.ts:84:9 › Inventory Management › Trucks Page › should display trucks list or empty state
+[1A[2K[173/299] [chromium] › tests/inventory.spec.ts:92:9 › Inventory Management › Trucks Page › should display truck stock information
+[1A[2K[174/299] [chromium] › tests/inventory.spec.ts:104:9 › Inventory Management › New Part Page › should display new part form
+[1A[2K[175/299] [chromium] › tests/inventory.spec.ts:108:9 › Inventory Management › New Part Page › should display part name field
+[1A[2K  11) [chromium] › tests/inventory.spec.ts:79:9 › Inventory Management › Trucks Page › should display trucks page 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h1, h2').filter({ hasText: /truck|vehicle|inventory/i })
+    Expected: visible
+    Error: strict mode violation: locator('h1, h2').filter({ hasText: /truck|vehicle|inventory/i }) resolved to 2 elements:
+        1) <h1 class="text-2xl font-bold text-gray-900">Truck Inventory</h1> aka getByRole('heading', { name: 'Truck Inventory' })
+        2) <h2 class="font-semibold text-gray-700 mb-3">Select Truck</h2> aka getByRole('heading', { name: 'Select Truck' })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h1, h2').filter({ hasText: /truck|vehicle|inventory/i })[22m
+
+
+      79 |     test('should display trucks page', async ({ page }) => {
+      80 |       await page.waitForLoadState('networkidle')
+    > 81 |       await expect(page.locator('h1, h2').filter({ hasText: /truck|vehicle|inventory/i })).toBeVisible()
+         |                                                                                            ^
+      82 |     })
+      83 |
+      84 |     test('should display trucks list or empty state', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/inventory.spec.ts:81:92
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/inventory-Inventory-Manage-9d2c6--should-display-trucks-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/inventory-Inventory-Manage-9d2c6--should-display-trucks-page-chromium/error-context.md
+
+
+[1A[2K[176/299] [chromium] › tests/inventory.spec.ts:119:9 › Inventory Management › New Part Page › should display cost field
+[1A[2K[177/299] [chromium] › tests/inventory.spec.ts:112:9 › Inventory Management › New Part Page › should display SKU field
+[1A[2K[178/299] [chromium] › tests/inventory.spec.ts:123:9 › Inventory Management › New Part Page › should display price field
+[1A[2K[179/299] [chromium] › tests/inventory.spec.ts:127:9 › Inventory Management › New Part Page › should display quantity fields
+[1A[2K[180/299] [chromium] › tests/inventory.spec.ts:134:9 › Inventory Management › New Part Page › should display min/max quantity fields
+[1A[2K[181/299] [chromium] › tests/inventory.spec.ts:146:9 › Inventory Management › New Part Page › should display Create button
+[1A[2K[182/299] [chromium] › tests/inventory.spec.ts:150:9 › Inventory Management › New Part Page › should display Cancel button
+[1A[2K[183/299] [chromium] › tests/inventory.spec.ts:154:9 › Inventory Management › New Part Page › Cancel button navigates back to parts list
+[1A[2K[184/299] [chromium] › tests/inventory.spec.ts:166:7 › Inventory Operations › can navigate between inventory sections
+[1A[2K[185/299] [chromium] › tests/invoices.spec.ts:11:9 › Invoices › Invoices List Page › should display invoices page title
+[1A[2K[186/299] [chromium] › tests/invoices.spec.ts:15:9 › Invoices › Invoices List Page › should display New Invoice button
+[1A[2K[187/299] [chromium] › tests/invoices.spec.ts:19:9 › Invoices › Invoices List Page › New Invoice button navigates to new invoice page
+[1A[2K[188/299] [chromium] › tests/invoices.spec.ts:24:9 › Invoices › Invoices List Page › should display invoices table or empty state
+[1A[2K[189/299] [chromium] › tests/invoices.spec.ts:31:9 › Invoices › Invoices List Page › should display status filter
+[1A[2K[190/299] [chromium] › tests/invoices.spec.ts:38:9 › Invoices › Invoices List Page › should display invoice totals/summary
+[1A[2K[191/299] [chromium] › tests/invoices.spec.ts:51:9 › Invoices › New Invoice Page › should display new invoice form
+[1A[2K[192/299] [chromium] › tests/invoices.spec.ts:55:9 › Invoices › New Invoice Page › should display customer selection
+[1A[2K  12) [chromium] › tests/invoices.spec.ts:24:9 › Invoices › Invoices List Page › should display invoices table or empty state 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      26 |       const hasEmptyState = await page.locator('text=/no invoices|empty|create your first/i').count() > 0
+      27 |
+    > 28 |       expect(hasInvoices || hasEmptyState).toBeTruthy()
+         |                                            ^
+      29 |     })
+      30 |
+      31 |     test('should display status filter', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/invoices.spec.ts:28:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/invoices-Invoices-Invoices-e8396-voices-table-or-empty-state-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/invoices-Invoices-Invoices-e8396-voices-table-or-empty-state-chromium/error-context.md
+
+
+[1A[2K[193/299] [chromium] › tests/invoices.spec.ts:60:9 › Invoices › New Invoice Page › should display job selection
+[1A[2K[194/299] [chromium] › tests/invoices.spec.ts:67:9 › Invoices › New Invoice Page › should display due date field
+[1A[2K[195/299] [chromium] › tests/invoices.spec.ts:74:9 › Invoices › New Invoice Page › should display line items section
+[1A[2K[196/299] [chromium] › tests/invoices.spec.ts:78:9 › Invoices › New Invoice Page › should display tax rate field
+[1A[2K[197/299] [chromium] › tests/invoices.spec.ts:85:9 › Invoices › New Invoice Page › should display Save/Create button
+[1A[2K[198/299] [chromium] › tests/invoices.spec.ts:89:9 › Invoices › New Invoice Page › should display Cancel button
+[1A[2K[199/299] [chromium] › tests/invoices.spec.ts:93:9 › Invoices › New Invoice Page › Cancel button navigates back to invoices list
+[1A[2K  13) [chromium] › tests/invoices.spec.ts:74:9 › Invoices › New Invoice Page › should display line items section 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('text=/line items|items|services/i')
+    Expected: visible
+    Error: strict mode violation: locator('text=/line items|items|services/i') resolved to 2 elements:
+        1) <h2 class="font-semibold">Line Items</h2> aka getByRole('heading', { name: 'Line Items' })
+        2) <p class="text-center text-gray-500 py-8">No line items yet. Click "Add Item" to start.</p> aka getByText('No line items yet. Click "Add')
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('text=/line items|items|services/i')[22m
+
+
+      73 |
+      74 |     test('should display line items section', async ({ page }) => {
+    > 75 |       await expect(page.locator('text=/line items|items|services/i')).toBeVisible()
+         |                                                                       ^
+      76 |     })
+      77 |
+      78 |     test('should display tax rate field', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/invoices.spec.ts:75:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/invoices-Invoices-New-Invo-38921--display-line-items-section-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/invoices-Invoices-New-Invo-38921--display-line-items-section-chromium/error-context.md
+
+
+[1A[2K[200/299] [chromium] › tests/invoices.spec.ts:116:7 › Invoice Actions › invoice detail page should show send button
+[1A[2K[201/299] [chromium] › tests/invoices.spec.ts:100:9 › Invoices › Invoice Detail Page › clicking on invoice navigates to detail page
+[1A[2K[202/299] [chromium] › tests/invoices.spec.ts:131:7 › Invoice Actions › invoice detail page should show record payment button
+[1A[2K[203/299] [chromium] › tests/invoices.spec.ts:146:7 › Invoice Actions › invoice detail page should show status badge
+[1A[2K[204/299] [chromium] › tests/jobs.spec.ts:11:9 › Jobs › Jobs List Page › should display jobs page title
+[1A[2K[205/299] [chromium] › tests/jobs.spec.ts:15:9 › Jobs › Jobs List Page › should display New Job button
+[1A[2K[206/299] [chromium] › tests/jobs.spec.ts:19:9 › Jobs › Jobs List Page › New Job button navigates to new job page
+[1A[2K[207/299] [chromium] › tests/jobs.spec.ts:24:9 › Jobs › Jobs List Page › should display jobs table or empty state
+[1A[2K[208/299] [chromium] › tests/jobs.spec.ts:30:9 › Jobs › Jobs List Page › should display job status badges
+[1A[2K[209/299] [chromium] › tests/jobs.spec.ts:42:9 › Jobs › New Job Page › should display new job form
+[1A[2K[210/299] [chromium] › tests/jobs.spec.ts:46:9 › Jobs › New Job Page › should display customer selection
+[1A[2K[211/299] [chromium] › tests/jobs.spec.ts:53:9 › Jobs › New Job Page › should display service type selection
+[1A[2K[212/299] [chromium] › tests/jobs.spec.ts:60:9 › Jobs › New Job Page › should display title field
+[1A[2K[213/299] [chromium] › tests/jobs.spec.ts:69:9 › Jobs › New Job Page › should display description field
+[1A[2K[214/299] [chromium] › tests/jobs.spec.ts:78:9 › Jobs › New Job Page › should display priority selection
+[1A[2K[215/299] [chromium] › tests/jobs.spec.ts:85:9 › Jobs › New Job Page › should display Schedule section
+[1A[2K[216/299] [chromium] › tests/jobs.spec.ts:94:9 › Jobs › New Job Page › should display date picker
+[1A[2K[217/299] [chromium] › tests/jobs.spec.ts:101:9 › Jobs › New Job Page › should display Create Job button
+[1A[2K[218/299] [chromium] › tests/jobs.spec.ts:105:9 › Jobs › New Job Page › should display Cancel button
+[1A[2K[219/299] [chromium] › tests/jobs.spec.ts:109:9 › Jobs › New Job Page › Cancel button navigates back to jobs list
+[1A[2K[220/299] [chromium] › tests/jobs.spec.ts:114:9 › Jobs › New Job Page › should require customer selection
+[1A[2K[221/299] [chromium] › tests/jobs.spec.ts:124:9 › Jobs › Job Detail Page › clicking on job navigates to detail page
+[1A[2K[222/299] [chromium] › tests/landing-page.spec.ts:9:9 › Landing Page › Navigation › should display navigation bar
+[1A[2K[223/299] [chromium] › tests/landing-page.spec.ts:14:9 › Landing Page › Navigation › Features link scrolls to features section
+[1A[2K[224/299] [chromium] › tests/landing-page.spec.ts:19:9 › Landing Page › Navigation › Pricing link scrolls to pricing section
+[1A[2K[225/299] [chromium] › tests/landing-page.spec.ts:24:9 › Landing Page › Navigation › Compare link scrolls to comparison section
+[1A[2K[226/299] [chromium] › tests/landing-page.spec.ts:29:9 › Landing Page › Navigation › Sign In link navigates to login
+[1A[2K[227/299] [chromium] › tests/landing-page.spec.ts:34:9 › Landing Page › Navigation › Start Free Trial link navigates to register
+[1A[2K[228/299] [chromium] › tests/landing-page.spec.ts:41:9 › Landing Page › Hero Section › should display main headline
+[1A[2K[229/299] [chromium] › tests/landing-page.spec.ts:46:9 › Landing Page › Hero Section › should display AI badge
+[1A[2K[230/299] [chromium] › tests/landing-page.spec.ts:50:9 › Landing Page › Hero Section › should display hero stats
+[1A[2K[231/299] [chromium] › tests/landing-page.spec.ts:56:9 › Landing Page › Hero Section › should display CTA buttons
+[1A[2K[232/299] [chromium] › tests/landing-page.spec.ts:60:9 › Landing Page › Hero Section › Sign in to your account link navigates to login
+[1A[2K[233/299] [chromium] › tests/landing-page.spec.ts:67:9 › Landing Page › Problem Section › should display pain points heading
+[1A[2K[234/299] [chromium] › tests/landing-page.spec.ts:71:9 › Landing Page › Problem Section › should display competitor pricing pain points
+[1A[2K[235/299] [chromium] › tests/landing-page.spec.ts:78:9 › Landing Page › Features Section › should display features heading
+[1A[2K[236/299] [chromium] › tests/landing-page.spec.ts:82:9 › Landing Page › Features Section › should display all 6 feature cards
+[1A[2K[237/299] [chromium] › tests/landing-page.spec.ts:93:9 › Landing Page › Pricing Section › should display pricing heading
+[1A[2K[238/299] [chromium] › tests/landing-page.spec.ts:97:9 › Landing Page › Pricing Section › should display all pricing tiers
+[1A[2K[239/299] [chromium] › tests/landing-page.spec.ts:103:9 › Landing Page › Pricing Section › should display Pro tier as most popular
+[1A[2K[240/299] [chromium] › tests/landing-page.spec.ts:107:9 › Landing Page › Pricing Section › should display tier prices
+[1A[2K[241/299] [chromium] › tests/landing-page.spec.ts:113:9 › Landing Page › Pricing Section › Free tier Start Free button navigates to register
+[1A[2K[242/299] [chromium] › tests/landing-page.spec.ts:120:9 › Landing Page › Comparison Section › should display comparison heading
+[1A[2K[243/299] [chromium] › tests/landing-page.spec.ts:124:9 › Landing Page › Comparison Section › should display comparison table
+[1A[2K[244/299] [chromium] › tests/landing-page.spec.ts:128:9 › Landing Page › Comparison Section › should display comparison features
+[1A[2K  14) [chromium] › tests/landing-page.spec.ts:113:9 › Landing Page › Pricing Section › Free tier Start Free button navigates to register 
+
+    Error: locator.click: Error: strict mode violation: getByRole('link', { name: 'Start Free' }) resolved to 5 elements:
+        1) <a href="/register" class="btn-primary">Start Free Trial</a> aka getByRole('navigation').getByRole('link', { name: 'Start Free Trial' })
+        2) <a href="/register" class="btn-primary text-lg px-8 py-4 flex items-center gap-2">…</a> aka getByRole('link', { name: 'Start Free 14-Day Trial' }).first()
+        3) <a href="/register" class="block w-full text-center btn-secondary py-3">Start Free</a> aka getByRole('link', { name: 'Start Free', exact: true })
+        4) <a href="/register" class="block w-full text-center btn-primary py-3">Start Free Trial</a> aka locator('#pricing').getByRole('link', { name: 'Start Free Trial' })
+        5) <a href="/register" class="bg-white text-primary-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors flex items-center gap-2">…</a> aka getByRole('link', { name: 'Start Free 14-Day Trial' }).nth(1)
+
+    Call log:
+    [2m  - waiting for getByRole('link', { name: 'Start Free' })[22m
+
+
+      112 |
+      113 |     test('Free tier Start Free button navigates to register', async ({ page }) => {
+    > 114 |       await page.getByRole('link', { name: 'Start Free' }).click()
+          |                                                            ^
+      115 |       await expect(page).toHaveURL('/register')
+      116 |     })
+      117 |   })
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/landing-page.spec.ts:114:60
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/landing-page-Landing-Page--85b4b-utton-navigates-to-register-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/landing-page-Landing-Page--85b4b-utton-navigates-to-register-chromium/error-context.md
+
+
+[1A[2K[245/299] [chromium] › tests/landing-page.spec.ts:141:9 › Landing Page › CTA Section › should display CTA heading
+[1A[2K[246/299] [chromium] › tests/landing-page.spec.ts:145:9 › Landing Page › CTA Section › should display final CTA button
+[1A[2K[247/299] [chromium] › tests/landing-page.spec.ts:152:9 › Landing Page › Footer › should display footer
+[1A[2K[248/299] [chromium] › tests/landing-page.spec.ts:156:9 › Landing Page › Footer › should display company name in footer
+[1A[2K[249/299] [chromium] › tests/landing-page.spec.ts:160:9 › Landing Page › Footer › should display footer links
+[1A[2K[250/299] [chromium] › tests/settings.spec.ts:11:9 › Settings › Settings Overview Page › should display settings page title
+[1A[2K[251/299] [chromium] › tests/landing-page.spec.ts:134:9 › Landing Page › Comparison Section › should display competitor names
+[1A[2K[252/299] [chromium] › tests/settings.spec.ts:15:9 › Settings › Settings Overview Page › should display Pricebook link
+[1A[2K[253/299] [chromium] › tests/settings.spec.ts:19:9 › Settings › Settings Overview Page › should display Service Types link
+[1A[2K[254/299] [chromium] › tests/settings.spec.ts:23:9 › Settings › Settings Overview Page › should display Integrations link
+[1A[2K[255/299] [chromium] › tests/settings.spec.ts:27:9 › Settings › Settings Overview Page › Pricebook link navigates correctly
+[1A[2K[256/299] [chromium] › tests/settings.spec.ts:32:9 › Settings › Settings Overview Page › Service Types link navigates correctly
+[1A[2K[257/299] [chromium] › tests/settings.spec.ts:37:9 › Settings › Settings Overview Page › Integrations link navigates correctly
+[1A[2K[258/299] [chromium] › tests/settings.spec.ts:48:9 › Settings › Pricebook Page › should display pricebook page
+[1A[2K[259/299] [chromium] › tests/settings.spec.ts:52:9 › Settings › Pricebook Page › should display Add Item button
+[1A[2K[260/299] [chromium] › tests/settings.spec.ts:56:9 › Settings › Pricebook Page › should display pricebook items or empty state
+[1A[2K[261/299] [chromium] › tests/settings.spec.ts:64:9 › Settings › Pricebook Page › Add button opens form/modal
+[1A[2K[262/299] [chromium] › tests/settings.spec.ts:82:9 › Settings › Service Types Page › should display service types page
+[1A[2K[263/299] [chromium] › tests/settings.spec.ts:86:9 › Settings › Service Types Page › should display Add Service Type button
+[1A[2K[264/299] [chromium] › tests/settings.spec.ts:90:9 › Settings › Service Types Page › should display service types list or empty state
+[1A[2K[265/299] [chromium] › tests/settings.spec.ts:98:9 › Settings › Service Types Page › Add button opens form/modal
+[1A[2K[266/299] [chromium] › tests/settings.spec.ts:116:9 › Settings › Integrations Page › should display integrations page
+[1A[2K[267/299] [chromium] › tests/settings.spec.ts:120:9 › Settings › Integrations Page › should display integration options
+[1A[2K[268/299] [chromium] › tests/settings.spec.ts:126:9 › Settings › Integrations Page › should display Stripe integration
+[1A[2K[269/299] [chromium] › tests/settings.spec.ts:130:9 › Settings › Integrations Page › should display Google Maps integration
+[1A[2K[270/299] [chromium] › tests/settings.spec.ts:134:9 › Settings › Integrations Page › should display Twilio integration
+[1A[2K  15) [chromium] › tests/settings.spec.ts:120:9 › Settings › Integrations Page › should display integration options 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      121 |       // Check for various integration sections
+      122 |       const hasIntegrations = await page.locator('.card, [data-testid="integration"]').count() > 0
+    > 123 |       expect(hasIntegrations).toBeTruthy()
+          |                               ^
+      124 |     })
+      125 |
+      126 |     test('should display Stripe integration', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/settings.spec.ts:123:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/settings-Settings-Integrat-6ef44-display-integration-options-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/settings-Settings-Integrat-6ef44-display-integration-options-chromium/error-context.md
+
+
+[1A[2K[271/299] [chromium] › tests/settings.spec.ts:142:9 › Settings › Integrations Page › should display AI integration
+[1A[2K[272/299] [chromium] › tests/settings.spec.ts:153:7 › Settings Forms › can add new service type
+[1A[2K[273/299] [chromium] › tests/settings.spec.ts:138:9 › Settings › Integrations Page › should display Email integration
+[1A[2K[274/299] [chromium] › tests/settings.spec.ts:171:7 › Settings Forms › can add new pricebook item
+[1A[2K[275/299] [chromium] › tests/technicians.spec.ts:11:9 › Technicians Management › Technicians List Page › should display technicians page title
+[1A[2K[276/299] [chromium] › tests/technicians.spec.ts:15:9 › Technicians Management › Technicians List Page › should display New Technician button
+[1A[2K[277/299] [chromium] › tests/technicians.spec.ts:19:9 › Technicians Management › Technicians List Page › New Technician button navigates to new technician page
+[1A[2K[278/299] [chromium] › tests/technicians.spec.ts:24:9 › Technicians Management › Technicians List Page › should display technicians list or empty state
+[1A[2K[279/299] [chromium] › tests/technicians.spec.ts:33:9 › Technicians Management › Technicians List Page › should display technician status indicators
+[1A[2K[280/299] [chromium] › tests/technicians.spec.ts:46:9 › Technicians Management › New Technician Page › should display new technician form
+[1A[2K[281/299] [chromium] › tests/technicians.spec.ts:50:9 › Technicians Management › New Technician Page › should display name fields
+[1A[2K[282/299] [chromium] › tests/technicians.spec.ts:59:9 › Technicians Management › New Technician Page › should display contact fields
+[1A[2K[283/299] [chromium] › tests/technicians.spec.ts:68:9 › Technicians Management › New Technician Page › should display trade type selection
+[1A[2K[284/299] [chromium] › tests/technicians.spec.ts:75:9 › Technicians Management › New Technician Page › should display pay type selection
+[1A[2K[285/299] [chromium] › tests/technicians.spec.ts:82:9 › Technicians Management › New Technician Page › should display skills/certifications section
+[1A[2K  16) [chromium] › tests/technicians.spec.ts:50:9 › Technicians Management › New Technician Page › should display name fields 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      54 |       const hasLastName = await page.locator('text=/last name/i').count() > 0 ||
+      55 |                          await page.locator('input[name="lastName"]').count() > 0
+    > 56 |       expect(hasFirstName && hasLastName).toBeTruthy()
+         |                                           ^
+      57 |     })
+      58 |
+      59 |     test('should display contact fields', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/technicians.spec.ts:56:43
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/technicians-Technicians-Ma-6d420--should-display-name-fields-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/technicians-Technicians-Ma-6d420--should-display-name-fields-chromium/error-context.md
+
+
+[1A[2K  17) [chromium] › tests/technicians.spec.ts:59:9 › Technicians Management › New Technician Page › should display contact fields 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      63 |       const hasPhone = await page.locator('text=/phone/i').count() > 0 ||
+      64 |                        await page.locator('input[type="tel"]').count() > 0
+    > 65 |       expect(hasEmail && hasPhone).toBeTruthy()
+         |                                    ^
+      66 |     })
+      67 |
+      68 |     test('should display trade type selection', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/technicians.spec.ts:65:36
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/technicians-Technicians-Ma-80b08-ould-display-contact-fields-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/technicians-Technicians-Ma-80b08-ould-display-contact-fields-chromium/error-context.md
+
+
+[1A[2K[286/299] [chromium] › tests/technicians.spec.ts:97:9 › Technicians Management › New Technician Page › Cancel button navigates back to technicians list
+[1A[2K[287/299] [chromium] › tests/technicians.spec.ts:89:9 › Technicians Management › New Technician Page › should display Create button
+[1A[2K[288/299] [chromium] › tests/technicians.spec.ts:93:9 › Technicians Management › New Technician Page › should display Cancel button
+[1A[2K[289/299] [chromium] › tests/technicians.spec.ts:104:9 › Technicians Management › Technician Detail Page › clicking on technician navigates to detail page
+[1A[2K[290/299] [chromium] › tests/technicians.spec.ts:117:9 › Technician Mobile App › Technician App Access › technician app link from dashboard
+[1A[2K[291/299] [chromium] › tests/technicians.spec.ts:130:9 › Technician Mobile App › Technician App Pages › should display today's jobs
+[1A[2K[292/299] [chromium] › tests/technicians.spec.ts:137:9 › Technician Mobile App › Technician App Pages › should display job list or empty state
+[1A[2K[293/299] [chromium] › tests/technicians.spec.ts:146:9 › Technician Mobile App › Technician App Pages › should navigate to truck inventory
+[1A[2K[294/299] [chromium] › tests/technicians.spec.ts:154:9 › Technician Mobile App › Technician App Pages › should navigate to profile
+[1A[2K[295/299] [chromium] › tests/technicians.spec.ts:159:9 › Technician Mobile App › Technician App Pages › should navigate to schedule
+[1A[2K[296/299] [chromium] › tests/technicians.spec.ts:164:9 › Technician Mobile App › Technician App Pages › should navigate to estimate creation
+[1A[2K[297/299] [chromium] › tests/technicians.spec.ts:169:9 › Technician Mobile App › Technician App Pages › should navigate to invoice creation
+[1A[2K  18) [chromium] › tests/technicians.spec.ts:137:9 › Technician Mobile App › Technician App Pages › should display job list or empty state 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      141 |       const hasContent = await page.locator('main, .container, [class*="content"]').count() > 0
+      142 |
+    > 143 |       expect(hasJobs || hasEmptyState || hasContent).toBeTruthy()
+          |                                                      ^
+      144 |     })
+      145 |
+      146 |     test('should navigate to truck inventory', async ({ page }) => {
+        at /Users/erolakarsu/projects/homeServices_salesforce/tests/technicians.spec.ts:143:54
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/technicians-Technician-Mob-2786b-lay-job-list-or-empty-state-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/technicians-Technician-Mob-2786b-lay-job-list-or-empty-state-chromium/error-context.md
+
+
+[1A[2K[298/299] [chromium] › tests/technicians.spec.ts:181:9 › Technician Mobile App › Technician Profile Page › should display profile information
+[1A[2K[299/299] [chromium] › tests/technicians.spec.ts:185:9 › Technician Mobile App › Technician Profile Page › should display status selector
+[1A[2K  18 failed
+    [chromium] › tests/customers.spec.ts:51:9 › Customers › New Customer Page › should display customer type selection 
+    [chromium] › tests/customers.spec.ts:58:9 › Customers › New Customer Page › should display name fields 
+    [chromium] › tests/customers.spec.ts:65:9 › Customers › New Customer Page › should display contact fields 
+    [chromium] › tests/customers.spec.ts:73:9 › Customers › New Customer Page › should display address fields 
+    [chromium] › tests/dashboard.spec.ts:116:9 › Dashboard › Dashboard Content › should display revenue overview section 
+    [chromium] › tests/dispatch.spec.ts:168:9 › Agreements › New Agreement Page › should display customer selection 
+    [chromium] › tests/dispatch.spec.ts:223:9 › Reports › Reports Overview Page › should display Technician Report link 
+    [chromium] › tests/estimates.spec.ts:50:9 › Estimates › New Estimate Page › should display customer selection 
+    [chromium] › tests/estimates.spec.ts:64:9 › Estimates › New Estimate Page › should display estimate title field 
+    [chromium] › tests/estimates.spec.ts:77:9 › Estimates › New Estimate Page › should display line items section 
+    [chromium] › tests/inventory.spec.ts:79:9 › Inventory Management › Trucks Page › should display trucks page 
+    [chromium] › tests/invoices.spec.ts:24:9 › Invoices › Invoices List Page › should display invoices table or empty state 
+    [chromium] › tests/invoices.spec.ts:74:9 › Invoices › New Invoice Page › should display line items section 
+    [chromium] › tests/landing-page.spec.ts:113:9 › Landing Page › Pricing Section › Free tier Start Free button navigates to register 
+    [chromium] › tests/settings.spec.ts:120:9 › Settings › Integrations Page › should display integration options 
+    [chromium] › tests/technicians.spec.ts:50:9 › Technicians Management › New Technician Page › should display name fields 
+    [chromium] › tests/technicians.spec.ts:59:9 › Technicians Management › New Technician Page › should display contact fields 
+    [chromium] › tests/technicians.spec.ts:137:9 › Technician Mobile App › Technician App Pages › should display job list or empty state 
+  281 passed (2.3m)
+
+[36m  Serving HTML report at http://localhost:9323. Press Ctrl+C to quit.[39m

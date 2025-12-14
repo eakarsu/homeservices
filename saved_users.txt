@@ -1,0 +1,4 @@
+Saved credentials for your reference:
+  - Admin: admin@comfortpro.com / password123
+  - Dispatcher: sarah@comfortpro.com / password123
+  - Technician: tom@comfortpro.com / password123

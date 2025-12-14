@@ -1,0 +1,904 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ COMPANY & USERS ============
+
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  website       String?
+  logo          String?
+  timezone      String    @default("America/New_York")
+
+  // Address
+  address       String?
+  city          String?
+  state         String?
+  zip           String?
+
+  // Business info
+  licenseNumber String?
+  serviceArea   String[]  // ZIP codes or city names
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  users         User[]
+  customers     Customer[]
+  jobs          Job[]
+  trucks        Truck[]
+  parts         Part[]
+  pricebookItems PricebookItem[]
+  serviceTypes  ServiceType[]
+  agreementPlans AgreementPlan[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole
+  avatar        String?
+  isActive      Boolean   @default(true)
+
+  // Push notifications for mobile
+  pushToken           String?
+  pushPlatform        String?
+  pushTokenUpdatedAt  DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  technician    Technician?
+  createdJobs   Job[]     @relation("CreatedByUser")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  DISPATCHER
+  TECHNICIAN
+  OFFICE
+}
+
+model Technician {
+  id            String    @id @default(cuid())
+  employeeId    String?
+  color         String?   // For calendar display
+
+  // Skills & certifications
+  tradeTypes    TradeType[]
+  certifications String[]
+
+  // Compensation
+  payType       PayType   @default(HOURLY)
+  hourlyRate    Decimal?  @db.Decimal(10, 2)
+  commissionPct Decimal?  @db.Decimal(5, 2)
+
+  // Current status
+  status        TechStatus @default(AVAILABLE)
+  currentLat    Decimal?  @db.Decimal(10, 7)
+  currentLng    Decimal?  @db.Decimal(10, 7)
+  lastLocationUpdate DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @unique
+  truck         Truck?    @relation(fields: [truckId], references: [id])
+  truckId       String?
+  schedules     TechSchedule[]
+  assignments   JobAssignment[]
+  timeEntries   TimeEntry[]
+}
+
+enum TradeType {
+  HVAC
+  PLUMBING
+  ELECTRICAL
+  GENERAL
+}
+
+enum PayType {
+  HOURLY
+  SALARY
+  COMMISSION
+  HYBRID
+}
+
+enum TechStatus {
+  AVAILABLE
+  ON_JOB
+  EN_ROUTE
+  BREAK
+  OFF_DUTY
+}
+
+model TechSchedule {
+  id            String    @id @default(cuid())
+  dayOfWeek     Int       // 0-6 (Sunday-Saturday)
+  startTime     String    // HH:MM format
+  endTime       String
+  isWorking     Boolean   @default(true)
+
+  technician    Technician @relation(fields: [technicianId], references: [id])
+  technicianId  String
+
+  @@unique([technicianId, dayOfWeek])
+}
+
+// ============ CUSTOMERS & PROPERTIES ============
+
+model Customer {
+  id            String        @id @default(cuid())
+  customerNumber String       @unique
+  type          CustomerType  @default(RESIDENTIAL)
+  status        CustomerStatus @default(ACTIVE)
+
+  // Contact info
+  firstName     String?
+  lastName      String?
+  companyName   String?
+  email         String?
+  phone         String?
+  mobile        String?
+  preferredContact String?   @default("phone")
+
+  // Billing
+  billingAddress String?
+  billingCity   String?
+  billingState  String?
+  billingZip    String?
+
+  // Source
+  referralSource String?
+  referredBy    String?
+
+  // Communication
+  doNotCall     Boolean       @default(false)
+  doNotEmail    Boolean       @default(false)
+  doNotText     Boolean       @default(false)
+
+  notes         String?
+  tags          String[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  company       Company       @relation(fields: [companyId], references: [id])
+  companyId     String
+  properties    Property[]
+  jobs          Job[]
+  estimates     Estimate[]
+  invoices      Invoice[]
+  agreements    ServiceAgreement[]
+  communications Communication[]
+}
+
+enum CustomerType {
+  RESIDENTIAL
+  COMMERCIAL
+  PROPERTY_MANAGEMENT
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  VIP
+  DO_NOT_SERVICE
+}
+
+model Property {
+  id            String    @id @default(cuid())
+  name          String?   // "Main Home", "Rental Property", etc.
+  type          String?   // House, Apartment, Office, etc.
+
+  // Address
+  address       String
+  address2      String?
+  city          String
+  state         String
+  zip           String
+
+  // Access info
+  gateCode      String?
+  accessNotes   String?
+  lockboxCode   String?
+
+  // Property details
+  sqFootage     Int?
+  yearBuilt     Int?
+  stories       Int?
+
+  // Pets
+  hasPets       Boolean   @default(false)
+  petNotes      String?
+
+  notes         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  customerId    String
+  equipment     Equipment[]
+  jobs          Job[]
+  serviceHistory ServiceHistory[]
+}
+
+model Equipment {
+  id            String    @id @default(cuid())
+  type          EquipmentType
+  brand         String?
+  model         String?
+  serialNumber  String?
+
+  // Installation
+  installDate   DateTime?
+  installedBy   String?
+
+  // Warranty
+  warrantyExpires DateTime?
+  warrantyNotes String?
+
+  // Location in property
+  location      String?   // Basement, Attic, Garage, etc.
+
+  // Specs (varies by type)
+  specs         Json?     // SEER rating, BTU, tonnage, etc.
+
+  // Maintenance
+  lastServiceDate DateTime?
+  nextServiceDue DateTime?
+
+  // Photos
+  photos        String[]
+
+  notes         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  property      Property  @relation(fields: [propertyId], references: [id])
+  propertyId    String
+  serviceHistory ServiceHistory[]
+}
+
+enum EquipmentType {
+  AC_UNIT
+  FURNACE
+  HEAT_PUMP
+  AIR_HANDLER
+  WATER_HEATER
+  TANKLESS_WATER_HEATER
+  BOILER
+  MINI_SPLIT
+  THERMOSTAT
+  ELECTRICAL_PANEL
+  GARBAGE_DISPOSAL
+  SUMP_PUMP
+  HVAC_PACKAGE
+  OTHER
+}
+
+model ServiceHistory {
+  id            String    @id @default(cuid())
+  date          DateTime  @default(now())
+  type          String    // Repair, Maintenance, Installation
+  description   String
+  technicianName String?
+  notes         String?
+
+  property      Property  @relation(fields: [propertyId], references: [id])
+  propertyId    String
+  equipment     Equipment? @relation(fields: [equipmentId], references: [id])
+  equipmentId   String?
+  job           Job?      @relation(fields: [jobId], references: [id])
+  jobId         String?
+}
+
+// ============ JOBS ============
+
+model Job {
+  id            String      @id @default(cuid())
+  jobNumber     String      @unique
+  status        JobStatus   @default(PENDING)
+  priority      Priority    @default(NORMAL)
+  type          JobType     @default(SERVICE_CALL)
+
+  // Trade
+  tradeType     TradeType
+
+  // Description
+  title         String
+  description   String?
+  customerPO    String?     // Customer's PO number
+
+  // Scheduling
+  scheduledStart DateTime?
+  scheduledEnd  DateTime?
+  actualStart   DateTime?
+  actualEnd     DateTime?
+  estimatedDuration Int?    // minutes
+
+  // Window
+  timeWindowStart String?   // "8:00 AM"
+  timeWindowEnd String?     // "12:00 PM"
+
+  // Location
+  propertyId    String?
+
+  // Source
+  source        String?     // Phone, Web, Referral, etc.
+  leadId        String?
+
+  // Amounts
+  estimatedAmount Decimal?  @db.Decimal(10, 2)
+  actualAmount  Decimal?    @db.Decimal(10, 2)
+
+  // Completion
+  workPerformed String?
+  customerSignature String?
+  completedAt   DateTime?
+
+  notes         String?
+  tags          String[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  company       Company     @relation(fields: [companyId], references: [id])
+  companyId     String
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  customerId    String
+  property      Property?   @relation(fields: [propertyId], references: [id])
+  serviceType   ServiceType? @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId String?
+  createdBy     User        @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById   String
+  assignments   JobAssignment[]
+  timeEntries   TimeEntry[]
+  photos        JobPhoto[]
+  partsUsed     JobPart[]
+  serviceHistory ServiceHistory[]
+  estimates     Estimate[]
+  invoices      Invoice[]
+}
+
+enum JobStatus {
+  PENDING
+  SCHEDULED
+  DISPATCHED
+  EN_ROUTE
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  INVOICED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  EMERGENCY
+}
+
+enum JobType {
+  SERVICE_CALL
+  REPAIR
+  MAINTENANCE
+  INSTALLATION
+  ESTIMATE_ONLY
+  WARRANTY
+  CALLBACK
+  INSPECTION
+}
+
+model ServiceType {
+  id            String    @id @default(cuid())
+  name          String
+  code          String?
+  description   String?
+  tradeType     TradeType
+  defaultDuration Int?    // minutes
+  color         String?
+  isActive      Boolean   @default(true)
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  jobs          Job[]
+
+  @@unique([companyId, name])
+}
+
+model JobAssignment {
+  id            String    @id @default(cuid())
+  isPrimary     Boolean   @default(false)
+  assignedAt    DateTime  @default(now())
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+
+  job           Job       @relation(fields: [jobId], references: [id])
+  jobId         String
+  technician    Technician @relation(fields: [technicianId], references: [id])
+  technicianId  String
+
+  @@unique([jobId, technicianId])
+}
+
+model TimeEntry {
+  id            String      @id @default(cuid())
+  type          TimeEntryType @default(WORK)
+  startTime     DateTime
+  endTime       DateTime?
+  duration      Int?        // minutes
+
+  notes         String?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  job           Job         @relation(fields: [jobId], references: [id])
+  jobId         String
+  technician    Technician  @relation(fields: [technicianId], references: [id])
+  technicianId  String
+}
+
+enum TimeEntryType {
+  TRAVEL
+  WORK
+  BREAK
+}
+
+model JobPhoto {
+  id            String    @id @default(cuid())
+  type          PhotoType @default(DURING)
+  filePath      String
+  caption       String?
+  takenAt       DateTime  @default(now())
+
+  job           Job       @relation(fields: [jobId], references: [id])
+  jobId         String
+}
+
+enum PhotoType {
+  BEFORE
+  DURING
+  AFTER
+  EQUIPMENT
+  PROBLEM
+  SIGNATURE
+}
+
+model JobPart {
+  id            String    @id @default(cuid())
+  quantity      Int
+  unitPrice     Decimal   @db.Decimal(10, 2)
+  totalPrice    Decimal   @db.Decimal(10, 2)
+  markup        Decimal?  @db.Decimal(5, 2)
+
+  job           Job       @relation(fields: [jobId], references: [id])
+  jobId         String
+  part          Part      @relation(fields: [partId], references: [id])
+  partId        String
+}
+
+// ============ ESTIMATES ============
+
+model Estimate {
+  id              String        @id @default(cuid())
+  estimateNumber  String        @unique
+  status          EstimateStatus @default(DRAFT)
+
+  // Dates
+  createdDate     DateTime      @default(now())
+  expirationDate  DateTime?
+  approvedAt      DateTime?
+
+  // Options (Good-Better-Best)
+  options         EstimateOption[]
+
+  // Selected option
+  selectedOption  String?       // good, better, best
+
+  // Totals
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxAmount       Decimal       @db.Decimal(10, 2) @default(0)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+
+  // Approval
+  signatureFile   String?
+  signedBy        String?
+
+  notes           String?
+  terms           String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  customerId      String
+  job             Job?          @relation(fields: [jobId], references: [id])
+  jobId           String?
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  VIEWED
+  APPROVED
+  DECLINED
+  EXPIRED
+  CONVERTED
+}
+
+model EstimateOption {
+  id            String        @id @default(cuid())
+  name          String        // Good, Better, Best, or custom
+  description   String?
+  sortOrder     Int           @default(0)
+
+  subtotal      Decimal       @db.Decimal(10, 2)
+  taxAmount     Decimal       @db.Decimal(10, 2) @default(0)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+
+  isRecommended Boolean       @default(false)
+
+  estimate      Estimate      @relation(fields: [estimateId], references: [id])
+  estimateId    String
+  lineItems     EstimateLineItem[]
+}
+
+model EstimateLineItem {
+  id            String    @id @default(cuid())
+  description   String
+  quantity      Decimal   @db.Decimal(10, 2)
+  unitPrice     Decimal   @db.Decimal(10, 2)
+  totalPrice    Decimal   @db.Decimal(10, 2)
+  category      String?   // Labor, Parts, Equipment, etc.
+  sortOrder     Int       @default(0)
+  isOptional    Boolean   @default(false)
+
+  option        EstimateOption @relation(fields: [optionId], references: [id])
+  optionId      String
+  pricebookItem PricebookItem? @relation(fields: [pricebookItemId], references: [id])
+  pricebookItemId String?
+}
+
+// ============ INVOICES ============
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+  status          InvoiceStatus @default(DRAFT)
+
+  // Dates
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime
+  paidDate        DateTime?
+
+  // Amounts
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxRate         Decimal       @db.Decimal(5, 4) @default(0)
+  taxAmount       Decimal       @db.Decimal(10, 2) @default(0)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  paidAmount      Decimal       @db.Decimal(10, 2) @default(0)
+  balanceDue      Decimal       @db.Decimal(10, 2)
+
+  notes           String?
+  terms           String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  customerId      String
+  job             Job?          @relation(fields: [jobId], references: [id])
+  jobId           String?
+  lineItems       InvoiceLineItem[]
+  payments        Payment[]
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PARTIAL
+  PAID
+  OVERDUE
+  VOID
+}
+
+model InvoiceLineItem {
+  id            String    @id @default(cuid())
+  description   String
+  quantity      Decimal   @db.Decimal(10, 2)
+  unitPrice     Decimal   @db.Decimal(10, 2)
+  totalPrice    Decimal   @db.Decimal(10, 2)
+  category      String?   // Labor, Parts, etc.
+  sortOrder     Int       @default(0)
+
+  invoice       Invoice   @relation(fields: [invoiceId], references: [id])
+  invoiceId     String
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  reference     String?       // Check number, last 4 digits, etc.
+  date          DateTime      @default(now())
+  notes         String?
+
+  // Stripe
+  stripePaymentId String?
+
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  invoiceId     String
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CREDIT_CARD
+  DEBIT_CARD
+  ACH
+  FINANCING
+  OTHER
+}
+
+// ============ PRICEBOOK ============
+
+model PricebookItem {
+  id            String    @id @default(cuid())
+  code          String
+  name          String
+  description   String?
+  category      String    // Labor, Parts, Equipment, Misc
+  type          String    // Flat Rate, Per Hour, Per Unit
+
+  // Pricing
+  unitCost      Decimal?  @db.Decimal(10, 2)
+  unitPrice     Decimal   @db.Decimal(10, 2)
+  laborMinutes  Int?
+
+  // For parts
+  manufacturer  String?
+  partNumber    String?
+
+  isActive      Boolean   @default(true)
+  isTaxable     Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  estimateLines EstimateLineItem[]
+
+  @@unique([companyId, code])
+}
+
+// ============ INVENTORY ============
+
+model Part {
+  id            String    @id @default(cuid())
+  partNumber    String
+  name          String
+  description   String?
+  category      String?
+  manufacturer  String?
+
+  // Pricing
+  cost          Decimal   @db.Decimal(10, 2)
+  price         Decimal   @db.Decimal(10, 2)
+  markup        Decimal?  @db.Decimal(5, 2)
+
+  // Inventory
+  quantityOnHand Int      @default(0)
+  reorderLevel  Int       @default(0)
+  reorderQty    Int       @default(0)
+
+  // Location
+  warehouseLocation String?
+
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  truckStock    TruckStock[]
+  jobParts      JobPart[]
+  purchaseOrders PurchaseOrderItem[]
+
+  @@unique([companyId, partNumber])
+}
+
+model Truck {
+  id            String    @id @default(cuid())
+  name          String    // "Truck 1", "Van 3"
+  vehicleId     String?   // License plate or fleet number
+  make          String?
+  model         String?
+  year          Int?
+  vin           String?
+  isActive      Boolean   @default(true)
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  technicians   Technician[]
+  stock         TruckStock[]
+}
+
+model TruckStock {
+  id            String    @id @default(cuid())
+  quantity      Int       @default(0)
+  minQuantity   Int       @default(0)
+  maxQuantity   Int?
+
+  updatedAt     DateTime  @updatedAt
+
+  truck         Truck     @relation(fields: [truckId], references: [id])
+  truckId       String
+  part          Part      @relation(fields: [partId], references: [id])
+  partId        String
+
+  @@unique([truckId, partId])
+}
+
+model PurchaseOrder {
+  id            String          @id @default(cuid())
+  poNumber      String          @unique
+  status        POStatus        @default(DRAFT)
+  vendorName    String
+  vendorContact String?
+
+  orderDate     DateTime        @default(now())
+  expectedDate  DateTime?
+  receivedDate  DateTime?
+
+  subtotal      Decimal         @db.Decimal(10, 2)
+  taxAmount     Decimal         @db.Decimal(10, 2) @default(0)
+  totalAmount   Decimal         @db.Decimal(10, 2)
+
+  notes         String?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  items         PurchaseOrderItem[]
+}
+
+enum POStatus {
+  DRAFT
+  ORDERED
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrderItem {
+  id            String    @id @default(cuid())
+  quantity      Int
+  unitCost      Decimal   @db.Decimal(10, 2)
+  totalCost     Decimal   @db.Decimal(10, 2)
+  receivedQty   Int       @default(0)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String
+  part          Part      @relation(fields: [partId], references: [id])
+  partId        String
+}
+
+// ============ SERVICE AGREEMENTS ============
+
+model AgreementPlan {
+  id            String    @id @default(cuid())
+  name          String    // Bronze, Silver, Gold
+  description   String?
+  tradeType     TradeType
+
+  // Pricing
+  monthlyPrice  Decimal   @db.Decimal(10, 2)
+  annualPrice   Decimal   @db.Decimal(10, 2)
+
+  // Benefits
+  visitsIncluded Int      @default(1)
+  discountPct   Decimal   @db.Decimal(5, 2) @default(0)
+  priorityService Boolean @default(false)
+  noDiagnosticFee Boolean @default(false)
+
+  // Included services
+  includedServices String[]
+
+  isActive      Boolean   @default(true)
+
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     String
+  agreements    ServiceAgreement[]
+
+  @@unique([companyId, name])
+}
+
+model ServiceAgreement {
+  id            String          @id @default(cuid())
+  agreementNumber String        @unique
+  status        AgreementStatus @default(ACTIVE)
+
+  // Dates
+  startDate     DateTime
+  endDate       DateTime
+  renewalDate   DateTime?
+  cancelledDate DateTime?
+
+  // Billing
+  billingFrequency String     // monthly, annual
+  paymentMethod String?
+  autoRenew     Boolean        @default(true)
+
+  // Tracking
+  visitsUsed    Int            @default(0)
+  lastVisitDate DateTime?
+  nextVisitDue  DateTime?
+
+  notes         String?
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  customerId    String
+  plan          AgreementPlan  @relation(fields: [planId], references: [id])
+  planId        String
+  equipment     Json?          // Equipment covered
+}
+
+enum AgreementStatus {
+  ACTIVE
+  PENDING
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+// ============ COMMUNICATIONS ============
+
+model Communication {
+  id            String            @id @default(cuid())
+  type          CommunicationType
+  direction     String            // inbound, outbound
+  subject       String?
+  message       String?
+  status        String            @default("sent")
+  sentAt        DateTime          @default(now())
+
+  customer      Customer          @relation(fields: [customerId], references: [id])
+  customerId    String
+}
+
+enum CommunicationType {
+  EMAIL
+  SMS
+  PHONE
+  NOTE
+}

@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Environment files (will be set in container)
+.env
+.env.local
+.env.development
+.env.production
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+tests
+test-results
+playwright-report
+playwright.config.ts
+
+# Documentation
+*.md
+!README.md
+
+# Docker files (no need to copy these into the container)
+docker-compose*.yml
+Dockerfile*
+
+# Misc
+*.log
+coverage
+.nyc_output

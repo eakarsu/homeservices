@@ -1,0 +1,960 @@
+(node:26838) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ○ Compiling / ...
+ GET /api/equipment?includeCustomer=true 400 in 81ms
+ POST /api/auth/callback/credentials 401 in 34ms
+ ○ Compiling /dashboard/technicians ...
+ ○ Compiling /tech ...
+ GET /api/technicians/my-jobs 404 in 196ms
+ ⨯ Failed to generate static paths for /api/auth/[...nextauth]:
+SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at loadManifest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/load-manifest.js:36:25)
+    at getMaybePagePath (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/require.js:57:59)
+    at getPagePath (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/require.js:92:22)
+    at requirePage (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/require.js:99:22)
+    at /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/load-components.js:103:84
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async loadComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/load-components.js:103:26)
+    at async Object.loadStaticPaths (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/static-paths-worker.js:23:24) {
+  type: 'SyntaxError'
+}
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+ ○ Compiling /dashboard/agreements/new ...
+ ○ Compiling /dashboard/reports/aging ...
+Daily report error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    createdAt: {
+      gte: new Date("2025-11-28T21:06:51.922Z")
+    }
+  },
+  include: {
+    customer: true,
+    technician: true,
+    ~~~~~~~~~~
+?   company?: true,
+?   property?: true,
+?   serviceType?: true,
+?   createdBy?: true,
+?   assignments?: true,
+?   timeEntries?: true,
+?   photos?: true,
+?   partsUsed?: true,
+?   serviceHistory?: true,
+?   estimates?: true,
+?   invoices?: true
+  }
+}
+
+Unknown field `technician` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/daily/route.ts:26:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+ GET /api/reports/daily?days=7 500 in 365ms
+ ○ Compiling /dashboard/reports/services ...
+Services report error: PrismaClientValidationError:
+Invalid `prisma.serviceType.findMany()` invocation:
+
+{
+  include: {
+    jobs: {
+      include: {
+        invoice: true,
+        ~~~~~~~
+?       company?: true,
+?       customer?: true,
+?       property?: true,
+?       serviceType?: true,
+?       createdBy?: true,
+?       assignments?: true,
+?       timeEntries?: true,
+?       photos?: true,
+?       partsUsed?: true,
+?       serviceHistory?: true,
+?       estimates?: true,
+?       invoices?: true
+      }
+    }
+  }
+}
+
+Unknown field `invoice` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/services/route.ts:22:30)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Daily report error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    createdAt: {
+      gte: new Date("2025-11-28T21:06:54.989Z")
+    }
+  },
+  include: {
+    customer: true,
+    technician: true,
+    ~~~~~~~~~~
+?   company?: true,
+?   property?: true,
+?   serviceType?: true,
+?   createdBy?: true,
+?   assignments?: true,
+?   timeEntries?: true,
+?   photos?: true,
+?   partsUsed?: true,
+?   serviceHistory?: true,
+?   estimates?: true,
+?   invoices?: true
+  }
+}
+
+Unknown field `technician` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/daily/route.ts:26:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+ GET /api/reports/daily?days=7 500 in 14ms
+Technicians report error: PrismaClientValidationError:
+Invalid `prisma.user.findMany()` invocation:
+
+{
+  where: {
+    role: "TECHNICIAN"
+  },
+  include: {
+    jobs: {
+    ~~~~
+      include: {
+        invoice: true
+      }
+    },
+?   company?: true,
+?   technician?: true,
+?   createdJobs?: true
+  }
+}
+
+Unknown field `jobs` for include statement on model `User`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/technicians/route.ts:22:29)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Services report error: PrismaClientValidationError:
+Invalid `prisma.serviceType.findMany()` invocation:
+
+{
+  include: {
+    jobs: {
+      include: {
+        invoice: true,
+        ~~~~~~~
+?       company?: true,
+?       customer?: true,
+?       property?: true,
+?       serviceType?: true,
+?       createdBy?: true,
+?       assignments?: true,
+?       timeEntries?: true,
+?       photos?: true,
+?       partsUsed?: true,
+?       serviceHistory?: true,
+?       estimates?: true,
+?       invoices?: true
+      }
+    }
+  }
+}
+
+Unknown field `invoice` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/services/route.ts:22:30)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Daily report error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    createdAt: {
+      gte: new Date("2025-11-28T21:06:56.404Z")
+    }
+  },
+  include: {
+    customer: true,
+    technician: true,
+    ~~~~~~~~~~
+?   company?: true,
+?   property?: true,
+?   serviceType?: true,
+?   createdBy?: true,
+?   assignments?: true,
+?   timeEntries?: true,
+?   photos?: true,
+?   partsUsed?: true,
+?   serviceHistory?: true,
+?   estimates?: true,
+?   invoices?: true
+  }
+}
+
+Unknown field `technician` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/daily/route.ts:26:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+ GET /api/reports/daily?days=7 500 in 7ms
+Daily report error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    createdAt: {
+      gte: new Date("2025-11-28T21:06:58.080Z")
+    }
+  },
+  include: {
+    customer: true,
+    technician: true,
+    ~~~~~~~~~~
+?   company?: true,
+?   property?: true,
+?   serviceType?: true,
+?   createdBy?: true,
+?   assignments?: true,
+?   timeEntries?: true,
+?   photos?: true,
+?   partsUsed?: true,
+?   serviceHistory?: true,
+?   estimates?: true,
+?   invoices?: true
+  }
+}
+
+Unknown field `technician` for include statement on model `Job`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/reports/daily/route.ts:26:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+ ○ Compiling /dashboard/inventory/parts ...
+ ○ Compiling /dashboard/settings/service-types ...
+ GET /api/technicians/my-jobs 404 in 145ms
+ GET /api/technicians/my-jobs 404 in 72ms
+ GET /api/technicians/my-jobs 404 in 13ms
+ GET /api/technicians/my-jobs 404 in 6ms
+ ○ Compiling /tech/invoice ...
+ GET /api/technicians/my-jobs 404 in 14ms
+ GET /api/technicians/me 404 in 13ms
+ GET /api/technicians/me 404 in 14ms
+ GET /api/equipment?includeCustomer=true 400 in 21ms
+ POST /api/auth/callback/credentials 401 in 22ms
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}
+Dispatch board error: PrismaClientValidationError:
+Invalid `prisma.job.findMany()` invocation:
+
+{
+  where: {
+    scheduledDate: {
+    ~~~~~~~~~~~~~
+      gte: new Date("2025-12-04T05:00:00.000Z"),
+      lte: new Date("2025-12-05T04:59:59.999Z")
+    },
+?   AND?: JobWhereInput | JobWhereInput[],
+?   OR?: JobWhereInput[],
+?   NOT?: JobWhereInput | JobWhereInput[],
+?   id?: StringFilter | String,
+?   jobNumber?: StringFilter | String,
+?   status?: EnumJobStatusFilter | JobStatus,
+?   priority?: EnumPriorityFilter | Priority,
+?   type?: EnumJobTypeFilter | JobType,
+?   tradeType?: EnumTradeTypeFilter | TradeType,
+?   title?: StringFilter | String,
+?   description?: StringNullableFilter | String | Null,
+?   customerPO?: StringNullableFilter | String | Null,
+?   scheduledStart?: DateTimeNullableFilter | DateTime | Null,
+?   scheduledEnd?: DateTimeNullableFilter | DateTime | Null,
+?   actualStart?: DateTimeNullableFilter | DateTime | Null,
+?   actualEnd?: DateTimeNullableFilter | DateTime | Null,
+?   estimatedDuration?: IntNullableFilter | Int | Null,
+?   timeWindowStart?: StringNullableFilter | String | Null,
+?   timeWindowEnd?: StringNullableFilter | String | Null,
+?   propertyId?: StringNullableFilter | String | Null,
+?   source?: StringNullableFilter | String | Null,
+?   leadId?: StringNullableFilter | String | Null,
+?   estimatedAmount?: DecimalNullableFilter | Decimal | Null,
+?   actualAmount?: DecimalNullableFilter | Decimal | Null,
+?   workPerformed?: StringNullableFilter | String | Null,
+?   customerSignature?: StringNullableFilter | String | Null,
+?   completedAt?: DateTimeNullableFilter | DateTime | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   tags?: StringNullableListFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   companyId?: StringFilter | String,
+?   customerId?: StringFilter | String,
+?   serviceTypeId?: StringNullableFilter | String | Null,
+?   createdById?: StringFilter | String,
+?   company?: CompanyRelationFilter | CompanyWhereInput,
+?   customer?: CustomerRelationFilter | CustomerWhereInput,
+?   property?: PropertyNullableRelationFilter | PropertyWhereInput | Null,
+?   serviceType?: ServiceTypeNullableRelationFilter | ServiceTypeWhereInput | Null,
+?   createdBy?: UserRelationFilter | UserWhereInput,
+?   assignments?: JobAssignmentListRelationFilter,
+?   timeEntries?: TimeEntryListRelationFilter,
+?   photos?: JobPhotoListRelationFilter,
+?   partsUsed?: JobPartListRelationFilter,
+?   serviceHistory?: ServiceHistoryListRelationFilter,
+?   estimates?: EstimateListRelationFilter,
+?   invoices?: InvoiceListRelationFilter
+  },
+  include: {
+    customer: true,
+    technician: true,
+    serviceType: true
+  }
+}
+
+Unknown argument `scheduledDate`. Available options are marked with ?.
+    at wn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at $n.handleRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6958)
+    at $n.handleAndLogRequestError (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async GET (webpack-internal:///(rsc)/./src/app/api/dispatch/board/route.ts:46:22)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/erolakarsu/projects/homeServices_salesforce/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  clientVersion: '5.22.0'
+}

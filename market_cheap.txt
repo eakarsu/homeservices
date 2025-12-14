@@ -1,0 +1,147 @@
+Free Marketing Actions (Start Today)
+
+  1. Set Up Your Online Presence
+
+  | Action                                                       | Cost | Time      |
+  |--------------------------------------------------------------|------|-----------|
+  | Create a simple landing page (use your existing Next.js app) | Free | 2-3 hours |
+  | Set up Google Business Profile                               | Free | 30 min    |
+  | Create LinkedIn company page                                 | Free | 30 min    |
+  | Create X/Twitter account                                     | Free | 15 min    |
+  | Create YouTube channel                                       | Free | 15 min    |
+
+  ---
+  2. Go Where Contractors Are (Today)
+
+  | Platform                  | Members  | Action                                    |
+  |---------------------------|----------|-------------------------------------------|
+  | r/HVAC                    | 140,000+ | Join, answer questions, build credibility |
+  | r/Plumbing                | Large    | Same approach                             |
+  | HVAC-Talk.com             | 260,000+ | Create account, participate genuinely     |
+  | Contractor Talk           | 145,000+ | Join business/marketing discussions       |
+  | Facebook: HVAC Technician | 54,000+  | Request to join, engage                   |
+
+  What to post:
+  "Hey everyone, I'm building an affordable alternative to
+  ServiceTitan for small shops. Looking for 5 beta testers
+  to try it free and give feedback. No strings attached.
+
+  Features: AI dispatch, scheduling, invoicing, estimates.
+  Flat pricing, no per-tech fees.
+
+  Anyone interested?"
+
+  ---
+  3. Free Tools to Use
+
+  | Tool       | Purpose                | Cost                    |
+  |------------|------------------------|-------------------------|
+  | Canva      | Graphics, social posts | Free tier               |
+  | Loom       | Record demo videos     | Free (25 videos)        |
+  | Mailchimp  | Email marketing        | Free up to 500 contacts |
+  | Calendly   | Book demo calls        | Free tier               |
+  | Tally.so   | Waitlist/signup forms  | Free                    |
+  | Notion     | Landing page (simple)  | Free                    |
+  | Carrd.co   | One-page website       | Free tier               |
+  | OBS Studio | Record tutorials       | Free                    |
+
+  ---
+  4. Content You Can Create for Free
+
+  | Content Type                    | Platform           | Effort  |
+  |---------------------------------|--------------------|---------|
+  | Screen recording demo           | YouTube, Loom      | 1 hour  |
+  | "ServiceTitan vs Us" comparison | Blog/Landing page  | 2 hours |
+  | Tips for HVAC dispatch          | Reddit, Forums     | 30 min  |
+  | Before/after screenshots        | Twitter, LinkedIn  | 30 min  |
+  | Pricing breakdown graphic       | Canva → everywhere | 1 hour  |
+
+  ---
+  5. Week 1 Action Plan
+
+  | Day   | Action                                                  | Time    |
+  |-------|---------------------------------------------------------|---------|
+  | Day 1 | Create accounts: Reddit, HVAC-Talk, Facebook groups     | 1 hr    |
+  | Day 2 | Record 3-min Loom demo video                            | 1 hr    |
+  | Day 3 | Write & post "looking for beta testers" in 3 forums     | 1 hr    |
+  | Day 4 | Create simple landing page with signup form             | 2-3 hrs |
+  | Day 5 | Post demo video to YouTube                              | 30 min  |
+  | Day 6 | Answer 5 questions on Reddit/forums (build credibility) | 1 hr    |
+  | Day 7 | Direct message 10 small HVAC companies on Facebook      | 1 hr    |
+
+  ---
+  6. Free Cold Outreach
+
+  Find leads for free:
+  - Google Maps: Search "HVAC [your city]" → get business names/emails
+  - Yelp: Browse contractor listings
+  - Facebook: Find business pages, message them
+
+  Email template (send from personal Gmail):
+  Subject: Quick question about your dispatch software
+
+  Hi [Name],
+
+  I found [Company] on Google Maps. Quick question:
+  are you using ServiceTitan or similar software?
+
+  I built a much cheaper alternative ($99/month flat,
+  no per-technician fees) with AI-powered dispatch.
+
+  Looking for 5 contractors to try it free for 30 days.
+  Interested in a quick look?
+
+  [Your name]
+  [Your phone]
+
+  Send 10-20 of these per day = free leads
+
+  ---
+  7. Leverage Product Hunt & Indie Hackers (Free)
+
+  | Platform      | Action                            |
+  |---------------|-----------------------------------|
+  | Product Hunt  | Launch when ready, get visibility |
+  | Indie Hackers | Post your story, get feedback     |
+  | Hacker News   | "Show HN" post when ready         |
+  | BetaList      | List your product for free        |
+
+  ---
+  8. Free PR / Backlinks
+
+  | Action                     | How                                           |
+  |----------------------------|-----------------------------------------------|
+  | HARO (Help a Reporter Out) | Sign up free, respond to journalist queries   |
+  | Podcast guesting           | Pitch contractor/business podcasts            |
+  | Guest posts                | Write for HVAC blogs in exchange for backlink |
+
+  ---
+  Low-Cost Options ($0-100/month)
+
+  | Tool/Service | Cost       | Purpose                  |
+  |--------------|------------|--------------------------|
+  | Hunter.io    | Free 25/mo | Find business emails     |
+  | Apollo.io    | Free tier  | Lead database            |
+  | Instantly.ai | $37/mo     | Cold email automation    |
+  | Namecheap    | $10/yr     | Domain name              |
+  | Vercel       | Free       | Host your app            |
+  | Stripe Atlas | $500 once  | Form company (if needed) |
+
+  ---
+  Immediate Next Steps
+
+  1. Pick a product name (if you haven't)
+  2. Create a landing page - I can help build this in your existing codebase
+  3. Record a Loom demo - Just screen record the app
+  4. Post in 3 forums today - Looking for beta testers
+  5. Send 10 cold emails - Find local HVAC shops on Google Maps
+
+  ---
+  Want me to help you:
+
+  1. Build a landing/marketing page in your existing Next.js app?
+  2. Write forum posts for HVAC-Talk, Reddit, etc.?
+  3. Create cold email templates ready to send?
+  4. Set up a waitlist form with Tally or in your app?
+
+  Which one should we tackle first?
