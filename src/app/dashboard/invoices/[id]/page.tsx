@@ -9,8 +9,11 @@ import {
   PaperAirplaneIcon,
   CurrencyDollarIcon,
   PrinterIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  LinkIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 import { formatCurrency, getStatusColor, formatDate } from '@/lib/utils'
 
 interface Invoice {
@@ -151,6 +154,16 @@ export default function InvoiceDetailPage() {
 
   const canSend = invoice.status === 'DRAFT'
   const canRecordPayment = invoice.balanceDue > 0
+  const paymentUrl = `${window.location.origin}/pay/${invoice.id}`
+
+  const copyPaymentLink = () => {
+    navigator.clipboard.writeText(paymentUrl)
+    toast.success('Payment link copied to clipboard!')
+  }
+
+  const openPaymentPage = () => {
+    window.open(paymentUrl, '_blank')
+  }
 
   return (
     <div className="space-y-6">
@@ -187,16 +200,32 @@ export default function InvoiceDetailPage() {
             </button>
           )}
           {canRecordPayment && (
-            <button
-              onClick={() => {
-                setPaymentAmount(invoice.balanceDue.toString())
-                setShowPaymentModal(true)
-              }}
-              className="btn-primary bg-green-600 hover:bg-green-700 flex items-center gap-2"
-            >
-              <CurrencyDollarIcon className="w-4 h-4" />
-              Record Payment
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setPaymentAmount(invoice.balanceDue.toString())
+                  setShowPaymentModal(true)
+                }}
+                className="btn-primary bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <CurrencyDollarIcon className="w-4 h-4" />
+                Record Payment
+              </button>
+              <button
+                onClick={copyPaymentLink}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <LinkIcon className="w-4 h-4" />
+                Copy Payment Link
+              </button>
+              <button
+                onClick={openPaymentPage}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <CreditCardIcon className="w-4 h-4" />
+                Pay Online
+              </button>
+            </>
           )}
           <button className="btn-secondary flex items-center gap-2">
             <PrinterIcon className="w-4 h-4" />

@@ -13,6 +13,87 @@ export async function seedDemoDataForCompany(
   // Use company ID prefix for unique identifiers
   const prefix = companyId.slice(0, 8)
 
+  // Create Service Types first (required for jobs)
+  const serviceTypes = await Promise.all([
+    tx.serviceType.create({
+      data: { name: 'HVAC Repair', code: 'HVAC-REP', tradeType: 'HVAC', defaultDuration: 120, color: '#3B82F6', companyId },
+    }),
+    tx.serviceType.create({
+      data: { name: 'HVAC Maintenance', code: 'HVAC-MAINT', tradeType: 'HVAC', defaultDuration: 90, color: '#60A5FA', companyId },
+    }),
+    tx.serviceType.create({
+      data: { name: 'Plumbing Repair', code: 'PLMB-REP', tradeType: 'PLUMBING', defaultDuration: 90, color: '#22C55E', companyId },
+    }),
+    tx.serviceType.create({
+      data: { name: 'Drain Cleaning', code: 'DRAIN', tradeType: 'PLUMBING', defaultDuration: 60, color: '#15803D', companyId },
+    }),
+    tx.serviceType.create({
+      data: { name: 'Electrical Repair', code: 'ELEC-REP', tradeType: 'ELECTRICAL', defaultDuration: 90, color: '#F59E0B', companyId },
+    }),
+    tx.serviceType.create({
+      data: { name: 'Emergency Service', code: 'EMER', tradeType: 'GENERAL', defaultDuration: 120, color: '#EF4444', companyId },
+    }),
+  ])
+
+  // Create Agreement Plans
+  const agreementPlans = await Promise.all([
+    tx.agreementPlan.create({
+      data: {
+        name: 'Bronze',
+        description: 'Basic maintenance plan with 1 annual visit',
+        tradeType: 'HVAC',
+        monthlyPrice: 15,
+        annualPrice: 149,
+        visitsIncluded: 1,
+        discountPct: 10,
+        priorityService: false,
+        noDiagnosticFee: false,
+        includedServices: ['Annual tune-up', 'Filter replacement'],
+        companyId,
+      },
+    }),
+    tx.agreementPlan.create({
+      data: {
+        name: 'Silver',
+        description: 'Standard maintenance plan with 2 annual visits',
+        tradeType: 'HVAC',
+        monthlyPrice: 25,
+        annualPrice: 249,
+        visitsIncluded: 2,
+        discountPct: 15,
+        priorityService: true,
+        noDiagnosticFee: false,
+        includedServices: ['Spring tune-up', 'Fall tune-up', 'Filter replacements'],
+        companyId,
+      },
+    }),
+    tx.agreementPlan.create({
+      data: {
+        name: 'Gold',
+        description: 'Premium maintenance plan with all benefits',
+        tradeType: 'HVAC',
+        monthlyPrice: 35,
+        annualPrice: 349,
+        visitsIncluded: 2,
+        discountPct: 20,
+        priorityService: true,
+        noDiagnosticFee: true,
+        includedServices: ['Spring tune-up', 'Fall tune-up', 'Filter replacements', 'No diagnostic fee'],
+        companyId,
+      },
+    }),
+  ])
+
+  // Create Trucks
+  await Promise.all([
+    tx.truck.create({
+      data: { name: 'Truck 1', vehicleId: 'DEMO-T1', make: 'Ford', model: 'E-350 Van', year: 2022, companyId },
+    }),
+    tx.truck.create({
+      data: { name: 'Truck 2', vehicleId: 'DEMO-T2', make: 'Chevrolet', model: 'Express', year: 2021, companyId },
+    }),
+  ])
+
   // Create demo technician users
   const techUsers = await Promise.all([
     tx.user.create({
@@ -153,11 +234,6 @@ export async function seedDemoDataForCompany(
 
     customers.push({ customer, property })
   }
-
-  // Get service types for this company
-  const serviceTypes = await tx.serviceType.findMany({
-    where: { companyId },
-  })
 
   // Create jobs for today (visible on dispatch board)
   const todayJobs = [
@@ -395,10 +471,6 @@ export async function seedDemoDataForCompany(
   }
 
   // Create service agreements
-  const agreementPlans = await tx.agreementPlan.findMany({
-    where: { companyId },
-  })
-
   const agreementStatuses = ['ACTIVE', 'ACTIVE', 'ACTIVE', 'PENDING', 'EXPIRED'] as const
   const billingFrequencies = ['monthly', 'annual'] as const
 

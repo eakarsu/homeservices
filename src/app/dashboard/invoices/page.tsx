@@ -9,7 +9,9 @@ import {
   MagnifyingGlassIcon,
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
-  TrashIcon
+  TrashIcon,
+  CreditCardIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline'
 import { getStatusColor, formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -99,6 +101,18 @@ export default function InvoicesPage() {
   const isOverdue = (invoice: Invoice) => {
     if (!invoice.dueDate || invoice.status === 'PAID') return false
     return new Date(invoice.dueDate) < new Date()
+  }
+
+  const copyPaymentLink = (e: React.MouseEvent, invoiceId: string) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/pay/${invoiceId}`
+    navigator.clipboard.writeText(url)
+    toast.success('Payment link copied!')
+  }
+
+  const openPaymentPage = (e: React.MouseEvent, invoiceId: string) => {
+    e.stopPropagation()
+    window.open(`/pay/${invoiceId}`, '_blank')
   }
 
   const stats = {
@@ -255,13 +269,33 @@ export default function InvoicesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={(e) => handleDeleteClick(e, invoice)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete invoice"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      {invoice.balanceDue > 0 && (
+                        <>
+                          <button
+                            onClick={(e) => copyPaymentLink(e, invoice.id)}
+                            className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                            title="Copy payment link"
+                          >
+                            <LinkIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => openPaymentPage(e, invoice.id)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Open payment page"
+                          >
+                            <CreditCardIcon className="w-5 h-5" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={(e) => handleDeleteClick(e, invoice)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete invoice"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

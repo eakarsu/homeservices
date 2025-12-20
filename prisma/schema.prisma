@@ -175,6 +175,9 @@ model Customer {
   doNotEmail    Boolean       @default(false)
   doNotText     Boolean       @default(false)
 
+  // Stripe
+  stripeCustomerId String?    // Stripe customer ID for saved payment methods
+
   notes         String?
   tags          String[]
 
@@ -855,6 +858,15 @@ model ServiceAgreement {
   billingFrequency String     // monthly, annual
   paymentMethod String?
   autoRenew     Boolean        @default(true)
+
+  // Stripe Subscription
+  stripeSubscriptionId String?  // Stripe subscription ID for recurring billing
+  stripePriceId       String?   // Stripe price ID
+  paymentStatus       String    @default("trial") // trial, active, past_due, cancelled
+  trialEndsAt         DateTime? // When trial period ends
+  nextBillingDate     DateTime? // Next charge date
+  lastPaymentDate     DateTime? // Last successful payment
+  lastPaymentAmount   Decimal?  @db.Decimal(10, 2)
 
   // Tracking
   visitsUsed    Int            @default(0)

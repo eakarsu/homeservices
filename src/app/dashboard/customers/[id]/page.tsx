@@ -14,10 +14,13 @@ import {
   HomeIcon,
   WrenchScrewdriverIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CreditCardIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import { formatDateTime, getStatusColor } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import StripeCardForm from '@/components/StripeCardForm'
 
 interface Property {
   id: string
@@ -46,6 +49,7 @@ interface Customer {
   phone?: string
   source?: string
   createdAt: string
+  stripeCustomerId?: string
   properties: Property[]
   jobs: Array<{
     id: string
@@ -71,12 +75,21 @@ interface Customer {
   }>
 }
 
+interface PaymentMethod {
+  id: string
+  brand: string
+  last4: string
+  expMonth: number
+  expYear: number
+}
+
 export default function CustomerDetailPage() {
   const params = useParams()
   const router = useRouter()
   const queryClient = useQueryClient()
   const customerId = params.id as string
   const [showPropertyModal, setShowPropertyModal] = useState(false)
+  const [showCardModal, setShowCardModal] = useState(false)
   const [propertyForm, setPropertyForm] = useState({
     name: '',
     type: 'House',
@@ -93,6 +106,35 @@ export default function CustomerDetailPage() {
       if (!res.ok) throw new Error('Failed to fetch customer')
       return res.json()
     },
+  })
+
+  const { data: paymentMethodsData } = useQuery<{ paymentMethods: PaymentMethod[] }>({
+    queryKey: ['paymentMethods', customerId],
+    queryFn: async () => {
+      const res = await fetch(`/api/stripe/payment-methods?customerId=${customerId}`)
+      if (!res.ok) throw new Error('Failed to fetch payment methods')
+      return res.json()
+    },
+    enabled: !!customerId,
+  })
+
+  const paymentMethods = paymentMethodsData?.paymentMethods || []
+
+  const deleteCardMutation = useMutation({
+    mutationFn: async (paymentMethodId: string) => {
+      const res = await fetch(`/api/stripe/payment-methods?paymentMethodId=${paymentMethodId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete card')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods', customerId] })
+      toast.success('Card removed successfully')
+    },
+    onError: () => {
+      toast.error('Failed to remove card')
+    }
   })
 
   const createPropertyMutation = useMutation({
@@ -238,6 +280,51 @@ export default function CustomerDetailPage() {
               ))}
               {customer.properties.length === 0 && (
                 <p className="text-gray-500 text-sm">No properties yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Methods */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <CreditCardIcon className="w-5 h-5" />
+                Payment Methods
+              </h2>
+              <button
+                onClick={() => setShowCardModal(true)}
+                className="text-primary-600 text-sm hover:underline"
+              >
+                Add Card
+              </button>
+            </div>
+            <div className="space-y-3">
+              {paymentMethods.map((card) => (
+                <div key={card.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-7 bg-gradient-to-r from-gray-700 to-gray-900 rounded flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">
+                        {card.brand?.toUpperCase().slice(0, 4)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">•••• {card.last4}</p>
+                      <p className="text-xs text-gray-500">
+                        Expires {card.expMonth}/{card.expYear}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => deleteCardMutation.mutate(card.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Remove card"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {paymentMethods.length === 0 && (
+                <p className="text-gray-500 text-sm">No payment methods saved</p>
               )}
             </div>
           </div>
@@ -467,6 +554,27 @@ export default function CustomerDetailPage() {
                 {createPropertyMutation.isPending ? 'Adding...' : 'Add Property'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Card Modal */}
+      {showCardModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Payment Method</h3>
+            <p className="text-gray-600 mb-6">
+              Add a credit or debit card for this customer. This card will be securely stored with Stripe and can be used for recurring payments.
+            </p>
+            <StripeCardForm
+              customerId={customerId}
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['paymentMethods', customerId] })
+                toast.success('Card added successfully')
+                setShowCardModal(false)
+              }}
+              onCancel={() => setShowCardModal(false)}
+            />
           </div>
         </div>
       )}

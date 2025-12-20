@@ -32,12 +32,20 @@ interface Agreement {
   lastVisitDate: string | null
   nextVisitDue: string | null
   notes: string | null
+  // Stripe subscription fields
+  stripeSubscriptionId: string | null
+  paymentStatus: string
+  trialEndsAt: string | null
+  nextBillingDate: string | null
+  lastPaymentDate: string | null
+  lastPaymentAmount: number | null
   customer: {
     id: string
     firstName: string
     lastName: string
     email: string
     phone: string
+    stripeCustomerId: string | null
   }
   plan: {
     id: string
@@ -59,6 +67,13 @@ const statusColors: Record<string, string> = {
   EXPIRED: 'bg-red-100 text-red-800',
   CANCELLED: 'bg-gray-100 text-gray-800',
   SUSPENDED: 'bg-orange-100 text-orange-800',
+}
+
+const paymentStatusColors: Record<string, string> = {
+  trial: 'bg-blue-100 text-blue-800',
+  active: 'bg-green-100 text-green-800',
+  past_due: 'bg-red-100 text-red-800',
+  cancelled: 'bg-gray-100 text-gray-800',
 }
 
 export default function AgreementDetailPage() {
@@ -134,6 +149,28 @@ export default function AgreementDetailPage() {
     },
     onError: () => {
       toast.error('Failed to cancel agreement')
+    }
+  })
+
+  const activateSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/stripe/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agreementId: id }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to activate subscription')
+      }
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['agreement', id] })
+      toast.success(`Subscription activated! Trial ends ${format(new Date(data.trialEndsAt), 'MMM d, yyyy')}`)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to activate subscription')
     }
   })
 
@@ -421,6 +458,85 @@ export default function AgreementDetailPage() {
                   {agreement.autoRenew ? 'Enabled' : 'Disabled'}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Payment Status */}
+          <div className="card">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <CreditCardIcon className="w-5 h-5 text-gray-400" />
+              Payment Status
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">Status</p>
+                <span className={cn(
+                  'px-2 py-1 rounded-full text-xs font-medium capitalize',
+                  paymentStatusColors[agreement.paymentStatus] || 'bg-gray-100 text-gray-800'
+                )}>
+                  {agreement.paymentStatus.replace('_', ' ')}
+                </span>
+              </div>
+
+              {agreement.paymentStatus === 'trial' && agreement.trialEndsAt && (
+                <div>
+                  <p className="text-sm text-gray-500">Trial Ends</p>
+                  <p className="font-medium text-blue-600">
+                    {format(new Date(agreement.trialEndsAt), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              )}
+
+              {agreement.nextBillingDate && (
+                <div>
+                  <p className="text-sm text-gray-500">Next Billing Date</p>
+                  <p className="font-medium">
+                    {format(new Date(agreement.nextBillingDate), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              )}
+
+              {agreement.lastPaymentDate && (
+                <div>
+                  <p className="text-sm text-gray-500">Last Payment</p>
+                  <p className="font-medium">
+                    ${Number(agreement.lastPaymentAmount || 0).toFixed(2)} on{' '}
+                    {format(new Date(agreement.lastPaymentDate), 'MMM d, yyyy')}
+                  </p>
+                </div>
+              )}
+
+              {!agreement.stripeSubscriptionId && agreement.status === 'ACTIVE' && (
+                <div className="pt-2">
+                  {agreement.customer.stripeCustomerId ? (
+                    <button
+                      onClick={() => activateSubscriptionMutation.mutate()}
+                      disabled={activateSubscriptionMutation.isPending}
+                      className="w-full btn-primary text-sm"
+                    >
+                      {activateSubscriptionMutation.isPending ? 'Activating...' : 'Activate Subscription'}
+                    </button>
+                  ) : (
+                    <div className="text-sm text-gray-500 text-center">
+                      <p>No payment method on file</p>
+                      <Link
+                        href={`/dashboard/customers/${agreement.customer.id}`}
+                        className="text-primary-600 hover:underline"
+                      >
+                        Add payment method
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {agreement.stripeSubscriptionId && (
+                <div className="pt-2 text-center">
+                  <span className="text-xs text-gray-400">
+                    Subscription ID: {agreement.stripeSubscriptionId.slice(0, 20)}...
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
