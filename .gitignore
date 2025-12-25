@@ -43,3 +43,12 @@ uploads/*
 
 # Prisma
 prisma/migrations/**/migration_lock.toml
+
+# Capacitor (keep native projects in git for build config)
+ios/App/Pods/
+ios/App/Podfile.lock
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/google-services.json
