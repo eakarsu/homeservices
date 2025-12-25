@@ -6,6 +6,18 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Geolocation } from '@capacitor/geolocation'
 import { PushNotifications } from '@capacitor/push-notifications'
 
+// Dynamic imports for platform-specific features
+let StatusBar: any = null
+let SplashScreen: any = null
+let Keyboard: any = null
+
+// Load platform-specific plugins
+if (typeof window !== 'undefined') {
+  import('@capacitor/status-bar').then(module => { StatusBar = module.StatusBar }).catch(() => {})
+  import('@capacitor/splash-screen').then(module => { SplashScreen = module.SplashScreen }).catch(() => {})
+  import('@capacitor/keyboard').then(module => { Keyboard = module.Keyboard }).catch(() => {})
+}
+
 // Check if running in native app
 export const isNative = () => Capacitor.isNativePlatform()
 export const isIOS = () => Capacitor.getPlatform() === 'ios'
@@ -252,4 +264,81 @@ export async function checkAllPermissions(): Promise<PermissionStatus> {
   ])
 
   return { camera, location, push }
+}
+
+// ============================================
+// STATUS BAR - Native status bar control
+// ============================================
+
+export async function setStatusBarStyle(style: 'dark' | 'light'): Promise<void> {
+  if (!isNative() || !StatusBar) return
+  try {
+    await StatusBar.setStyle({ style: style === 'dark' ? 'Dark' : 'Light' })
+  } catch (error) {
+    console.error('StatusBar error:', error)
+  }
+}
+
+export async function hideStatusBar(): Promise<void> {
+  if (!isNative() || !StatusBar) return
+  try {
+    await StatusBar.hide()
+  } catch (error) {
+    console.error('StatusBar hide error:', error)
+  }
+}
+
+export async function showStatusBar(): Promise<void> {
+  if (!isNative() || !StatusBar) return
+  try {
+    await StatusBar.show()
+  } catch (error) {
+    console.error('StatusBar show error:', error)
+  }
+}
+
+// ============================================
+// SPLASH SCREEN - Control splash screen
+// ============================================
+
+export async function hideSplashScreen(): Promise<void> {
+  if (!isNative() || !SplashScreen) return
+  try {
+    await SplashScreen.hide()
+  } catch (error) {
+    console.error('SplashScreen hide error:', error)
+  }
+}
+
+// ============================================
+// KEYBOARD - Keyboard control for forms
+// ============================================
+
+export async function hideKeyboard(): Promise<void> {
+  if (!isNative() || !Keyboard) return
+  try {
+    await Keyboard.hide()
+  } catch (error) {
+    console.error('Keyboard hide error:', error)
+  }
+}
+
+// ============================================
+// APP INITIALIZATION - Call on app start
+// ============================================
+
+export async function initializeApp(): Promise<void> {
+  if (!isNative()) return
+
+  try {
+    // Hide splash screen after a delay
+    setTimeout(() => {
+      hideSplashScreen()
+    }, 1000)
+
+    // Set status bar style
+    await setStatusBarStyle('dark')
+  } catch (error) {
+    console.error('App initialization error:', error)
+  }
 }

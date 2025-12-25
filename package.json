@@ -29,7 +29,18 @@
     "test:inventory": "npx playwright test inventory.spec.ts",
     "test:ai": "npx playwright test ai-features.spec.ts",
     "test:settings": "npx playwright test settings.spec.ts",
-    "test:dispatch": "npx playwright test dispatch.spec.ts"
+    "test:dispatch": "npx playwright test dispatch.spec.ts",
+    "cap:sync": "npx cap sync",
+    "cap:copy": "npx cap copy",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
+    "cap:run:ios": "npx cap run ios",
+    "cap:run:android": "npx cap run android",
+    "mobile:sync": "npm run cap:sync",
+    "mobile:ios": "npm run cap:open:ios",
+    "mobile:android": "npm run cap:open:android",
+    "mobile:dev:ios": "npm run cap:run:ios",
+    "mobile:dev:android": "npm run cap:run:android"
   },
   "dependencies": {
     "@capacitor/camera": "^7.0.2",
@@ -65,6 +76,12 @@
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
+    "@capacitor/keyboard": "^7.0.0",
     "@playwright/test": "^1.57.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.8.0",
