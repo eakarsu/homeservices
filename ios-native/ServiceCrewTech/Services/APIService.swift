@@ -201,6 +201,36 @@ extension APIService {
         )
     }
 
+    func loginWithApple(
+        identityToken: String,
+        authorizationCode: String,
+        userIdentifier: String,
+        email: String?,
+        fullName: PersonNameComponents?
+    ) async throws -> AuthResponse {
+        struct AppleLoginRequest: Codable {
+            let identityToken: String
+            let authorizationCode: String
+            let userIdentifier: String
+            let email: String?
+            let firstName: String?
+            let lastName: String?
+        }
+
+        return try await request(
+            endpoint: "/auth/apple",
+            method: .post,
+            body: AppleLoginRequest(
+                identityToken: identityToken,
+                authorizationCode: authorizationCode,
+                userIdentifier: userIdentifier,
+                email: email,
+                firstName: fullName?.givenName,
+                lastName: fullName?.familyName
+            )
+        )
+    }
+
     func getCurrentUser() async throws -> User {
         return try await request(endpoint: "/auth/me")
     }

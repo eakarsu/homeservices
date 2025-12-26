@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
@@ -128,6 +129,38 @@ struct LoginView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.primaryOrange)
                         }
+
+                        // Divider
+                        HStack {
+                            Rectangle()
+                                .fill(Color.textTertiary.opacity(0.3))
+                                .frame(height: 1)
+                            Text("or")
+                                .font(.subheadline)
+                                .foregroundColor(.textTertiary)
+                                .padding(.horizontal, 16)
+                            Rectangle()
+                                .fill(Color.textTertiary.opacity(0.3))
+                                .frame(height: 1)
+                        }
+                        .padding(.vertical, 8)
+
+                        // Sign in with Apple
+                        SignInWithAppleButton(
+                            onRequest: { request in
+                                let appleRequest = authManager.startAppleSignIn()
+                                request.requestedScopes = appleRequest.requestedScopes
+                                request.nonce = appleRequest.nonce
+                            },
+                            onCompletion: { result in
+                                Task {
+                                    await authManager.handleAppleSignIn(result: result)
+                                }
+                            }
+                        )
+                        .signInWithAppleButtonStyle(.black)
+                        .frame(height: 50)
+                        .cornerRadius(12)
                     }
                     .padding(24)
                     .background(Color.white)
