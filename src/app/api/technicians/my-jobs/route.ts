@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -15,17 +14,20 @@ export async function GET(request: NextRequest) {
 
     // Find technician by user ID
     const technician = await prisma.technician.findFirst({
-      where: { userId: session.user.id }
+      where: { userId: user.id }
     })
 
-    if (!technician) {
-      return NextResponse.json({ error: 'Technician not found' }, { status: 404 })
-    }
+    // Build where clause - if user is technician, show their jobs; otherwise show all company jobs
+    const whereClause: Record<string, unknown> = {}
 
-    const whereClause: Record<string, unknown> = {
-      assignments: {
+    if (technician) {
+      // Technician: show only their assigned jobs
+      whereClause.assignments = {
         some: { technicianId: technician.id }
       }
+    } else {
+      // Non-technician (admin, dispatcher, etc.): show all company jobs
+      whereClause.companyId = user.companyId
     }
 
     if (dateStr) {
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
       include: {
         customer: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             phone: true,
@@ -52,15 +55,18 @@ export async function GET(request: NextRequest) {
         },
         property: {
           select: {
+            id: true,
             address: true,
             city: true,
             state: true,
+            zip: true,
           },
         },
         serviceType: {
           select: {
+            id: true,
             name: true,
-            color: true,
+            description: true,
           },
         },
       },
@@ -69,17 +75,11 @@ export async function GET(request: NextRequest) {
       ],
     })
 
-    // Transform jobs to include address info in customer for frontend compatibility
+    // Return jobs with all required fields for iOS
     const transformedJobs = jobs.map(job => ({
       ...job,
       scheduledDate: job.scheduledStart?.toISOString().split('T')[0],
       scheduledTime: job.scheduledStart?.toISOString().split('T')[1]?.substring(0, 5),
-      customer: {
-        ...job.customer,
-        address: job.property?.address || '',
-        city: job.property?.city || '',
-        state: job.property?.state || '',
-      }
     }))
 
     return NextResponse.json(transformedJobs)

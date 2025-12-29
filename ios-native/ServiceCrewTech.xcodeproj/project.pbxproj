@@ -1,0 +1,673 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 90;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		97032D402F02166F00BA9F80 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D412F02166F00BA9F80 /* MoreView.swift */; };
+		0B4ADA5BD54620C500345D06 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63F955C16362D44FE67531B7 /* ScheduleView.swift */; };
+		97032D202F02166F00BA9F80 /* ServiceAgreement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D212F02166F00BA9F80 /* ServiceAgreement.swift */; };
+		97032D222F02166F00BA9F80 /* DispatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D232F02166F00BA9F80 /* DispatchService.swift */; };
+		97032D242F02166F00BA9F80 /* AgreementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D252F02166F00BA9F80 /* AgreementService.swift */; };
+		97032D262F02166F00BA9F80 /* TechnicianService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D272F02166F00BA9F80 /* TechnicianService.swift */; };
+		97032D282F02166F00BA9F80 /* ReportsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D292F02166F00BA9F80 /* ReportsService.swift */; };
+		97032D2A2F02166F00BA9F80 /* DispatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D2B2F02166F00BA9F80 /* DispatchView.swift */; };
+		97032D2C2F02166F00BA9F80 /* AgreementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D2D2F02166F00BA9F80 /* AgreementsView.swift */; };
+		97032D2E2F02166F00BA9F80 /* TechniciansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D2F2F02166F00BA9F80 /* TechniciansView.swift */; };
+		97032D302F02166F00BA9F80 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032D312F02166F00BA9F80 /* ReportsView.swift */; };
+		97032C0A2F02166F00BA9F80 /* CustomersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C0B2F02166F00BA9F80 /* CustomersView.swift */; };
+		97032C0D2F02166F00BA9F80 /* Estimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C0E2F02166F00BA9F80 /* Estimate.swift */; };
+		97032C0F2F02166F00BA9F80 /* EstimateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C102F02166F00BA9F80 /* EstimateService.swift */; };
+		97032C112F02166F00BA9F80 /* EstimatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C122F02166F00BA9F80 /* EstimatesView.swift */; };
+		97032C142F02166F00BA9F80 /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C152F02166F00BA9F80 /* Invoice.swift */; };
+		97032C162F02166F00BA9F80 /* InvoiceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C172F02166F00BA9F80 /* InvoiceService.swift */; };
+		97032C182F02166F00BA9F80 /* InvoicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C192F02166F00BA9F80 /* InvoicesView.swift */; };
+		97032C1B2F02166F00BA9F80 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C1C2F02166F00BA9F80 /* SettingsView.swift */; };
+		0F638DF2DAABE093209BFFB4 /* JobsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD11830258824E6C9BB6DBF0 /* JobsListView.swift */; };
+		1E9DF071029A62780FE85DF9 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D901FA1489B6B39FE4ECFF94 /* LoginView.swift */; };
+		3DC9312E0A8C277232A79C9B /* JobCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30152DDBAA48E49644E3BCDF /* JobCardView.swift */; };
+		49FC65B708BBBAF465855FD7 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA03409D56711C84BA56CBD /* NotificationManager.swift */; };
+		4A6C9759A420C6E8E9ACC20A /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215F1A57F02B5FFED33D951B /* Customer.swift */; };
+		50FA61A74008EEB69CE81099 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58FCBA57F9EFF767A52C0B3 /* Extensions.swift */; };
+		558163902A797FFBB1D03C34 /* ServiceCrewTechApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11AE50E5B708385E3B25D41 /* ServiceCrewTechApp.swift */; };
+		56B2CE1C1FC03B4DD65A8F1E /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6EBCB9B5A9AB111C3DE83E8 /* User.swift */; };
+		6ABFB701F68BFA89B5C56873 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0524CA0D9ADD56689511D85E /* AuthManager.swift */; };
+		6B1786EFD6F02ED85C723559 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1899CBD3A53720AB6A6AC671 /* ProfileView.swift */; };
+		77B7706956255CFE01752A9E /* AIAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05DE96DD192D2CCEA80AB4B9 /* AIAssistantView.swift */; };
+		8E6333C77C235D64EE217A70 /* JobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EAC268F4BB5736DC85EA8D /* JobDetailView.swift */; };
+		97032C002F02166F00BA9F80 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFB2F02166F00BA9F80 /* DashboardService.swift */; };
+		97032C012F02166F00BA9F80 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BF92F02166F00BA9F80 /* AppleSignInManager.swift */; };
+		97032C022F02166F00BA9F80 /* JobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFD2F02166F00BA9F80 /* JobService.swift */; };
+		97032C032F02166F00BA9F80 /* ScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFE2F02166F00BA9F80 /* ScheduleService.swift */; };
+		97032C042F02166F00BA9F80 /* SocialAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFF2F02166F00BA9F80 /* SocialAuthManager.swift */; };
+		97032C052F02166F00BA9F80 /* CustomerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFA2F02166F00BA9F80 /* CustomerService.swift */; };
+		97032C062F02166F00BA9F80 /* InventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032BFC2F02166F00BA9F80 /* InventoryService.swift */; };
+		97032C082F02166F00BA9F80 /* AIFeaturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97032C072F02166F00BA9F80 /* AIFeaturesView.swift */; };
+		A504AE7AB0A9A0C5ADCED666 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DB4514372536B4584918BE /* InventoryView.swift */; };
+		A571FE4C020215219F5BE999 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C78BB1E80AF1C59114C53A /* MainTabView.swift */; };
+		A9E937CD269F8B37B49E2A86 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD2C83B070E5B27468C4A289 /* Assets.xcassets */; };
+		B2A6720882CD5D20AB39196D /* Job.swift in Sources */ = {isa = PBXBuildFile; fileRef = 238DD2AB58AE070F63BA6F83 /* Job.swift */; };
+		B8EDFAAC2077E12F570A717E /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295C6EF02155CC1C024EA03A /* Colors.swift */; };
+		CA433F96CA675798D688D0F1 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EF9BF5054BD4C9354008B86 /* HomeView.swift */; };
+		D96C88BC9DAC625B973275B9 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0B4A243AAC886B9FEDB6F5 /* CameraManager.swift */; };
+		E5210F1C49A8E9B8724144C3 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1E7518B89EE9B3B4DF7725 /* LocationManager.swift */; };
+		F68BE650DAC96230F9049050 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DE1B16D2B60623E4675165D /* APIService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0524CA0D9ADD56689511D85E /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		97032D212F02166F00BA9F80 /* ServiceAgreement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceAgreement.swift; sourceTree = "<group>"; };
+		97032D232F02166F00BA9F80 /* DispatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchService.swift; sourceTree = "<group>"; };
+		97032D252F02166F00BA9F80 /* AgreementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementService.swift; sourceTree = "<group>"; };
+		97032D272F02166F00BA9F80 /* TechnicianService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TechnicianService.swift; sourceTree = "<group>"; };
+		97032D292F02166F00BA9F80 /* ReportsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsService.swift; sourceTree = "<group>"; };
+		97032D2B2F02166F00BA9F80 /* DispatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchView.swift; sourceTree = "<group>"; };
+		97032D2D2F02166F00BA9F80 /* AgreementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgreementsView.swift; sourceTree = "<group>"; };
+		97032D2F2F02166F00BA9F80 /* TechniciansView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TechniciansView.swift; sourceTree = "<group>"; };
+		97032D312F02166F00BA9F80 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
+		97032C0B2F02166F00BA9F80 /* CustomersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersView.swift; sourceTree = "<group>"; };
+		97032C0E2F02166F00BA9F80 /* Estimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Estimate.swift; sourceTree = "<group>"; };
+		97032C102F02166F00BA9F80 /* EstimateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimateService.swift; sourceTree = "<group>"; };
+		97032C122F02166F00BA9F80 /* EstimatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimatesView.swift; sourceTree = "<group>"; };
+		97032C152F02166F00BA9F80 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
+		97032C172F02166F00BA9F80 /* InvoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoiceService.swift; sourceTree = "<group>"; };
+		97032C192F02166F00BA9F80 /* InvoicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoicesView.swift; sourceTree = "<group>"; };
+		97032C1C2F02166F00BA9F80 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		05DE96DD192D2CCEA80AB4B9 /* AIAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantView.swift; sourceTree = "<group>"; };
+		0EF9BF5054BD4C9354008B86 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		1899CBD3A53720AB6A6AC671 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		215F1A57F02B5FFED33D951B /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
+		238DD2AB58AE070F63BA6F83 /* Job.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Job.swift; sourceTree = "<group>"; };
+		295C6EF02155CC1C024EA03A /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		2C0B4A243AAC886B9FEDB6F5 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		30152DDBAA48E49644E3BCDF /* JobCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCardView.swift; sourceTree = "<group>"; };
+		3CA03409D56711C84BA56CBD /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		555380FCC602EA91647896B8 /* ServiceCrewTech.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ServiceCrewTech.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63F955C16362D44FE67531B7 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		664840B284BF5540F543C60B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7A1E7518B89EE9B3B4DF7725 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		8DE1B16D2B60623E4675165D /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		92C78BB1E80AF1C59114C53A /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		97032BF92F02166F00BA9F80 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
+		97032BFA2F02166F00BA9F80 /* CustomerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerService.swift; sourceTree = "<group>"; };
+		97032BFB2F02166F00BA9F80 /* DashboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardService.swift; sourceTree = "<group>"; };
+		97032BFC2F02166F00BA9F80 /* InventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryService.swift; sourceTree = "<group>"; };
+		97032BFD2F02166F00BA9F80 /* JobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobService.swift; sourceTree = "<group>"; };
+		97032BFE2F02166F00BA9F80 /* ScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleService.swift; sourceTree = "<group>"; };
+		97032BFF2F02166F00BA9F80 /* SocialAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthManager.swift; sourceTree = "<group>"; };
+		97032C072F02166F00BA9F80 /* AIFeaturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIFeaturesView.swift; sourceTree = "<group>"; };
+		BD11830258824E6C9BB6DBF0 /* JobsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobsListView.swift; sourceTree = "<group>"; };
+		C6DB4514372536B4584918BE /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
+		CD2C83B070E5B27468C4A289 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D58FCBA57F9EFF767A52C0B3 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		D901FA1489B6B39FE4ECFF94 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		DD6D0F0AC9363281023D2667 /* ServiceCrewTech.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ServiceCrewTech.entitlements; sourceTree = "<group>"; };
+		F11AE50E5B708385E3B25D41 /* ServiceCrewTechApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceCrewTechApp.swift; sourceTree = "<group>"; };
+		F1EAC268F4BB5736DC85EA8D /* JobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailView.swift; sourceTree = "<group>"; };
+		F6EBCB9B5A9AB111C3DE83E8 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		97032D412F02166F00BA9F80 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		100BFCC59B36613E71605A83 = {
+			isa = PBXGroup;
+			children = (
+				8D8697073F3F7A06BA3282D9 /* ServiceCrewTech */,
+				FF0B78DAB0C718A9C8019157 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		11099FD9FE4E3EF91EEAE082 /* Inventory */ = {
+			isa = PBXGroup;
+			children = (
+				C6DB4514372536B4584918BE /* InventoryView.swift */,
+			);
+			path = Inventory;
+			sourceTree = "<group>";
+		};
+		14163145A39FE89838B22BBF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				CD2C83B070E5B27468C4A289 /* Assets.xcassets */,
+				664840B284BF5540F543C60B /* Info.plist */,
+				DD6D0F0AC9363281023D2667 /* ServiceCrewTech.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		297E14B0841BAAD65750BD36 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F11AE50E5B708385E3B25D41 /* ServiceCrewTechApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3398BBBEBA0E35A34E873D78 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				05DE96DD192D2CCEA80AB4B9 /* AIAssistantView.swift */,
+				30152DDBAA48E49644E3BCDF /* JobCardView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		42AA117C623FD707F9AC4BEE /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				63F955C16362D44FE67531B7 /* ScheduleView.swift */,
+			);
+			path = Schedule;
+			sourceTree = "<group>";
+		};
+		4AA08D5886BBEC961D5A94D6 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				215F1A57F02B5FFED33D951B /* Customer.swift */,
+				97032C0E2F02166F00BA9F80 /* Estimate.swift */,
+				97032C152F02166F00BA9F80 /* Invoice.swift */,
+				238DD2AB58AE070F63BA6F83 /* Job.swift */,
+				97032D212F02166F00BA9F80 /* ServiceAgreement.swift */,
+				F6EBCB9B5A9AB111C3DE83E8 /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4E9F4BF88D78DFA70B6614B9 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				D901FA1489B6B39FE4ECFF94 /* LoginView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		628A56C5C051D3103C5208B9 /* Jobs */ = {
+			isa = PBXGroup;
+			children = (
+				F1EAC268F4BB5736DC85EA8D /* JobDetailView.swift */,
+				BD11830258824E6C9BB6DBF0 /* JobsListView.swift */,
+			);
+			path = Jobs;
+			sourceTree = "<group>";
+		};
+		66F3063B569BBBADE00EDDF8 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				1899CBD3A53720AB6A6AC671 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		7F9D2801D05175F7A3B7F9E6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				97032D252F02166F00BA9F80 /* AgreementService.swift */,
+				8DE1B16D2B60623E4675165D /* APIService.swift */,
+				97032BF92F02166F00BA9F80 /* AppleSignInManager.swift */,
+				0524CA0D9ADD56689511D85E /* AuthManager.swift */,
+				2C0B4A243AAC886B9FEDB6F5 /* CameraManager.swift */,
+				97032BFA2F02166F00BA9F80 /* CustomerService.swift */,
+				97032BFB2F02166F00BA9F80 /* DashboardService.swift */,
+				97032D232F02166F00BA9F80 /* DispatchService.swift */,
+				97032C102F02166F00BA9F80 /* EstimateService.swift */,
+				97032BFC2F02166F00BA9F80 /* InventoryService.swift */,
+				97032C172F02166F00BA9F80 /* InvoiceService.swift */,
+				97032BFD2F02166F00BA9F80 /* JobService.swift */,
+				7A1E7518B89EE9B3B4DF7725 /* LocationManager.swift */,
+				3CA03409D56711C84BA56CBD /* NotificationManager.swift */,
+				97032D292F02166F00BA9F80 /* ReportsService.swift */,
+				97032BFE2F02166F00BA9F80 /* ScheduleService.swift */,
+				97032BFF2F02166F00BA9F80 /* SocialAuthManager.swift */,
+				97032D272F02166F00BA9F80 /* TechnicianService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		8D8697073F3F7A06BA3282D9 /* ServiceCrewTech */ = {
+			isa = PBXGroup;
+			children = (
+				297E14B0841BAAD65750BD36 /* App */,
+				4AA08D5886BBEC961D5A94D6 /* Models */,
+				14163145A39FE89838B22BBF /* Resources */,
+				7F9D2801D05175F7A3B7F9E6 /* Services */,
+				C4738CB57DDCBE6708C18A78 /* Utilities */,
+				C715A1CD1B401C465DE69DE5 /* Views */,
+			);
+			path = ServiceCrewTech;
+			sourceTree = "<group>";
+		};
+		A295D185C08A65B73F184753 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				0EF9BF5054BD4C9354008B86 /* HomeView.swift */,
+				92C78BB1E80AF1C59114C53A /* MainTabView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		C4738CB57DDCBE6708C18A78 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				295C6EF02155CC1C024EA03A /* Colors.swift */,
+				D58FCBA57F9EFF767A52C0B3 /* Extensions.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		97032C092F02166F00BA9F80 /* AIFeatures */ = {
+			isa = PBXGroup;
+			children = (
+				97032C072F02166F00BA9F80 /* AIFeaturesView.swift */,
+			);
+			path = AIFeatures;
+			sourceTree = "<group>";
+		};
+		97032C0C2F02166F00BA9F80 /* Customers */ = {
+			isa = PBXGroup;
+			children = (
+				97032C0B2F02166F00BA9F80 /* CustomersView.swift */,
+			);
+			path = Customers;
+			sourceTree = "<group>";
+		};
+		97032C132F02166F00BA9F80 /* Estimates */ = {
+			isa = PBXGroup;
+			children = (
+				97032C122F02166F00BA9F80 /* EstimatesView.swift */,
+			);
+			path = Estimates;
+			sourceTree = "<group>";
+		};
+		97032C1A2F02166F00BA9F80 /* Invoices */ = {
+			isa = PBXGroup;
+			children = (
+				97032C192F02166F00BA9F80 /* InvoicesView.swift */,
+			);
+			path = Invoices;
+			sourceTree = "<group>";
+		};
+		97032C1D2F02166F00BA9F80 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				97032C1C2F02166F00BA9F80 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		97032D322F02166F00BA9F80 /* Dispatch */ = {
+			isa = PBXGroup;
+			children = (
+				97032D2B2F02166F00BA9F80 /* DispatchView.swift */,
+			);
+			path = Dispatch;
+			sourceTree = "<group>";
+		};
+		97032D332F02166F00BA9F80 /* Agreements */ = {
+			isa = PBXGroup;
+			children = (
+				97032D2D2F02166F00BA9F80 /* AgreementsView.swift */,
+			);
+			path = Agreements;
+			sourceTree = "<group>";
+		};
+		97032D342F02166F00BA9F80 /* Technicians */ = {
+			isa = PBXGroup;
+			children = (
+				97032D2F2F02166F00BA9F80 /* TechniciansView.swift */,
+			);
+			path = Technicians;
+			sourceTree = "<group>";
+		};
+		97032D352F02166F00BA9F80 /* Reports */ = {
+			isa = PBXGroup;
+			children = (
+				97032D312F02166F00BA9F80 /* ReportsView.swift */,
+			);
+			path = Reports;
+			sourceTree = "<group>";
+		};
+		97032D422F02166F00BA9F80 /* More */ = {
+			isa = PBXGroup;
+			children = (
+				97032D412F02166F00BA9F80 /* MoreView.swift */,
+			);
+			path = More;
+			sourceTree = "<group>";
+		};
+		C715A1CD1B401C465DE69DE5 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				97032D332F02166F00BA9F80 /* Agreements */,
+				97032C092F02166F00BA9F80 /* AIFeatures */,
+				4E9F4BF88D78DFA70B6614B9 /* Auth */,
+				3398BBBEBA0E35A34E873D78 /* Components */,
+				97032C0C2F02166F00BA9F80 /* Customers */,
+				A295D185C08A65B73F184753 /* Dashboard */,
+				97032D322F02166F00BA9F80 /* Dispatch */,
+				97032C132F02166F00BA9F80 /* Estimates */,
+				11099FD9FE4E3EF91EEAE082 /* Inventory */,
+				97032C1A2F02166F00BA9F80 /* Invoices */,
+				628A56C5C051D3103C5208B9 /* Jobs */,
+				97032D422F02166F00BA9F80 /* More */,
+				66F3063B569BBBADE00EDDF8 /* Profile */,
+				97032D352F02166F00BA9F80 /* Reports */,
+				42AA117C623FD707F9AC4BEE /* Schedule */,
+				97032C1D2F02166F00BA9F80 /* Settings */,
+				97032D342F02166F00BA9F80 /* Technicians */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		FF0B78DAB0C718A9C8019157 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				555380FCC602EA91647896B8 /* ServiceCrewTech.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F5FD22AC5F895AB6FF92A627 /* ServiceCrewTech */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A2F0FA9195E53A139BDDDD04 /* Build configuration list for PBXNativeTarget "ServiceCrewTech" */;
+			buildPhases = (
+				765309B6FC0D47F2068A38F5 /* Sources */,
+				BC8FD497781D40DEFA783D40 /* Resources */,
+			);
+			buildRules = (
+			);
+			name = ServiceCrewTech;
+			productName = ServiceCrewTech;
+			productReference = 555380FCC602EA91647896B8 /* ServiceCrewTech.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		634279E998A8C09386BDC35E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					F5FD22AC5F895AB6FF92A627 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C0C8ABAEFE7C620FFDD5AFF9 /* Build configuration list for PBXProject "ServiceCrewTech" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 100BFCC59B36613E71605A83;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 90;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F5FD22AC5F895AB6FF92A627 /* ServiceCrewTech */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BC8FD497781D40DEFA783D40 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				A9E937CD269F8B37B49E2A86 /* Assets.xcassets in Resources */,
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		765309B6FC0D47F2068A38F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				97032D402F02166F00BA9F80 /* MoreView.swift in Sources */,
+				97032D242F02166F00BA9F80 /* AgreementService.swift in Sources */,
+				97032D2C2F02166F00BA9F80 /* AgreementsView.swift in Sources */,
+				97032C082F02166F00BA9F80 /* AIFeaturesView.swift in Sources */,
+				97032C012F02166F00BA9F80 /* AppleSignInManager.swift in Sources */,
+				97032D222F02166F00BA9F80 /* DispatchService.swift in Sources */,
+				97032D2A2F02166F00BA9F80 /* DispatchView.swift in Sources */,
+				97032D282F02166F00BA9F80 /* ReportsService.swift in Sources */,
+				97032D302F02166F00BA9F80 /* ReportsView.swift in Sources */,
+				97032D202F02166F00BA9F80 /* ServiceAgreement.swift in Sources */,
+				97032D262F02166F00BA9F80 /* TechnicianService.swift in Sources */,
+				97032D2E2F02166F00BA9F80 /* TechniciansView.swift in Sources */,
+				97032C052F02166F00BA9F80 /* CustomerService.swift in Sources */,
+				97032C0A2F02166F00BA9F80 /* CustomersView.swift in Sources */,
+				97032C002F02166F00BA9F80 /* DashboardService.swift in Sources */,
+				97032C0D2F02166F00BA9F80 /* Estimate.swift in Sources */,
+				97032C0F2F02166F00BA9F80 /* EstimateService.swift in Sources */,
+				97032C112F02166F00BA9F80 /* EstimatesView.swift in Sources */,
+				97032C062F02166F00BA9F80 /* InventoryService.swift in Sources */,
+				97032C142F02166F00BA9F80 /* Invoice.swift in Sources */,
+				97032C162F02166F00BA9F80 /* InvoiceService.swift in Sources */,
+				97032C182F02166F00BA9F80 /* InvoicesView.swift in Sources */,
+				97032C022F02166F00BA9F80 /* JobService.swift in Sources */,
+				97032C1B2F02166F00BA9F80 /* SettingsView.swift in Sources */,
+				97032C032F02166F00BA9F80 /* ScheduleService.swift in Sources */,
+				97032C042F02166F00BA9F80 /* SocialAuthManager.swift in Sources */,
+				77B7706956255CFE01752A9E /* AIAssistantView.swift in Sources */,
+				F68BE650DAC96230F9049050 /* APIService.swift in Sources */,
+				6ABFB701F68BFA89B5C56873 /* AuthManager.swift in Sources */,
+				D96C88BC9DAC625B973275B9 /* CameraManager.swift in Sources */,
+				B8EDFAAC2077E12F570A717E /* Colors.swift in Sources */,
+				4A6C9759A420C6E8E9ACC20A /* Customer.swift in Sources */,
+				50FA61A74008EEB69CE81099 /* Extensions.swift in Sources */,
+				CA433F96CA675798D688D0F1 /* HomeView.swift in Sources */,
+				A504AE7AB0A9A0C5ADCED666 /* InventoryView.swift in Sources */,
+				B2A6720882CD5D20AB39196D /* Job.swift in Sources */,
+				3DC9312E0A8C277232A79C9B /* JobCardView.swift in Sources */,
+				8E6333C77C235D64EE217A70 /* JobDetailView.swift in Sources */,
+				0F638DF2DAABE093209BFFB4 /* JobsListView.swift in Sources */,
+				E5210F1C49A8E9B8724144C3 /* LocationManager.swift in Sources */,
+				1E9DF071029A62780FE85DF9 /* LoginView.swift in Sources */,
+				A571FE4C020215219F5BE999 /* MainTabView.swift in Sources */,
+				49FC65B708BBBAF465855FD7 /* NotificationManager.swift in Sources */,
+				6B1786EFD6F02ED85C723559 /* ProfileView.swift in Sources */,
+				0B4ADA5BD54620C500345D06 /* ScheduleView.swift in Sources */,
+				558163902A797FFBB1D03C34 /* ServiceCrewTechApp.swift in Sources */,
+				56B2CE1C1FC03B4DD65A8F1E /* User.swift in Sources */,
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		53E70E6DD3E2EF2E0FBC3FD2 /* Debug configuration for PBXNativeTarget "ServiceCrewTech" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ServiceCrewTech/Resources/ServiceCrewTech.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = VKPMTL7RAU;
+				INFOPLIST_FILE = ServiceCrewTech/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5BEA2B52EEFC8F9F15007B7B /* Release configuration for PBXNativeTarget "ServiceCrewTech" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ServiceCrewTech/Resources/ServiceCrewTech.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = VKPMTL7RAU;
+				INFOPLIST_FILE = ServiceCrewTech/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6C8F46C647CE0612A8FE41E1 /* Release configuration for PBXProject "ServiceCrewTech" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.servicecrew.tech;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AA504727B46CD771460BABCC /* Debug configuration for PBXProject "ServiceCrewTech" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.servicecrew.tech;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A2F0FA9195E53A139BDDDD04 /* Build configuration list for PBXNativeTarget "ServiceCrewTech" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				53E70E6DD3E2EF2E0FBC3FD2 /* Debug configuration for PBXNativeTarget "ServiceCrewTech" */,
+				5BEA2B52EEFC8F9F15007B7B /* Release configuration for PBXNativeTarget "ServiceCrewTech" */,
+			);
+			defaultConfigurationName = Debug;
+		};
+		C0C8ABAEFE7C620FFDD5AFF9 /* Build configuration list for PBXProject "ServiceCrewTech" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA504727B46CD771460BABCC /* Debug configuration for PBXProject "ServiceCrewTech" */,
+				6C8F46C647CE0612A8FE41E1 /* Release configuration for PBXProject "ServiceCrewTech" */,
+			);
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 634279E998A8C09386BDC35E /* Project object */;
+}

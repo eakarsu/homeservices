@@ -1,7 +1,9 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
+    @StateObject private var socialAuth = SocialAuthManager.shared
 
     @State private var email = ""
     @State private var password = ""
@@ -128,6 +130,63 @@ struct LoginView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.primaryOrange)
                         }
+
+                        // Divider
+                        HStack(spacing: 12) {
+                            Rectangle()
+                                .fill(Color.borderColor)
+                                .frame(height: 1)
+                            Text("or continue with")
+                                .font(.caption)
+                                .foregroundColor(.textTertiary)
+                            Rectangle()
+                                .fill(Color.borderColor)
+                                .frame(height: 1)
+                        }
+                        .padding(.top, 8)
+
+                        // Social Login Buttons
+                        HStack(spacing: 16) {
+                            // Apple
+                            SocialLoginButton(
+                                icon: "apple.logo",
+                                label: "Apple",
+                                backgroundColor: .charcoal,
+                                foregroundColor: .white
+                            ) {
+                                Task {
+                                    _ = await authManager.signInWithApple()
+                                }
+                            }
+
+                            // Google
+                            SocialLoginButton(
+                                icon: "g.circle.fill",
+                                label: "Google",
+                                backgroundColor: .googleBlue,
+                                foregroundColor: .white
+                            ) {
+                                Task {
+                                    await socialAuth.signInWithGoogle()
+                                }
+                            }
+
+                            // Microsoft
+                            MicrosoftLoginButton {
+                                Task {
+                                    await socialAuth.signInWithMicrosoft()
+                                }
+                            }
+                        }
+
+                        // Error message for social auth
+                        if let error = socialAuth.error {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.primaryOrange)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 8)
+                        }
                     }
                     .padding(24)
                     .background(Color.white)
@@ -174,6 +233,86 @@ struct LoginView: View {
                 showError = true
             }
             isLoading = false
+        }
+    }
+}
+
+// MARK: - Social Login Button
+
+struct SocialLoginButton: View {
+    let icon: String
+    let label: String
+    var backgroundColor: Color = .white
+    var foregroundColor: Color = .charcoal
+    var showBorder: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(foregroundColor)
+                    .frame(width: 52, height: 52)
+                    .background(backgroundColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(showBorder ? Color.borderColor : Color.clear, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
+
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(.textSecondary)
+            }
+        }
+    }
+}
+
+// MARK: - Microsoft Login Button (Custom icon with colored squares)
+
+struct MicrosoftLoginButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white)
+                        .frame(width: 52, height: 52)
+                        .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.borderColor, lineWidth: 1)
+                        )
+
+                    // Microsoft squares (no red - using orange instead)
+                    VStack(spacing: 2) {
+                        HStack(spacing: 2) {
+                            Rectangle()
+                                .fill(Color(hex: "F7931A")) // Orange instead of red
+                                .frame(width: 10, height: 10)
+                            Rectangle()
+                                .fill(Color(hex: "7FBA00")) // Green
+                                .frame(width: 10, height: 10)
+                        }
+                        HStack(spacing: 2) {
+                            Rectangle()
+                                .fill(Color(hex: "00A4EF")) // Blue
+                                .frame(width: 10, height: 10)
+                            Rectangle()
+                                .fill(Color(hex: "FFB900")) // Yellow
+                                .frame(width: 10, height: 10)
+                        }
+                    }
+                }
+
+                Text("Microsoft")
+                    .font(.caption2)
+                    .foregroundColor(.textSecondary)
+            }
         }
     }
 }

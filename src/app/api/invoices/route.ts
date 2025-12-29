@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
+
 import { prisma } from '@/lib/prisma'
 import { generateInvoiceNumber } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {
       customer: {
-        companyId: session.user.companyId,
+        companyId: user.companyId,
       },
     }
 
@@ -77,17 +77,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('Invoice create request body:', JSON.stringify(body, null, 2))
 
     // Calculate totals
     const lineItems = body.lineItems || []
     const subtotal = lineItems.reduce((sum: number, item: { totalPrice: number }) => sum + (item.totalPrice || 0), 0)
-    const taxRate = body.taxRate || 0.1
+    // taxRate should be a decimal (e.g., 0.05 for 5%), default to 0 if not provided
+    const taxRate = typeof body.taxRate === 'number' ? body.taxRate : 0
+    console.log('Calculated values - subtotal:', subtotal, 'taxRate:', taxRate)
     const taxAmount = subtotal * taxRate
     const totalAmount = subtotal + taxAmount
 

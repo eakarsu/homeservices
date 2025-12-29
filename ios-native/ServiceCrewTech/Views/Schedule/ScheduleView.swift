@@ -38,6 +38,15 @@ struct ScheduleView: View {
                 .background(Color.backgroundPrimary)
             }
             .navigationTitle("Schedule")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: NewJobView(onSave: {
+                        Task { await viewModel.loadJobs() }
+                    })) {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
             .task {
                 await viewModel.loadJobs()
             }
@@ -127,7 +136,7 @@ struct ScheduleJobCard: View {
                         .badge(color: job.status.swiftUIColor)
                 }
 
-                Text(job.title)
+                Text(job.displayTitle)
                     .font(.caption)
                     .foregroundColor(.textSecondary)
                     .lineLimit(1)

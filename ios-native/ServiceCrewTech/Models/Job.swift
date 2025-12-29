@@ -5,11 +5,15 @@ import Foundation
 struct Job: Identifiable, Codable, Hashable {
     let id: String
     let jobNumber: String
-    let title: String
+    let title: String?
     let description: String?
     let status: JobStatus
     let priority: JobPriority
-    let tradeType: TradeType
+    let tradeType: TradeType?
+
+    var displayTitle: String {
+        title ?? "Untitled Job"
+    }
     let scheduledStart: Date?
     let scheduledEnd: Date?
     let timeWindowStart: String?
@@ -19,23 +23,56 @@ struct Job: Identifiable, Codable, Hashable {
     let customer: Customer?
     let property: Property?
     let serviceType: ServiceType?
-    let notes: [JobNote]
-    let lineItems: [LineItem]
-    let photos: [JobPhoto]
-    let createdAt: Date
-    let updatedAt: Date
+    var notes: [JobNote]?
+    let lineItems: [LineItem]?
+    var photos: [JobPhoto]?
+    let createdAt: Date?
+    let updatedAt: Date?
+    let assignments: [JobAssignment]?
 
-    enum CodingKeys: String, CodingKey {
-        case id, jobNumber, title, description, status, priority, tradeType
-        case scheduledStart, scheduledEnd, timeWindowStart, timeWindowEnd
-        case estimatedDuration, actualDuration, customer, property, serviceType
-        case notes, lineItems, photos, createdAt, updatedAt
+    // Helper computed properties for non-optional access
+    var safeNotes: [JobNote] { notes ?? [] }
+    var safeLineItems: [LineItem] { lineItems ?? [] }
+    var safePhotos: [JobPhoto] { photos ?? [] }
+
+    // Get assigned technician name
+    var assignedTechnicianName: String? {
+        guard let assignments = assignments, let firstAssignment = assignments.first,
+              let technician = firstAssignment.technician else { return nil }
+        return technician.displayName
     }
+}
+
+// MARK: - Job Assignment
+
+struct JobAssignment: Codable, Hashable {
+    let id: String
+    let status: String?
+    let technician: AssignedTechnician?
+}
+
+struct AssignedTechnician: Codable, Hashable {
+    let id: String
+    let user: TechnicianUserInfo?
+
+    var displayName: String {
+        guard let user = user else { return "Unknown" }
+        let firstName = user.firstName ?? ""
+        let lastName = user.lastName ?? ""
+        let name = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "Unknown" : name
+    }
+}
+
+struct TechnicianUserInfo: Codable, Hashable {
+    let firstName: String?
+    let lastName: String?
 }
 
 // MARK: - Job Status
 
 enum JobStatus: String, Codable, CaseIterable {
+    case pending = "PENDING"
     case scheduled = "SCHEDULED"
     case dispatched = "DISPATCHED"
     case enRoute = "EN_ROUTE"
@@ -46,6 +83,7 @@ enum JobStatus: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
+        case .pending: return "Pending"
         case .scheduled: return "Scheduled"
         case .dispatched: return "Dispatched"
         case .enRoute: return "En Route"
@@ -58,6 +96,7 @@ enum JobStatus: String, Codable, CaseIterable {
 
     var color: String {
         switch self {
+        case .pending: return "gray"
         case .scheduled: return "gray"
         case .dispatched: return "blue"
         case .enRoute: return "purple"
@@ -155,10 +194,23 @@ struct JobNote: Identifiable, Codable, Hashable {
 struct LineItem: Identifiable, Codable, Hashable {
     let id: String
     let description: String
-    let quantity: Double
-    let unitPrice: Double
-    let totalPrice: Double
-    let itemType: ItemType
+    let itemType: ItemType?
+
+    // Prisma Decimal fields
+    private let quantityRaw: AnyCodableNumber?
+    private let unitPriceRaw: AnyCodableNumber?
+    private let totalPriceRaw: AnyCodableNumber?
+
+    var quantity: Double { quantityRaw?.doubleValue ?? 0 }
+    var unitPrice: Double { unitPriceRaw?.doubleValue ?? 0 }
+    var totalPrice: Double { totalPriceRaw?.doubleValue ?? 0 }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, description, itemType
+        case quantityRaw = "quantity"
+        case unitPriceRaw = "unitPrice"
+        case totalPriceRaw = "totalPrice"
+    }
 
     enum ItemType: String, Codable {
         case labor = "LABOR"
@@ -232,10 +284,10 @@ extension Job {
     }
 
     var partsUsed: [LineItem] {
-        lineItems.filter { $0.itemType == .part }
+        safeLineItems.filter { $0.itemType == .part }
     }
 
     var laborItems: [LineItem] {
-        lineItems.filter { $0.itemType == .labor }
+        safeLineItems.filter { $0.itemType == .labor }
     }
 }

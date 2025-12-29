@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
+
 import { prisma } from '@/lib/prisma'
 import { callAI } from '@/lib/ai'
 import { format, addDays, parseISO } from 'date-fns'
@@ -33,8 +33,8 @@ interface SchedulingRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       const customer = await prisma.customer.findFirst({
         where: {
           id: customerId,
-          companyId: session.user.companyId
+          companyId: user.companyId
         },
         include: {
           properties: true
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       const serviceType = await prisma.serviceType.findFirst({
         where: {
           id: serviceTypeId,
-          companyId: session.user.companyId
+          companyId: user.companyId
         }
       })
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       const technicians = await prisma.technician.findMany({
         where: {
           user: {
-            companyId: session.user.companyId,
+            companyId: user.companyId,
             isActive: true
           },
           tradeTypes: { has: serviceType.tradeType }

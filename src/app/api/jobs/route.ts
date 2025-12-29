@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { generateJobNumber } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get('customerId')
 
     const where: Record<string, unknown> = {
-      companyId: session.user.companyId,
+      companyId: user.companyId,
     }
 
     if (search) {
@@ -109,6 +108,7 @@ export async function GET(request: NextRequest) {
               address: true,
               city: true,
               state: true,
+              zip: true,
             },
           },
           serviceType: true,
@@ -149,8 +149,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -177,11 +177,11 @@ export async function POST(request: NextRequest) {
     const job = await prisma.job.create({
       data: {
         jobNumber: generateJobNumber(),
-        companyId: session.user.companyId,
+        companyId: user.companyId,
         customerId: body.customerId,
         propertyId: body.propertyId,
         serviceTypeId: body.serviceTypeId,
-        createdById: session.user.id,
+        createdById: user.id,
         tradeType: body.tradeType,
         type: body.type || 'SERVICE_CALL',
         status: body.status || 'PENDING',

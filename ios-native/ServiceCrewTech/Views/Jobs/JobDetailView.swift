@@ -22,20 +22,34 @@ struct JobDetailView: View {
     }
 
     var body: some View {
+        mainContent
+            .background(Color.backgroundPrimary)
+            .navigationTitle(viewModel.job?.jobNumber ?? "Job")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbarContent }
+            .task { await viewModel.loadJob() }
+            .sheet(isPresented: $showCamera) {
+                ImagePicker(image: $viewModel.capturedImage, sourceType: .camera)
+            }
+            .sheet(isPresented: $showPhotoPicker) {
+                PhotoPicker(images: $viewModel.selectedImages)
+            }
+            .onChange(of: viewModel.capturedImage) { newImage in
+                handleCapturedImage(newImage)
+            }
+            .onChange(of: viewModel.selectedImages) { newImages in
+                handleSelectedImages(newImages)
+            }
+    }
+
+    // MARK: - Main Content
+
+    @ViewBuilder
+    private var mainContent: some View {
         ScrollView {
             VStack(spacing: 16) {
                 if let job = viewModel.job {
-                    // Customer & Location Card
-                    customerLocationCard(job: job)
-
-                    // Action Buttons
-                    actionButtons(job: job)
-
-                    // Tab Navigation
-                    tabNavigation
-
-                    // Tab Content
-                    tabContent(job: job)
+                    jobContent(job: job)
                 } else if viewModel.isLoading {
                     loadingView
                 } else if let error = viewModel.error {
@@ -44,46 +58,41 @@ struct JobDetailView: View {
             }
             .padding()
         }
-        .background(Color.backgroundPrimary)
-        .navigationTitle(viewModel.job?.jobNumber ?? "Job")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                if let job = viewModel.job {
-                    HStack(spacing: 4) {
-                        Text(job.status.displayName)
-                            .badge(color: job.status.swiftUIColor)
+    }
 
-                        Text(job.priority.displayName)
-                            .badge(color: job.priority.swiftUIColor)
-                    }
+    @ViewBuilder
+    private func jobContent(job: Job) -> some View {
+        customerLocationCard(job: job)
+        actionButtons(job: job)
+        tabNavigation
+        tabContent(job: job)
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            if let job = viewModel.job {
+                HStack(spacing: 4) {
+                    Text(job.status.displayName)
+                        .badge(color: job.status.swiftUIColor)
+                    Text(job.priority.displayName)
+                        .badge(color: job.priority.swiftUIColor)
                 }
             }
         }
-        .task {
-            await viewModel.loadJob()
+    }
+
+    private func handleCapturedImage(_ newImage: UIImage?) {
+        if let image = newImage {
+            Task { await viewModel.uploadPhoto(image) }
         }
-        .sheet(isPresented: $showCamera) {
-            ImagePicker(image: $viewModel.capturedImage, sourceType: .camera)
+    }
+
+    private func handleSelectedImages(_ newImages: [UIImage]) {
+        for image in newImages {
+            Task { await viewModel.uploadPhoto(image) }
         }
-        .sheet(isPresented: $showPhotoPicker) {
-            PhotoPicker(images: $viewModel.selectedImages)
-        }
-        .onChange(of: viewModel.capturedImage) { _, newImage in
-            if let image = newImage {
-                Task {
-                    await viewModel.uploadPhoto(image)
-                }
-            }
-        }
-        .onChange(of: viewModel.selectedImages) { _, newImages in
-            for image in newImages {
-                Task {
-                    await viewModel.uploadPhoto(image)
-                }
-            }
-            viewModel.selectedImages = []
-        }
+        viewModel.selectedImages = []
     }
 
     // MARK: - Customer Location Card
@@ -246,6 +255,7 @@ struct JobDetailView: View {
 
     private func detailsTab(job: Job) -> some View {
         VStack(spacing: 16) {
+            // Description
             if let description = job.description, !description.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Description", systemImage: "doc.text.fill")
@@ -262,21 +272,98 @@ struct JobDetailView: View {
                 .cardStyle()
             }
 
+            // Job Information
             VStack(alignment: .leading, spacing: 12) {
-                Label("Service Info", systemImage: "wrench.and.screwdriver.fill")
+                Label("Job Information", systemImage: "info.circle.fill")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.textSecondary)
 
-                infoRow(label: "Type", value: job.serviceType?.name ?? "Not specified")
-                infoRow(label: "Trade", value: job.tradeType.displayName)
-                if let scheduled = job.scheduledStart {
-                    infoRow(label: "Scheduled", value: scheduled.formattedDateTime)
+                infoRow(label: "Job Number", value: job.jobNumber)
+                infoRow(label: "Status", value: job.status.displayName)
+                infoRow(label: "Priority", value: job.priority.displayName)
+                infoRow(label: "Trade Type", value: job.tradeType?.displayName ?? "Not specified")
+                if let serviceType = job.serviceType {
+                    infoRow(label: "Service Type", value: serviceType.name)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
             .cardStyle()
+
+            // Schedule Card
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Schedule", systemImage: "calendar")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.textSecondary)
+
+                if let scheduled = job.scheduledStart {
+                    infoRow(label: "Scheduled Date", value: scheduled.formatted(date: .long, time: .shortened))
+                }
+                if let timeStart = job.timeWindowStart, let timeEnd = job.timeWindowEnd {
+                    infoRow(label: "Time Window", value: "\(timeStart) - \(timeEnd)")
+                }
+                if let duration = job.estimatedDuration {
+                    infoRow(label: "Est. Duration", value: "\(duration) minutes")
+                }
+                if let actualDuration = job.actualDuration {
+                    infoRow(label: "Actual Duration", value: "\(actualDuration) minutes")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .cardStyle()
+
+            // Customer Info Card
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Customer", systemImage: "person.fill")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.textSecondary)
+
+                infoRow(label: "Name", value: job.customerName)
+                if let phone = job.customer?.phone {
+                    HStack {
+                        Text("Phone")
+                            .font(.subheadline)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Button(action: { phone.callPhoneNumber() }) {
+                            Text(phone)
+                                .font(.subheadline)
+                                .foregroundColor(.primaryOrange)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .cardStyle()
+
+            // Location Card
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Location", systemImage: "mappin.circle.fill")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.textSecondary)
+
+                Button(action: { job.fullAddress.openInMaps() }) {
+                    HStack {
+                        Text(job.fullAddress)
+                            .font(.subheadline)
+                            .foregroundColor(.textPrimary)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.primaryOrange)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .cardStyle()
+
         }
     }
 
@@ -418,13 +505,13 @@ struct JobDetailView: View {
             }
 
             // Notes list
-            if job.notes.isEmpty {
+            if job.safeNotes.isEmpty {
                 Text("No notes yet")
                     .font(.subheadline)
                     .foregroundColor(.textSecondary)
                     .padding(32)
             } else {
-                ForEach(job.notes) { note in
+                ForEach(job.safeNotes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(note.content)
                             .font(.body)
@@ -509,7 +596,7 @@ struct JobDetailView: View {
 
     private func aiTab(job: Job) -> some View {
         AIAssistantView(
-            tradeType: job.tradeType,
+            tradeType: job.tradeType ?? .hvac,
             diagnosticResult: $viewModel.diagnosticResult,
             isLoading: viewModel.isLoadingDiagnostics,
             onSubmit: { symptoms in
@@ -636,7 +723,10 @@ class JobDetailViewModel: ObservableObject {
 
         do {
             let note = try await APIService.shared.addJobNote(jobId: jobId, content: content)
-            job?.notes.append(note)
+            if job?.notes == nil {
+                job?.notes = []
+            }
+            job?.notes?.append(note)
         } catch {
             self.error = error.localizedDescription
         }
@@ -648,9 +738,12 @@ class JobDetailViewModel: ObservableObject {
         isLoadingDiagnostics = true
 
         do {
+            let tradeType = job?.tradeType?.rawValue ?? "HVAC"
             diagnosticResult = try await APIService.shared.getDiagnostics(
-                equipmentType: job?.tradeType.rawValue ?? "HVAC",
-                symptoms: symptoms
+                tradeType: tradeType,
+                symptoms: [symptoms],
+                equipmentType: tradeType,
+                additionalInfo: nil
             )
         } catch {
             self.error = error.localizedDescription

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Get invoices for revenue calculations
     const invoices = await prisma.invoice.findMany({
       where: {
-        customer: { companyId: session.user.companyId },
+        customer: { companyId: user.companyId },
         status: 'PAID',
         paidDate: { gte: yearStart },
       },
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
     // Get job stats
     const jobs = await prisma.job.findMany({
       where: {
-        companyId: session.user.companyId,
+        companyId: user.companyId,
         createdAt: { gte: startDate },
       },
       select: {
@@ -100,12 +99,12 @@ export async function GET(request: NextRequest) {
 
     // Get customer stats
     const totalCustomers = await prisma.customer.count({
-      where: { companyId: session.user.companyId },
+      where: { companyId: user.companyId },
     })
 
     const newCustomers = await prisma.customer.count({
       where: {
-        companyId: session.user.companyId,
+        companyId: user.companyId,
         createdAt: { gte: startDate },
       },
     })
@@ -115,7 +114,7 @@ export async function GET(request: NextRequest) {
       by: ['technicianId'],
       where: {
         job: {
-          companyId: session.user.companyId,
+          companyId: user.companyId,
           status: 'COMPLETED',
           completedAt: { gte: startDate },
         },

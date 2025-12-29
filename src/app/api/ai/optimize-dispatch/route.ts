@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
+
 import { prisma } from '@/lib/prisma'
 import { callAI } from '@/lib/ai'
 import { format, addMinutes } from 'date-fns'
@@ -38,8 +38,8 @@ interface OptimizeRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       // Get unassigned jobs
       const unassignedJobs = await prisma.job.findMany({
         where: {
-          companyId: session.user.companyId,
+          companyId: user.companyId,
           status: { in: ['PENDING', 'SCHEDULED'] },
           assignments: { none: {} },
           OR: [
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       const technicians = await prisma.technician.findMany({
         where: {
           user: {
-            companyId: session.user.companyId,
+            companyId: user.companyId,
             isActive: true,
           },
           status: { in: ['AVAILABLE', 'ON_JOB'] },

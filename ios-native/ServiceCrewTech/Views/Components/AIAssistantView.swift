@@ -70,32 +70,103 @@ struct AIAssistantView: View {
             // Results
             if let result = diagnosticResult {
                 // Possible Causes
-                resultSection(
-                    title: "Possible Causes",
-                    icon: "exclamationmark.triangle.fill",
-                    color: .secondaryRed,
-                    items: result.possibleCauses
-                )
+                if let causes = result.possibleCauses, !causes.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.secondaryRed)
+                            Text("Possible Causes")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.textPrimary)
+                        }
 
-                // Diagnostic Steps
-                resultSection(
-                    title: "Diagnostic Steps",
-                    icon: "list.number",
-                    color: .secondaryBlue,
-                    items: result.diagnosticSteps,
-                    numbered: true
-                )
+                        ForEach(causes, id: \.cause) { cause in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(cause.cause)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.textPrimary)
+                                    Spacer()
+                                    Text("\(cause.probability)%")
+                                        .font(.caption)
+                                        .foregroundColor(.secondaryRed)
+                                }
+                                Text(cause.explanation)
+                                    .font(.caption)
+                                    .foregroundColor(.textSecondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .padding()
+                    .cardStyle()
+                }
 
-                // Recommended Parts
-                resultSection(
-                    title: "Recommended Parts",
-                    icon: "wrench.and.screwdriver.fill",
-                    color: .secondaryGreen,
-                    items: result.recommendedParts
-                )
+                // Recommended Actions
+                if let actions = result.recommendedActions, !actions.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "list.number")
+                                .foregroundColor(.secondaryBlue)
+                            Text("Recommended Actions")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.textPrimary)
+                        }
+
+                        ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("\(index + 1). \(action.action)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.textPrimary)
+                                    Spacer()
+                                    Text(action.priority)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(action.priority == "high" ? Color.red.opacity(0.2) : Color.blue.opacity(0.2))
+                                        .cornerRadius(4)
+                                }
+                                HStack {
+                                    Text("~\(action.estimatedTime) min")
+                                        .font(.caption)
+                                        .foregroundColor(.textTertiary)
+                                    if !action.partsNeeded.isEmpty {
+                                        Text("Parts: \(action.partsNeeded.joined(separator: ", "))")
+                                            .font(.caption)
+                                            .foregroundColor(.textSecondary)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .padding()
+                    .cardStyle()
+                }
+
+                // Estimated Cost
+                if let cost = result.estimatedRepairCost {
+                    HStack {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundColor(.secondaryGreen)
+                        Text("Estimated Cost:")
+                            .font(.subheadline)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text("$\(Int(cost.low)) - $\(Int(cost.high))")
+                            .font(.headline)
+                            .foregroundColor(.primaryOrange)
+                    }
+                    .padding()
+                    .cardStyle()
+                }
 
                 // Safety Warnings
-                if !result.safetyWarnings.isEmpty {
+                if let warnings = result.safetyWarnings, !warnings.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Image(systemName: "exclamationmark.shield.fill")
@@ -107,7 +178,7 @@ struct AIAssistantView: View {
                                 .foregroundColor(.textPrimary)
                         }
 
-                        ForEach(result.safetyWarnings, id: \.self) { warning in
+                        ForEach(warnings, id: \.self) { warning in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("⚠️")
                                 Text(warning)
@@ -123,50 +194,6 @@ struct AIAssistantView: View {
             }
         }
     }
-
-    private func resultSection(
-        title: String,
-        icon: String,
-        color: Color,
-        items: [String],
-        numbered: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textPrimary)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    HStack(alignment: .top, spacing: 8) {
-                        if numbered {
-                            Text("\(index + 1).")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(color)
-                        } else {
-                            Circle()
-                                .fill(color)
-                                .frame(width: 6, height: 6)
-                                .padding(.top, 6)
-                        }
-
-                        Text(item)
-                            .font(.subheadline)
-                            .foregroundColor(.textSecondary)
-                    }
-                }
-            }
-        }
-        .padding()
-        .cardStyle()
-    }
 }
 
 #Preview {
@@ -174,10 +201,19 @@ struct AIAssistantView: View {
         AIAssistantView(
             tradeType: .hvac,
             diagnosticResult: .constant(DiagnosticResult(
-                possibleCauses: ["Refrigerant leak", "Dirty condenser coils", "Faulty compressor"],
-                diagnosticSteps: ["Check refrigerant levels", "Inspect condenser coils", "Test compressor"],
-                recommendedParts: ["Refrigerant", "Capacitor", "Contactor"],
-                safetyWarnings: ["Ensure power is off before inspection"]
+                possibleCauses: [
+                    DiagnosticResult.PossibleCause(cause: "Refrigerant leak", probability: 45, explanation: "Low refrigerant levels often cause poor cooling"),
+                    DiagnosticResult.PossibleCause(cause: "Dirty condenser coils", probability: 30, explanation: "Blocked airflow reduces cooling efficiency"),
+                    DiagnosticResult.PossibleCause(cause: "Faulty compressor", probability: 25, explanation: "Compressor failure prevents refrigerant circulation")
+                ],
+                recommendedActions: [
+                    DiagnosticResult.RecommendedAction(action: "Check refrigerant levels", priority: "high", estimatedTime: 30, partsNeeded: ["Refrigerant gauge"]),
+                    DiagnosticResult.RecommendedAction(action: "Clean condenser coils", priority: "medium", estimatedTime: 45, partsNeeded: ["Coil cleaner"]),
+                    DiagnosticResult.RecommendedAction(action: "Test compressor", priority: "low", estimatedTime: 20, partsNeeded: [])
+                ],
+                additionalQuestions: nil,
+                safetyWarnings: ["Ensure power is off before inspection", "Wear protective gloves when handling refrigerant"],
+                estimatedRepairCost: DiagnosticResult.RepairCost(low: 150, high: 450)
             )),
             isLoading: false,
             onSubmit: { _ in }

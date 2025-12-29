@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const technicians = await prisma.technician.findMany({
       where: {
         user: {
-          companyId: session.user.companyId,
+          companyId: user.companyId,
           isActive: true,
         },
       },
@@ -57,8 +56,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
       // Create the user account
       const hashedPassword = await bcrypt.hash(data.password || 'TempPass123!', 10)
 
-      const user = await tx.user.create({
+      const newUser = await tx.user.create({
         data: {
           email: data.email,
           password: hashedPassword,
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
           lastName: data.lastName,
           phone: data.phone,
           role: 'TECHNICIAN',
-          companyId: session.user.companyId,
+          companyId: user.companyId,
           isActive: true,
         },
       })
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
       // Create the technician profile
       const technician = await tx.technician.create({
         data: {
-          userId: user.id,
+          userId: newUser.id,
           employeeId: data.employeeId,
           color: data.color || '#3B82F6',
           tradeTypes: data.tradeTypes || [],

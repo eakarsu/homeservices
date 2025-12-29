@@ -35,8 +35,15 @@ struct JobsListView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: viewModel.refreshJobs) {
-                        Image(systemName: "arrow.clockwise")
+                    HStack {
+                        NavigationLink(destination: NewJobView(onSave: {
+                            Task { await viewModel.loadJobs() }
+                        })) {
+                            Image(systemName: "plus")
+                        }
+                        Button(action: viewModel.refreshJobs) {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                 }
             }
@@ -170,7 +177,7 @@ struct JobsListView: View {
             let query = searchText.lowercased()
             jobs = jobs.filter { job in
                 job.jobNumber.lowercased().contains(query) ||
-                job.title.lowercased().contains(query) ||
+                job.displayTitle.lowercased().contains(query) ||
                 job.customerName.lowercased().contains(query) ||
                 job.fullAddress.lowercased().contains(query)
             }
@@ -242,7 +249,8 @@ class JobsListViewModel: ObservableObject {
         error = nil
 
         do {
-            jobs = try await APIService.shared.getMyJobs(all: true)
+            let loadedJobs = try await APIService.shared.getMyJobs(all: true)
+            jobs = loadedJobs
         } catch {
             self.error = error.localizedDescription
         }
@@ -254,6 +262,205 @@ class JobsListViewModel: ObservableObject {
         Task {
             await loadJobs()
         }
+    }
+}
+
+// MARK: - New Job View
+
+struct NewJobView: View {
+    @Environment(\.dismiss) var dismiss
+    var onSave: (() -> Void)?
+
+    // Customer & Property
+    @State private var customers: [Customer] = []
+    @State private var selectedCustomerId: String = ""
+    @State private var properties: [Property] = []
+    @State private var selectedPropertyId: String = ""
+
+    // Job Details
+    @State private var title = ""
+    @State private var description = ""
+    @State private var tradeType = "HVAC"
+    @State private var jobType = "SERVICE_CALL"
+    @State private var priority = "NORMAL"
+    @State private var serviceTypeId: String?
+
+    // Schedule
+    @State private var scheduledDate = Date()
+    @State private var timeWindowStart = ""
+    @State private var timeWindowEnd = ""
+    @State private var estimatedDuration = ""
+
+    @State private var isLoadingCustomers = true
+    @State private var isLoadingProperties = false
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    let tradeTypes = ["HVAC", "PLUMBING", "ELECTRICAL"]
+    let jobTypes = ["SERVICE_CALL", "MAINTENANCE", "INSTALLATION", "REPAIR", "INSPECTION", "WARRANTY", "CALLBACK"]
+    let priorities = ["LOW", "NORMAL", "HIGH", "URGENT", "EMERGENCY"]
+
+    var body: some View {
+        Form {
+            Section("Customer & Location") {
+                if isLoadingCustomers {
+                    ProgressView("Loading customers...")
+                } else {
+                    Picker("Customer *", selection: $selectedCustomerId) {
+                        Text("Select Customer").tag("")
+                        ForEach(customers) { customer in
+                            Text(customer.displayName).tag(customer.id)
+                        }
+                    }
+                    .onChange(of: selectedCustomerId) { _ in
+                        loadProperties()
+                    }
+
+                    if isLoadingProperties {
+                        ProgressView("Loading properties...")
+                    } else if properties.isEmpty && !selectedCustomerId.isEmpty {
+                        Text("No properties for this customer")
+                            .foregroundColor(.textSecondary)
+                    } else if !properties.isEmpty {
+                        Picker("Property *", selection: $selectedPropertyId) {
+                            Text("Select Property").tag("")
+                            ForEach(properties) { property in
+                                Text(property.fullAddress).tag(property.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Section("Job Details") {
+                TextField("Title *", text: $title)
+
+                TextEditor(text: $description)
+                    .frame(minHeight: 80)
+                    .overlay(
+                        Group {
+                            if description.isEmpty {
+                                Text("Description")
+                                    .foregroundColor(.gray.opacity(0.5))
+                                    .padding(.leading, 4)
+                                    .padding(.top, 8)
+                            }
+                        },
+                        alignment: .topLeading
+                    )
+
+                Picker("Trade Type *", selection: $tradeType) {
+                    ForEach(tradeTypes, id: \.self) { type in
+                        Text(type).tag(type)
+                    }
+                }
+
+                Picker("Job Type", selection: $jobType) {
+                    ForEach(jobTypes, id: \.self) { type in
+                        Text(type.replacingOccurrences(of: "_", with: " ").capitalized).tag(type)
+                    }
+                }
+
+                Picker("Priority", selection: $priority) {
+                    ForEach(priorities, id: \.self) { p in
+                        Text(p.capitalized).tag(p)
+                    }
+                }
+            }
+
+            Section("Schedule") {
+                DatePicker("Scheduled Date", selection: $scheduledDate, displayedComponents: [.date, .hourAndMinute])
+
+                TextField("Time Window Start (e.g., 09:00)", text: $timeWindowStart)
+                TextField("Time Window End (e.g., 12:00)", text: $timeWindowEnd)
+                TextField("Estimated Duration (minutes)", text: $estimatedDuration)
+                    .keyboardType(.numberPad)
+            }
+
+            if let error = errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .navigationTitle("New Job")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Save") {
+                    Task { await saveJob() }
+                }
+                .disabled(!isFormValid || isSaving)
+            }
+        }
+        .task {
+            await loadCustomers()
+        }
+    }
+
+    var isFormValid: Bool {
+        !selectedCustomerId.isEmpty && !title.isEmpty && (!properties.isEmpty ? !selectedPropertyId.isEmpty : true)
+    }
+
+    func loadCustomers() async {
+        isLoadingCustomers = true
+        do {
+            customers = try await CustomerService.shared.getCustomers()
+        } catch {
+            errorMessage = "Failed to load customers"
+        }
+        isLoadingCustomers = false
+    }
+
+    func loadProperties() {
+        guard !selectedCustomerId.isEmpty else {
+            properties = []
+            selectedPropertyId = ""
+            return
+        }
+        isLoadingProperties = true
+        Task {
+            do {
+                properties = try await CustomerService.shared.getCustomerProperties(customerId: selectedCustomerId)
+                if properties.count == 1 {
+                    selectedPropertyId = properties[0].id
+                }
+            } catch {
+                print("Failed to load properties: \(error)")
+            }
+            isLoadingProperties = false
+        }
+    }
+
+    func saveJob() async {
+        isSaving = true
+        errorMessage = nil
+        do {
+            // Use first property if available and none selected
+            let propId = selectedPropertyId.isEmpty ? properties.first?.id ?? "" : selectedPropertyId
+            try await JobService.shared.createJob(
+                customerId: selectedCustomerId,
+                propertyId: propId,
+                title: title,
+                description: description.isEmpty ? nil : description,
+                tradeType: tradeType,
+                jobType: jobType,
+                priority: priority,
+                scheduledStart: scheduledDate,
+                timeWindowStart: timeWindowStart.isEmpty ? nil : timeWindowStart,
+                timeWindowEnd: timeWindowEnd.isEmpty ? nil : timeWindowEnd,
+                estimatedDuration: Int(estimatedDuration)
+            )
+            onSave?()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 }
 

@@ -49,8 +49,15 @@ struct InventoryView: View {
             .navigationTitle("Inventory")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: viewModel.refresh) {
-                        Image(systemName: "arrow.clockwise")
+                    HStack {
+                        NavigationLink(destination: NewPartView(onSave: {
+                            Task { await viewModel.loadInventory() }
+                        })) {
+                            Image(systemName: "plus")
+                        }
+                        Button(action: viewModel.refresh) {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                 }
             }
@@ -126,14 +133,33 @@ struct InventoryItemRow: View {
                         .font(.caption)
                         .foregroundColor(.textTertiary)
                 }
+
+                // Show reorder level (min quantity)
+                if let minQty = item.minQuantity {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down.to.line")
+                            .font(.caption2)
+                        Text("Reorder at: \(minQty)")
+                            .font(.caption)
+                    }
+                    .foregroundColor(item.isLowStock ? .orange : .textTertiary)
+                }
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("\(item.quantity)")
-                    .font(.headline)
-                    .foregroundColor(item.quantity > 5 ? .secondaryGreen : (item.quantity > 0 ? .secondaryYellow : .secondaryRed))
+                HStack(spacing: 4) {
+                    Text("\(item.quantity)")
+                        .font(.headline)
+                        .foregroundColor(item.isLowStock ? .orange : (item.quantity > 0 ? .secondaryGreen : .secondaryRed))
+
+                    if item.isLowStock {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
 
                 if let price = item.unitPrice {
                     Text(price.asCurrency)
@@ -165,6 +191,114 @@ class InventoryViewModel: ObservableObject {
         Task {
             await loadInventory()
         }
+    }
+}
+
+// MARK: - New Part View
+
+struct NewPartView: View {
+    @Environment(\.dismiss) var dismiss
+    var onSave: (() -> Void)?
+
+    // Part Information
+    @State private var name = ""
+    @State private var partNumber = ""
+    @State private var description = ""
+    @State private var category = "HVAC"
+
+    // Pricing
+    @State private var cost = ""
+    @State private var sellPrice = ""
+
+    // Inventory
+    @State private var quantity = ""
+    @State private var minQuantity = ""
+    @State private var location = ""
+    @State private var vendor = ""
+
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    let categories = ["HVAC", "PLUMBING", "ELECTRICAL", "GENERAL"]
+
+    var body: some View {
+        Form {
+            Section("Part Information") {
+                TextField("Part Name *", text: $name)
+                TextField("Part Number", text: $partNumber)
+                TextField("Description", text: $description, axis: .vertical)
+                    .lineLimit(2...4)
+                Picker("Category", selection: $category) {
+                    ForEach(categories, id: \.self) { cat in
+                        Text(cat).tag(cat)
+                    }
+                }
+            }
+
+            Section("Pricing") {
+                TextField("Cost *", text: $cost)
+                    .keyboardType(.decimalPad)
+                TextField("Sell Price *", text: $sellPrice)
+                    .keyboardType(.decimalPad)
+            }
+
+            Section("Inventory") {
+                TextField("Quantity on Hand", text: $quantity)
+                    .keyboardType(.numberPad)
+                TextField("Minimum Quantity", text: $minQuantity)
+                    .keyboardType(.numberPad)
+                TextField("Storage Location", text: $location)
+                TextField("Vendor", text: $vendor)
+            }
+
+            if let error = errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .navigationTitle("New Part")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Save") {
+                    Task { await savePart() }
+                }
+                .disabled(!isFormValid || isSaving)
+            }
+        }
+    }
+
+    var isFormValid: Bool {
+        !name.isEmpty && !cost.isEmpty && !sellPrice.isEmpty
+    }
+
+    func savePart() async {
+        isSaving = true
+        errorMessage = nil
+        do {
+            try await InventoryService.shared.createPart(
+                name: name,
+                partNumber: partNumber.isEmpty ? nil : partNumber,
+                description: description.isEmpty ? nil : description,
+                category: category,
+                cost: Double(cost) ?? 0,
+                sellPrice: Double(sellPrice) ?? 0,
+                quantity: Int(quantity) ?? 0,
+                minQuantity: Int(minQuantity),
+                location: location.isEmpty ? nil : location,
+                vendor: vendor.isEmpty ? nil : vendor
+            )
+            onSave?()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 }
 

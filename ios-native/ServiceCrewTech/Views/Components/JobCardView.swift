@@ -17,7 +17,7 @@ struct JobCardView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.textPrimary)
 
-                    Text(job.title)
+                    Text(job.displayTitle)
                         .font(.caption)
                         .foregroundColor(.textSecondary)
                         .lineLimit(1)
@@ -54,6 +54,18 @@ struct JobCardView: View {
                         .foregroundColor(.textTertiary)
 
                     Text("\(timeStart) - \(timeEnd)")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                }
+            }
+
+            // Assigned Technician
+            if let techName = job.assignedTechnicianName {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.fill")
+                        .foregroundColor(.secondaryBlue)
+
+                    Text(techName)
                         .font(.caption)
                         .foregroundColor(.textSecondary)
                 }
@@ -122,14 +134,22 @@ struct JobCardView: View {
                 actualDuration: nil,
                 customer: Customer(
                     id: "1",
+                    customerNumber: nil,
                     firstName: "John",
                     lastName: "Smith",
                     email: nil,
                     phone: "555-1234",
                     alternatePhone: nil,
                     customerType: .residential,
+                    type: nil,
+                    status: nil,
                     companyName: nil,
+                    source: nil,
+                    preferredContact: nil,
                     properties: nil,
+                    propertyCount: nil,
+                    jobCount: nil,
+                    totalSpent: nil,
                     createdAt: nil,
                     updatedAt: nil
                 ),
@@ -152,7 +172,17 @@ struct JobCardView: View {
                 lineItems: [],
                 photos: [],
                 createdAt: Date(),
-                updatedAt: Date()
+                updatedAt: Date(),
+                assignments: [
+                    JobAssignment(
+                        id: "1",
+                        status: "ASSIGNED",
+                        technician: AssignedTechnician(
+                            id: "1",
+                            user: TechnicianUserInfo(firstName: "Mike", lastName: "Johnson")
+                        )
+                    )
+                ]
             ),
             showStatus: true
         )

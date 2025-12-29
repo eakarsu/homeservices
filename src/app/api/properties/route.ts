@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     const properties = await prisma.property.findMany({
       where: {
         customerId,
-        customer: { companyId: session.user.companyId }
+        customer: { companyId: user.companyId }
       },
       include: {
         equipment: true,
@@ -40,8 +39,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.findFirst({
       where: {
         id: data.customerId,
-        companyId: session.user.companyId
+        companyId: user.companyId
       }
     })
 

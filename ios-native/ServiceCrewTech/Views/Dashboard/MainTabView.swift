@@ -19,23 +19,29 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            ScheduleView()
+            CustomersView()
                 .tabItem {
-                    Label("Schedule", systemImage: "calendar")
+                    Label("Customers", systemImage: "person.2.fill")
                 }
                 .tag(2)
 
-            InventoryView()
+            EstimatesView()
                 .tabItem {
-                    Label("Inventory", systemImage: "cube.fill")
+                    Label("Estimates", systemImage: "doc.text.fill")
                 }
                 .tag(3)
 
-            ProfileView()
+            InvoicesView()
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("Invoices", systemImage: "dollarsign.circle.fill")
                 }
                 .tag(4)
+
+            MoreView()
+                .tabItem {
+                    Label("More", systemImage: "ellipsis.circle.fill")
+                }
+                .tag(5)
         }
         .tint(Color.primaryOrange)
         .onAppear {

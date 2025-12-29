@@ -15,6 +15,12 @@ extension Color {
     static let secondaryRed = Color(hex: "EF4444")
     static let secondaryPurple = Color(hex: "8B5CF6")
 
+    // Social login colors (no red used)
+    static let googleBlue = Color(hex: "4285F4")
+    static let microsoftBlue = Color(hex: "00A4EF")
+    static let appleBlack = Color(hex: "000000")
+    static let charcoal = Color(hex: "1D1D1F")
+
     // Neutral colors
     static let backgroundPrimary = Color(hex: "F9FAFB")
     static let backgroundSecondary = Color(hex: "F3F4F6")
@@ -60,6 +66,7 @@ extension Color {
 extension JobStatus {
     var swiftUIColor: Color {
         switch self {
+        case .pending: return .textSecondary
         case .scheduled: return .textSecondary
         case .dispatched: return .secondaryBlue
         case .enRoute: return .secondaryPurple

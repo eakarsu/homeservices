@@ -182,3 +182,4 @@ extension View {
         modifier(Badge(color: color, textColor: textColor))
     }
 }
+

@@ -11,18 +11,26 @@ struct HomeView: View {
                     // Header
                     headerSection
 
-                    // Active Job Card
-                    if let activeJob = viewModel.activeJob {
-                        activeJobCard(job: activeJob)
+                    // Error display
+                    if let error = viewModel.error {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .padding()
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
                     }
 
-                    // Upcoming Jobs
-                    upcomingJobsSection
+                    // Stats Grid
+                    statsGrid
 
-                    // Completed Jobs
-                    if !viewModel.completedJobs.isEmpty {
-                        completedJobsSection
-                    }
+                    // Revenue Section
+                    revenueSection
+
+                    // Recent Jobs
+                    recentJobsSection
+
+                    // Alerts Section
+                    alertsSection
                 }
                 .padding()
             }
@@ -30,17 +38,17 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: viewModel.refreshJobs) {
+                    Button(action: viewModel.refresh) {
                         Image(systemName: "arrow.clockwise")
                             .foregroundColor(.primaryOrange)
                     }
                 }
             }
             .refreshable {
-                await viewModel.loadJobs()
+                await viewModel.loadData()
             }
             .task {
-                await viewModel.loadJobs()
+                await viewModel.loadData()
             }
         }
     }
@@ -62,152 +70,147 @@ struct HomeView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing) {
-                Text("\(viewModel.todayJobs.count)")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primaryOrange)
-
-                Text("Jobs Today")
-                    .font(.caption)
-                    .foregroundColor(.textSecondary)
-            }
+            Text("Dashboard")
+                .font(.headline)
+                .foregroundColor(.textSecondary)
         }
     }
 
-    // MARK: - Active Job Card
+    // MARK: - Stats Grid
 
-    private func activeJobCard(job: Job) -> some View {
+    private var statsGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            StatCard(
+                title: "Today's Jobs",
+                value: "\(viewModel.stats?.todayJobs ?? 0)",
+                icon: "wrench.and.screwdriver",
+                color: .secondaryBlue
+            )
+
+            StatCard(
+                title: "Pending Jobs",
+                value: "\(viewModel.stats?.pendingJobs ?? 0)",
+                icon: "clock",
+                color: .yellow
+            )
+
+            StatCard(
+                title: "Completed Today",
+                value: "\(viewModel.stats?.completedToday ?? 0)",
+                icon: "checkmark.circle",
+                color: .secondaryGreen
+            )
+
+            StatCard(
+                title: "Techs Available",
+                value: "\(viewModel.stats?.techniciansAvailable ?? 0)",
+                icon: "person.2",
+                color: .purple
+            )
+        }
+    }
+
+    // MARK: - Revenue Section
+
+    private var revenueSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "play.circle.fill")
-                    .foregroundColor(.primaryOrange)
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundColor(.secondaryGreen)
 
-                Text("Current Job")
+                Text("Revenue Overview")
                     .font(.headline)
-                    .foregroundColor(.primaryOrange)
+                    .foregroundColor(.textPrimary)
             }
 
-            NavigationLink(destination: JobDetailView(jobId: job.id)) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(job.jobNumber)
-                                .font(.headline)
-                                .foregroundColor(.textPrimary)
-
-                            Text(job.title)
-                                .font(.subheadline)
-                                .foregroundColor(.textSecondary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer()
-
-                        Text(job.priority.displayName)
-                            .badge(color: job.priority.swiftUIColor)
-                    }
-
-                    HStack(spacing: 8) {
-                        Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(.textTertiary)
-
-                        Text(job.shortAddress)
-                            .font(.subheadline)
-                            .foregroundColor(.textSecondary)
-                            .lineLimit(1)
-                    }
-
-                    Text(job.customerName)
-                        .font(.subheadline)
-                        .foregroundColor(.textSecondary)
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
+            HStack(spacing: 12) {
+                RevenueCard(label: "Today", value: viewModel.revenueToday)
+                RevenueCard(label: "This Week", value: viewModel.revenueWeek)
+                RevenueCard(label: "This Month", value: viewModel.revenueMonth)
             }
         }
         .padding()
-        .background(Color.primaryOrange.opacity(0.1))
-        .cornerRadius(16)
+        .background(Color.white)
+        .cornerRadius(12)
     }
 
-    // MARK: - Upcoming Jobs Section
+    // MARK: - Recent Jobs Section
 
-    private var upcomingJobsSection: some View {
+    private var recentJobsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "clock.fill")
-                    .foregroundColor(.textSecondary)
-
-                Text("Upcoming (\(viewModel.upcomingJobs.count))")
+                Text("Recent Jobs")
                     .font(.headline)
                     .foregroundColor(.textPrimary)
+
+                Spacer()
+
+                NavigationLink(destination: JobsListView()) {
+                    Text("View All")
+                        .font(.subheadline)
+                        .foregroundColor(.primaryOrange)
+                }
             }
 
-            if viewModel.isLoading && viewModel.upcomingJobs.isEmpty {
+            if viewModel.isLoading && viewModel.recentJobs.isEmpty {
                 loadingPlaceholder
-            } else if viewModel.upcomingJobs.isEmpty {
-                emptyState(message: "No upcoming jobs")
+            } else if viewModel.recentJobs.isEmpty {
+                emptyState(message: "No recent jobs")
             } else {
-                ForEach(viewModel.upcomingJobs) { job in
+                ForEach(viewModel.recentJobs) { job in
                     NavigationLink(destination: JobDetailView(jobId: job.id)) {
-                        JobCardView(job: job)
+                        RecentJobRow(job: job)
                     }
                 }
             }
         }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
     }
 
-    // MARK: - Completed Jobs Section
+    // MARK: - Alerts Section
 
-    private var completedJobsSection: some View {
+    private var alertsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.secondaryGreen)
+            Text("Alerts & Actions")
+                .font(.headline)
+                .foregroundColor(.textPrimary)
 
-                Text("Completed (\(viewModel.completedJobs.count))")
-                    .font(.headline)
-                    .foregroundColor(.textPrimary)
-            }
+            AlertRow(
+                title: "Open Estimates",
+                value: viewModel.stats?.openEstimates ?? 0,
+                icon: "doc.text",
+                color: .secondaryBlue
+            )
 
-            ForEach(viewModel.completedJobs) { job in
-                NavigationLink(destination: JobDetailView(jobId: job.id)) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(job.jobNumber)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+            AlertRow(
+                title: "Overdue Invoices",
+                value: viewModel.stats?.overdueInvoices ?? 0,
+                icon: "exclamationmark.triangle",
+                color: .orange
+            )
 
-                            Text(job.title)
-                                .font(.caption)
-                                .foregroundColor(.textSecondary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.secondaryGreen)
-                    }
-                    .padding()
-                    .background(Color.secondaryGreen.opacity(0.1))
-                    .cornerRadius(12)
-                }
-            }
+            AlertRow(
+                title: "Expiring Agreements",
+                value: viewModel.stats?.expiringAgreements ?? 0,
+                icon: "clock",
+                color: .orange
+            )
         }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
     }
 
     // MARK: - Helper Views
 
     private var loadingPlaceholder: some View {
         VStack(spacing: 12) {
-            ForEach(0..<3) { _ in
+            ForEach(0..<3, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.backgroundSecondary)
-                    .frame(height: 100)
+                    .frame(height: 60)
             }
         }
         .redacted(reason: .placeholder)
@@ -215,7 +218,7 @@ struct HomeView: View {
 
     private func emptyState(message: String) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "calendar.badge.exclamationmark")
+            Image(systemName: "tray")
                 .font(.system(size: 40))
                 .foregroundColor(.textTertiary)
 
@@ -228,42 +231,198 @@ struct HomeView: View {
     }
 }
 
+// MARK: - Stat Card
+
+struct StatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+
+                Text(value)
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.textPrimary)
+            }
+
+            Spacer()
+
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.white)
+                .padding(10)
+                .background(color)
+                .cornerRadius(8)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Revenue Card
+
+struct RevenueCard: View {
+    let label: String
+    let value: Double
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.textSecondary)
+
+            Text(formatCurrency(value))
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(.textPrimary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.backgroundSecondary)
+        .cornerRadius(8)
+    }
+
+    private func formatCurrency(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        return formatter.string(from: NSNumber(value: amount)) ?? "$\(amount)"
+    }
+}
+
+// MARK: - Recent Job Row
+
+struct RecentJobRow: View {
+    let job: Job
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(job.jobNumber)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.textPrimary)
+
+                Text(job.displayTitle)
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+                    .lineLimit(1)
+
+                Text(job.customerName)
+                    .font(.caption2)
+                    .foregroundColor(.textTertiary)
+            }
+
+            Spacer()
+
+            Text(job.status.displayName)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(job.status.swiftUIColor)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(job.status.swiftUIColor.opacity(0.15))
+                .cornerRadius(4)
+        }
+        .padding()
+        .background(Color.backgroundSecondary)
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Alert Row
+
+struct AlertRow: View {
+    let title: String
+    let value: Int
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.textSecondary)
+
+            Spacer()
+
+            Text("\(value)")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.textPrimary)
+        }
+        .padding()
+        .background(Color.backgroundSecondary)
+        .cornerRadius(8)
+    }
+}
+
 // MARK: - Home View Model
 
 @MainActor
 class HomeViewModel: ObservableObject {
-    @Published var todayJobs: [Job] = []
+    @Published var stats: DashboardStats?
+    @Published var recentJobs: [Job] = []
     @Published var isLoading = false
     @Published var error: String?
 
-    var activeJob: Job? {
-        todayJobs.first { $0.status == .inProgress }
-    }
+    var revenueToday: Double { stats?.revenue?.today ?? 0 }
+    var revenueWeek: Double { stats?.revenue?.week ?? 0 }
+    var revenueMonth: Double { stats?.revenue?.month ?? 0 }
 
-    var upcomingJobs: [Job] {
-        todayJobs.filter { ![.completed, .cancelled, .inProgress].contains($0.status) }
-    }
-
-    var completedJobs: [Job] {
-        todayJobs.filter { $0.status == .completed }
-    }
-
-    func loadJobs() async {
+    func loadData() async {
         isLoading = true
         error = nil
 
-        do {
-            todayJobs = try await APIService.shared.getMyJobs()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        // Load stats and recent jobs in parallel
+        async let statsTask = loadStats()
+        async let jobsTask = loadRecentJobs()
+
+        await statsTask
+        await jobsTask
 
         isLoading = false
     }
 
-    func refreshJobs() {
+    private func loadStats() async {
+        do {
+            let loadedStats = try await APIService.shared.getDashboardStats()
+            stats = loadedStats
+            print("Dashboard: Loaded stats - todayJobs: \(loadedStats.todayJobs)")
+        } catch {
+            print("Dashboard stats ERROR: \(error)")
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func loadRecentJobs() async {
+        do {
+            let response = try await APIService.shared.getRecentJobs(limit: 5)
+            recentJobs = response.data
+            print("Dashboard: Loaded \(response.data.count) recent jobs")
+        } catch {
+            print("Dashboard jobs ERROR: \(error)")
+            // Don't override stats error
+            if self.error == nil {
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    func refresh() {
         Task {
-            await loadJobs()
+            await loadData()
         }
     }
 }

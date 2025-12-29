@@ -104,6 +104,27 @@ struct ProfileView: View {
                     }
                 }
 
+                // Management section (for admin/dispatcher)
+                if authManager.currentUser?.role == .admin || authManager.currentUser?.role == .dispatcher {
+                    Section("Management") {
+                        NavigationLink(destination: DispatchView()) {
+                            Label("Dispatch", systemImage: "map.fill")
+                        }
+
+                        NavigationLink(destination: TechniciansView()) {
+                            Label("Technicians", systemImage: "person.3.fill")
+                        }
+
+                        NavigationLink(destination: AgreementsView()) {
+                            Label("Agreements", systemImage: "doc.text.fill")
+                        }
+
+                        NavigationLink(destination: ReportsView()) {
+                            Label("Reports", systemImage: "chart.bar.fill")
+                        }
+                    }
+                }
+
                 // App settings
                 Section("Settings") {
                     NavigationLink(destination: NotificationSettingsView()) {

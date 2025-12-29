@@ -4,14 +4,22 @@ import Foundation
 
 struct Customer: Identifiable, Codable, Hashable {
     let id: String
+    let customerNumber: String?
     let firstName: String?
     let lastName: String?
     let email: String?
     let phone: String?
     let alternatePhone: String?
-    let customerType: CustomerType
+    let customerType: CustomerType?
+    let type: String?
+    let status: String?
     let companyName: String?
+    let source: String?
+    let preferredContact: String?
     let properties: [Property]?
+    let propertyCount: Int?
+    let jobCount: Int?
+    let totalSpent: Double?
     let createdAt: Date?
     let updatedAt: Date?
 
