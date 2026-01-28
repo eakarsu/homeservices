@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli'
+import { KeyboardResize } from '@capacitor/keyboard'
 
 // Get environment-specific server URL
 const serverUrl = process.env.CAPACITOR_SERVER_URL
@@ -43,7 +44,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#EA580C',
     },
     Keyboard: {
-      resize: 'body',
+      resize: KeyboardResize.Body,
       resizeOnFullScreen: true,
     },
   },

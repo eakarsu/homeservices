@@ -32,7 +32,7 @@ export async function POST(
 
     // Append note to existing notes with timestamp
     const timestamp = new Date().toLocaleString()
-    const userName = session.user.name || 'Unknown'
+    const userName = user.email || 'Unknown'
     const newNote = `[${timestamp}] ${userName}: ${content}`
     const updatedNotes = job.notes ? `${job.notes}\n\n${newNote}` : newNote
 
@@ -50,8 +50,8 @@ export async function POST(
       content,
       createdAt: new Date().toISOString(),
       createdBy: {
-        firstName: session.user.name?.split(' ')[0] || 'Unknown',
-        lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+        firstName: userName.split('@')[0] || 'Unknown',
+        lastName: '',
       },
       notes: updatedJob.notes,
     })

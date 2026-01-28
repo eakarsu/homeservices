@@ -70,14 +70,12 @@ export async function GET(request: NextRequest) {
       technician: user.technician ? {
         id: user.technician.id,
         employeeId: user.technician.employeeId,
-        skills: user.technician.skills,
         certifications: user.technician.certifications,
         tradeTypes: user.technician.tradeTypes,
         currentLat: user.technician.currentLat,
         currentLng: user.technician.currentLng,
         lastLocationUpdate: user.technician.lastLocationUpdate,
         status: user.technician.status,
-        hireDate: user.technician.hireDate,
         hourlyRate: user.technician.hourlyRate
       } : null,
       companyId: user.companyId,

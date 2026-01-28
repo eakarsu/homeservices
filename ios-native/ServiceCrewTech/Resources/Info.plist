@@ -75,5 +75,24 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Google Sign-In</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.617052667836</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Microsoft Sign-In</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.servicecrew.tech</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
