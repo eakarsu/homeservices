@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeftIcon,
@@ -14,9 +15,12 @@ import {
   ChatBubbleLeftIcon,
   PlayIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import { formatDateTime, getStatusColor, getPriorityColor } from '@/lib/utils'
+import toast from 'react-hot-toast'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface Job {
   id: string
@@ -72,8 +76,10 @@ interface Job {
 
 export default function JobDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const queryClient = useQueryClient()
   const jobId = params.id as string
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
   const { data: job, isLoading } = useQuery<Job>({
     queryKey: ['job', jobId],
@@ -81,6 +87,21 @@ export default function JobDetailPage() {
       const res = await fetch(`/api/jobs/${jobId}`)
       if (!res.ok) throw new Error('Failed to fetch job')
       return res.json()
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete job')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Job deleted successfully')
+      router.push('/dashboard/jobs')
+    },
+    onError: () => {
+      toast.error('Failed to delete job')
     },
   })
 
@@ -188,6 +209,13 @@ export default function JobDetailPage() {
             <PencilIcon className="w-4 h-4" />
             Edit
           </Link>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Delete
+          </button>
         </div>
       </div>
 
@@ -324,6 +352,17 @@ export default function JobDetailPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        title="Delete Job"
+        message="Are you sure you want to delete this job? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setDeleteModalOpen(false)}
+      />
     </div>
   )
 }

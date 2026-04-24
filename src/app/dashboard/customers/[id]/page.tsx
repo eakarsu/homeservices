@@ -21,6 +21,7 @@ import {
 import { formatDateTime, getStatusColor } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import StripeCardForm from '@/components/StripeCardForm'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface Property {
   id: string
@@ -90,6 +91,7 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [showCardModal, setShowCardModal] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [propertyForm, setPropertyForm] = useState({
     name: '',
     type: 'House',
@@ -135,6 +137,21 @@ export default function CustomerDetailPage() {
     onError: () => {
       toast.error('Failed to remove card')
     }
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/customers/${customerId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete customer')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Customer deleted successfully')
+      router.push('/dashboard/customers')
+    },
+    onError: () => {
+      toast.error('Failed to delete customer')
+    },
   })
 
   const createPropertyMutation = useMutation({
@@ -209,6 +226,13 @@ export default function CustomerDetailPage() {
             <PencilIcon className="w-4 h-4" />
             Edit
           </Link>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Delete
+          </button>
           <Link
             href={`/dashboard/jobs/new?customerId=${customerId}`}
             className="btn-primary flex items-center gap-2"
@@ -557,6 +581,17 @@ export default function CustomerDetailPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        title="Delete Customer"
+        message="Are you sure you want to delete this customer? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setDeleteModalOpen(false)}
+      />
 
       {/* Add Card Modal */}
       {showCardModal && (

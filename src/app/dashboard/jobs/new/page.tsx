@@ -5,6 +5,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import type { FieldRules } from '@/lib/validation'
+
+const jobRules: FieldRules = {
+  customerId: [{ type: 'required', message: 'Customer is required' }],
+  propertyId: [{ type: 'required', message: 'Property is required' }],
+  title: [
+    { type: 'required', message: 'Job title is required' },
+    { type: 'minLength', value: 3, message: 'Title must be at least 3 characters' },
+  ],
+  tradeType: [{ type: 'required', message: 'Trade type is required' }],
+}
 
 interface JobFormData {
   customerId: string
@@ -27,6 +39,8 @@ function NewJobForm() {
   const queryClient = useQueryClient()
   const preSelectedCustomerId = searchParams.get('customerId') || ''
   const preSelectedPropertyId = searchParams.get('propertyId') || ''
+
+  const { errors, touched, markTouched, validateOne, validateAll } = useFormValidation(jobRules)
 
   const [formData, setFormData] = useState<JobFormData>({
     customerId: preSelectedCustomerId,
@@ -108,17 +122,24 @@ function NewJobForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateAll(formData as unknown as Record<string, string>)) return
     createMutation.mutate(formData)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const value = e.target.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value
     setFormData({ ...formData, [e.target.name]: value })
+    if (touched[e.target.name]) validateOne(e.target.name, e.target.value)
 
     // Reset property when customer changes
     if (e.target.name === 'customerId') {
       setFormData(prev => ({ ...prev, customerId: e.target.value, propertyId: '' }))
     }
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    markTouched(e.target.name)
+    validateOne(e.target.name, e.target.value)
   }
 
   const getCustomerName = (customer: { firstName?: string; lastName?: string; companyName?: string }) => {
@@ -150,8 +171,8 @@ function NewJobForm() {
                 name="customerId"
                 value={formData.customerId}
                 onChange={handleChange}
-                required
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.customerId && errors.customerId ? 'border-red-500' : ''}`}
               >
                 <option value="">Select customer...</option>
                 {customers?.map((customer: { id: string; firstName?: string; lastName?: string; companyName?: string }) => (
@@ -160,6 +181,7 @@ function NewJobForm() {
                   </option>
                 ))}
               </select>
+              {touched.customerId && errors.customerId && <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>}
             </div>
             <div>
               <label className="label">Property *</label>
@@ -167,9 +189,9 @@ function NewJobForm() {
                 name="propertyId"
                 value={formData.propertyId}
                 onChange={handleChange}
-                required
+                onBlur={handleBlur}
                 disabled={!formData.customerId}
-                className="input"
+                className={`input ${touched.propertyId && errors.propertyId ? 'border-red-500' : ''}`}
               >
                 <option value="">Select property...</option>
                 {properties?.map((property: { id: string; address: string; city: string }) => (
@@ -178,6 +200,7 @@ function NewJobForm() {
                   </option>
                 ))}
               </select>
+              {touched.propertyId && errors.propertyId && <p className="text-red-500 text-xs mt-1">{errors.propertyId}</p>}
             </div>
           </div>
         </div>
@@ -193,10 +216,11 @@ function NewJobForm() {
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                required
+                onBlur={handleBlur}
                 placeholder="e.g., AC Not Cooling, Heater Maintenance"
-                className="input"
+                className={`input ${touched.title && errors.title ? 'border-red-500' : ''}`}
               />
+              {touched.title && errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
             </div>
             <div className="md:col-span-2">
               <label className="label">Description</label>

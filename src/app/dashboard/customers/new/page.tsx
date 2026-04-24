@@ -5,6 +5,25 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import type { FieldRules } from '@/lib/validation'
+
+const customerRules: FieldRules = {
+  firstName: [{ type: 'required', message: 'First name is required' }],
+  lastName: [{ type: 'required', message: 'Last name is required' }],
+  email: [{ type: 'email', message: 'Invalid email address' }],
+  phone: [
+    { type: 'required', message: 'Phone is required' },
+    { type: 'phone', message: 'Invalid phone number' },
+  ],
+  propertyAddress: [{ type: 'required', message: 'Address is required' }],
+  propertyCity: [{ type: 'required', message: 'City is required' }],
+  propertyState: [{ type: 'required', message: 'State is required' }],
+  propertyZip: [
+    { type: 'required', message: 'ZIP code is required' },
+    { type: 'zip', message: 'Invalid ZIP code (e.g., 12345 or 12345-6789)' },
+  ],
+}
 
 interface CustomerFormData {
   firstName: string
@@ -44,6 +63,8 @@ export default function NewCustomerPage() {
     propertyType: 'RESIDENTIAL',
   })
 
+  const { errors, touched, markTouched, validateOne, validateAll } = useFormValidation(customerRules)
+
   const createMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       const res = await fetch('/api/customers', {
@@ -65,11 +86,18 @@ export default function NewCustomerPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateAll(formData as unknown as Record<string, string>)) return
     createMutation.mutate(formData)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    if (touched[e.target.name]) validateOne(e.target.name, e.target.value)
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    markTouched(e.target.name)
+    validateOne(e.target.name, e.target.value)
   }
 
   return (
@@ -88,26 +116,30 @@ export default function NewCustomerPage() {
           <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="label">First Name</label>
+              <label htmlFor="firstName" className="label">First Name *</label>
               <input
                 type="text"
                 id="firstName"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.firstName && errors.firstName ? 'border-red-500' : ''}`}
               />
+              {touched.firstName && errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
             </div>
             <div>
-              <label htmlFor="lastName" className="label">Last Name</label>
+              <label htmlFor="lastName" className="label">Last Name *</label>
               <input
                 type="text"
                 id="lastName"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.lastName && errors.lastName ? 'border-red-500' : ''}`}
               />
+              {touched.lastName && errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
             </div>
             <div className="md:col-span-2">
               <label htmlFor="companyName" className="label">Company Name</label>
@@ -128,8 +160,10 @@ export default function NewCustomerPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.email && errors.email ? 'border-red-500' : ''}`}
               />
+              {touched.email && errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="phone" className="label">Phone *</label>
@@ -139,9 +173,10 @@ export default function NewCustomerPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                required
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.phone && errors.phone ? 'border-red-500' : ''}`}
               />
+              {touched.phone && errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
             <div>
               <label className="label">Alternate Phone</label>
@@ -199,9 +234,10 @@ export default function NewCustomerPage() {
                 name="propertyAddress"
                 value={formData.propertyAddress}
                 onChange={handleChange}
-                required
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.propertyAddress && errors.propertyAddress ? 'border-red-500' : ''}`}
               />
+              {touched.propertyAddress && errors.propertyAddress && <p className="text-red-500 text-xs mt-1">{errors.propertyAddress}</p>}
             </div>
             <div>
               <label className="label">City *</label>
@@ -210,9 +246,10 @@ export default function NewCustomerPage() {
                 name="propertyCity"
                 value={formData.propertyCity}
                 onChange={handleChange}
-                required
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.propertyCity && errors.propertyCity ? 'border-red-500' : ''}`}
               />
+              {touched.propertyCity && errors.propertyCity && <p className="text-red-500 text-xs mt-1">{errors.propertyCity}</p>}
             </div>
             <div>
               <label className="label">State *</label>
@@ -221,10 +258,11 @@ export default function NewCustomerPage() {
                 name="propertyState"
                 value={formData.propertyState}
                 onChange={handleChange}
-                required
+                onBlur={handleBlur}
                 maxLength={2}
-                className="input"
+                className={`input ${touched.propertyState && errors.propertyState ? 'border-red-500' : ''}`}
               />
+              {touched.propertyState && errors.propertyState && <p className="text-red-500 text-xs mt-1">{errors.propertyState}</p>}
             </div>
             <div>
               <label className="label">ZIP Code *</label>
@@ -233,9 +271,10 @@ export default function NewCustomerPage() {
                 name="propertyZip"
                 value={formData.propertyZip}
                 onChange={handleChange}
-                required
-                className="input"
+                onBlur={handleBlur}
+                className={`input ${touched.propertyZip && errors.propertyZip ? 'border-red-500' : ''}`}
               />
+              {touched.propertyZip && errors.propertyZip && <p className="text-red-500 text-xs mt-1">{errors.propertyZip}</p>}
             </div>
             <div>
               <label className="label">Property Type</label>

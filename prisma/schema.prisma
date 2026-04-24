@@ -54,6 +54,13 @@ model User {
   avatar        String?
   isActive      Boolean   @default(true)
 
+  // Auth fields
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  emailVerified           Boolean   @default(false)
+  verificationToken       String?
+  verificationTokenExpiry DateTime?
+
   // Push notifications for mobile
   pushToken           String?
   pushPlatform        String?

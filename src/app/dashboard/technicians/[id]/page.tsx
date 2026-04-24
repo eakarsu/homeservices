@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import {
   ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
   UserCircleIcon,
   PhoneIcon,
   EnvelopeIcon,
@@ -23,6 +25,7 @@ import {
   PaperAirplaneIcon
 } from '@heroicons/react/24/outline'
 import { cn } from '@/lib/utils'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface TechnicianDetail {
   id: string
@@ -81,6 +84,7 @@ export default function TechnicianDetailPage() {
   const router = useRouter()
   const id = params.id as string
   const [showMessageModal, setShowMessageModal] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -91,6 +95,21 @@ export default function TechnicianDetailPage() {
       if (!res.ok) throw new Error('Failed to fetch technician')
       return res.json()
     }
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/technicians/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete technician')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Technician deleted successfully')
+      router.push('/dashboard/technicians')
+    },
+    onError: () => {
+      toast.error('Failed to delete technician')
+    },
   })
 
   const handleSendMessage = async () => {
@@ -178,6 +197,20 @@ export default function TechnicianDetailPage() {
           )}>
             {technician.status.replace('_', ' ')}
           </span>
+          <Link
+            href={`/dashboard/technicians/${id}/edit`}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <PencilIcon className="w-4 h-4" />
+            Edit
+          </Link>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Delete
+          </button>
           <button
             onClick={() => router.push(`/dashboard/dispatch?technicianId=${id}`)}
             className="btn-primary"
@@ -467,6 +500,17 @@ export default function TechnicianDetailPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        title="Delete Technician"
+        message="Are you sure you want to delete this technician? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setDeleteModalOpen(false)}
+      />
     </div>
   )
 }

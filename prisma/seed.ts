@@ -36,6 +36,7 @@ async function main() {
       phone: '(555) 100-0001',
       role: 'ADMIN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -48,6 +49,7 @@ async function main() {
       phone: '(555) 100-0002',
       role: 'DISPATCHER',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -60,6 +62,7 @@ async function main() {
       phone: '(555) 100-0003',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -72,6 +75,7 @@ async function main() {
       phone: '(555) 100-0004',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -84,6 +88,7 @@ async function main() {
       phone: '(555) 100-0005',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -96,6 +101,7 @@ async function main() {
       phone: '(555) 100-0006',
       role: 'OFFICE',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -303,6 +309,12 @@ async function main() {
     { firstName: 'Lisa', lastName: 'Davis', type: 'RESIDENTIAL', phone: '(555) 200-0008', email: 'ldavis@email.com', address: '800 Cherry Circle', city: 'Atlanta', state: 'GA', zip: '30308' },
     { companyName: 'ABC Office Building', type: 'COMMERCIAL', phone: '(555) 200-0009', email: 'facilities@abcoffice.com', address: '1000 Business Park Dr', city: 'Atlanta', state: 'GA', zip: '30309' },
     { companyName: 'XYZ Property Management', type: 'PROPERTY_MANAGEMENT', phone: '(555) 200-0010', email: 'maint@xyzpm.com', address: '2000 Management Lane', city: 'Atlanta', state: 'GA', zip: '30310' },
+    { firstName: 'Patricia', lastName: 'White', type: 'RESIDENTIAL', phone: '(555) 200-0011', email: 'pwhite@email.com', address: '1100 Dogwood Trail', city: 'Atlanta', state: 'GA', zip: '30301' },
+    { firstName: 'James', lastName: 'Harris', type: 'RESIDENTIAL', phone: '(555) 200-0012', email: 'jharris@email.com', address: '1200 Peachtree St', city: 'Atlanta', state: 'GA', zip: '30302' },
+    { firstName: 'Nancy', lastName: 'Clark', type: 'RESIDENTIAL', phone: '(555) 200-0013', email: 'nclark@email.com', address: '1300 Magnolia Ave', city: 'Atlanta', state: 'GA', zip: '30303' },
+    { firstName: 'Thomas', lastName: 'Lewis', type: 'RESIDENTIAL', phone: '(555) 200-0014', email: 'tlewis@email.com', address: '1400 Roswell Rd', city: 'Atlanta', state: 'GA', zip: '30304' },
+    { companyName: 'Sunrise Medical Center', type: 'COMMERCIAL', phone: '(555) 200-0015', email: 'facilities@sunrise.com', address: '1500 Hospital Way', city: 'Atlanta', state: 'GA', zip: '30305' },
+    { firstName: 'Karen', lastName: 'Walker', type: 'RESIDENTIAL', phone: '(555) 200-0016', email: 'kwalker@email.com', address: '1600 Ivy Lane', city: 'Atlanta', state: 'GA', zip: '30306' },
   ]
 
   const customers = []
@@ -371,7 +383,7 @@ async function main() {
     customers.push({ customer, property })
   }
 
-  console.log('Created 10 customers with properties and equipment')
+  console.log('Created 16 customers with properties and equipment')
 
   // Create Jobs
   const today = new Date()
@@ -643,6 +655,7 @@ async function main() {
       phone: '(555) 100-0007',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -655,6 +668,7 @@ async function main() {
       phone: '(555) 100-0008',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 
@@ -667,6 +681,7 @@ async function main() {
       phone: '(555) 100-0009',
       role: 'TECHNICIAN',
       companyId: company.id,
+      emailVerified: true,
     },
   })
 

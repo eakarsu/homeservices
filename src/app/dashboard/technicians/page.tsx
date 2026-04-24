@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { getStatusColor, getTradeColor } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface Technician {
   id: string
@@ -257,35 +258,16 @@ export default function TechniciansPage() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteModalOpen && techToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Technician</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <span className="font-medium">{techToDelete.user.firstName} {techToDelete.user.lastName}</span>? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setDeleteModalOpen(false)
-                  setTechToDelete(null)
-                }}
-                className="btn-secondary"
-                disabled={deleteMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="btn-primary bg-red-600 hover:bg-red-700"
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={deleteModalOpen && !!techToDelete}
+        title="Delete Technician"
+        message={`Are you sure you want to delete ${techToDelete ? `${techToDelete.user.firstName} ${techToDelete.user.lastName}` : ''}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => { setDeleteModalOpen(false); setTechToDelete(null) }}
+      />
     </div>
   )
 }

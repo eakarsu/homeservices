@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeftIcon,
   PencilIcon,
+  TrashIcon,
   PaperAirplaneIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -13,6 +15,8 @@ import {
   PrinterIcon
 } from '@heroicons/react/24/outline'
 import { formatCurrency, getStatusColor, formatDate } from '@/lib/utils'
+import toast from 'react-hot-toast'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface EstimateOption {
   id: string
@@ -67,6 +71,7 @@ export default function EstimateDetailPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const estimateId = params.id as string
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
   const { data: estimate, isLoading } = useQuery<Estimate>({
     queryKey: ['estimate', estimateId],
@@ -89,6 +94,21 @@ export default function EstimateDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/estimates/${estimateId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete estimate')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Estimate deleted successfully')
+      router.push('/dashboard/estimates')
+    },
+    onError: () => {
+      toast.error('Failed to delete estimate')
     },
   })
 
@@ -187,6 +207,20 @@ export default function EstimateDetailPage() {
               </button>
             </>
           )}
+          <Link
+            href={`/dashboard/estimates/${estimateId}/edit`}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <PencilIcon className="w-4 h-4" />
+            Edit
+          </Link>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Delete
+          </button>
           <button className="btn-secondary flex items-center gap-2">
             <PrinterIcon className="w-4 h-4" />
             Print
@@ -339,6 +373,17 @@ export default function EstimateDetailPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        title="Delete Estimate"
+        message="Are you sure you want to delete this estimate? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setDeleteModalOpen(false)}
+      />
     </div>
   )
 }

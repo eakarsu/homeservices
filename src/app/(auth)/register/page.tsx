@@ -4,6 +4,25 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import type { FieldRules } from '@/lib/validation'
+
+const registerRules: FieldRules = {
+  companyName: [{ type: 'required', message: 'Company name is required' }],
+  firstName: [{ type: 'required', message: 'First name is required' }],
+  lastName: [{ type: 'required', message: 'Last name is required' }],
+  email: [
+    { type: 'required', message: 'Email is required' },
+    { type: 'email', message: 'Invalid email address' },
+  ],
+  password: [
+    { type: 'required', message: 'Password is required' },
+    { type: 'minLength', value: 8, message: 'Password must be at least 8 characters' },
+  ],
+  confirmPassword: [
+    { type: 'required', message: 'Please confirm your password' },
+  ],
+}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -16,24 +35,28 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   })
+  const { errors: fieldErrors, touched, markTouched, validateOne, validateAll } = useFormValidation(registerRules)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    if (touched[e.target.name]) validateOne(e.target.name, e.target.value)
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    markTouched(e.target.name)
+    validateOne(e.target.name, e.target.value)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
+    if (!validateAll(formData)) return
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
       return
     }
 
@@ -98,11 +121,13 @@ export default function RegisterPage() {
                 name="companyName"
                 type="text"
                 required
-                className="input"
+                className={`input ${touched.companyName && fieldErrors.companyName ? 'border-red-500' : ''}`}
                 placeholder="Your Company Name"
                 value={formData.companyName}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
+              {touched.companyName && fieldErrors.companyName && <p className="text-red-500 text-xs mt-1">{fieldErrors.companyName}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -115,11 +140,13 @@ export default function RegisterPage() {
                   name="firstName"
                   type="text"
                   required
-                  className="input"
+                  className={`input ${touched.firstName && fieldErrors.firstName ? 'border-red-500' : ''}`}
                   placeholder="John"
                   value={formData.firstName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                 />
+                {touched.firstName && fieldErrors.firstName && <p className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</p>}
               </div>
               <div>
                 <label htmlFor="lastName" className="label">
@@ -130,11 +157,13 @@ export default function RegisterPage() {
                   name="lastName"
                   type="text"
                   required
-                  className="input"
+                  className={`input ${touched.lastName && fieldErrors.lastName ? 'border-red-500' : ''}`}
                   placeholder="Doe"
                   value={formData.lastName}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                 />
+                {touched.lastName && fieldErrors.lastName && <p className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</p>}
               </div>
             </div>
 
@@ -148,11 +177,13 @@ export default function RegisterPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="input"
+                className={`input ${touched.email && fieldErrors.email ? 'border-red-500' : ''}`}
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
+              {touched.email && fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}
             </div>
 
             <div>
@@ -179,11 +210,13 @@ export default function RegisterPage() {
                 name="password"
                 type="password"
                 required
-                className="input"
+                className={`input ${touched.password && fieldErrors.password ? 'border-red-500' : ''}`}
                 placeholder="At least 8 characters"
                 value={formData.password}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
+              {touched.password && fieldErrors.password && <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>}
             </div>
 
             <div>
@@ -195,11 +228,13 @@ export default function RegisterPage() {
                 name="confirmPassword"
                 type="password"
                 required
-                className="input"
+                className={`input ${touched.confirmPassword && fieldErrors.confirmPassword ? 'border-red-500' : ''}`}
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                onBlur={handleBlur}
               />
+              {touched.confirmPassword && fieldErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</p>}
             </div>
           </div>
 

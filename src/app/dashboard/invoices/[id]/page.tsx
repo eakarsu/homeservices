@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 import {
   ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
   PaperAirplaneIcon,
   CurrencyDollarIcon,
   PrinterIcon,
@@ -15,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { formatCurrency, getStatusColor, formatDate } from '@/lib/utils'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface Invoice {
   id: string
@@ -72,6 +75,7 @@ export default function InvoiceDetailPage() {
   const queryClient = useQueryClient()
   const invoiceId = params.id as string
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD')
   const [paymentReference, setPaymentReference] = useState('')
@@ -82,6 +86,21 @@ export default function InvoiceDetailPage() {
       const res = await fetch(`/api/invoices/${invoiceId}`)
       if (!res.ok) throw new Error('Failed to fetch invoice')
       return res.json()
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/invoices/${invoiceId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete invoice')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Invoice deleted successfully')
+      router.push('/dashboard/invoices')
+    },
+    onError: () => {
+      toast.error('Failed to delete invoice')
     },
   })
 
@@ -227,6 +246,20 @@ export default function InvoiceDetailPage() {
               </button>
             </>
           )}
+          <Link
+            href={`/dashboard/invoices/${invoiceId}/edit`}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <PencilIcon className="w-4 h-4" />
+            Edit
+          </Link>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <TrashIcon className="w-4 h-4" />
+            Delete
+          </button>
           <button className="btn-secondary flex items-center gap-2">
             <PrinterIcon className="w-4 h-4" />
             Print
@@ -374,6 +407,17 @@ export default function InvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        title="Delete Invoice"
+        message="Are you sure you want to delete this invoice? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setDeleteModalOpen(false)}
+      />
 
       {/* Payment Modal */}
       {showPaymentModal && (

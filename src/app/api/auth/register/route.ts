@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { seedDemoDataForCompany } from '@/lib/seedDemoData'
+import { sendEmail, emailTemplates } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +32,11 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // Generate verification token
+    const verificationToken = crypto.randomUUID()
+    const hashedVerificationToken = await bcrypt.hash(verificationToken, 10)
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
     // Create company and admin user in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create company
@@ -50,6 +57,9 @@ export async function POST(request: NextRequest) {
           phone,
           role: 'ADMIN',
           isActive: true,
+          emailVerified: false,
+          verificationToken: hashedVerificationToken,
+          verificationTokenExpiry,
         }
       })
 
@@ -59,8 +69,17 @@ export async function POST(request: NextRequest) {
       return { company, user, demoData }
     })
 
+    // Send verification email
+    const verifyUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`
+    await sendEmail(
+      emailTemplates.emailVerification({
+        name: firstName,
+        verifyUrl,
+      })
+    )
+
     return NextResponse.json({
-      message: 'Registration successful',
+      message: 'Registration successful. Please check your email to verify your account.',
       companyId: result.company.id,
       userId: result.user.id,
       demoDataCreated: result.demoData,

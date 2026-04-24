@@ -32,6 +32,17 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Sort support
+    const sort = searchParams.get('sort')
+    let orderBy: Record<string, string> = { createdAt: 'desc' }
+    if (sort) {
+      const [field, direction] = sort.split(':')
+      const allowedFields = ['agreementNumber', 'status', 'startDate', 'endDate', 'createdAt']
+      if (allowedFields.includes(field)) {
+        orderBy = { [field]: direction === 'asc' ? 'asc' : 'desc' }
+      }
+    }
+
     const agreements = await prisma.serviceAgreement.findMany({
       where,
       include: {
@@ -53,7 +64,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
     })
 
     return NextResponse.json({ agreements })

@@ -35,6 +35,17 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Sort support
+    const sort = searchParams.get('sort')
+    let orderBy: Record<string, string> = { createdAt: 'desc' }
+    if (sort) {
+      const [field, direction] = sort.split(':')
+      const allowedFields = ['estimateNumber', 'status', 'totalAmount', 'createdAt', 'createdDate']
+      if (allowedFields.includes(field)) {
+        orderBy = { [field]: direction === 'asc' ? 'asc' : 'desc' }
+      }
+    }
+
     const [rawEstimates, total] = await Promise.all([
       prisma.estimate.findMany({
         where,
@@ -58,7 +69,7 @@ export async function GET(request: NextRequest) {
             orderBy: { sortOrder: 'asc' },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),

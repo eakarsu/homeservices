@@ -174,6 +174,88 @@ export const emailTemplates = {
     `,
   }),
 
+  passwordReset: (data: {
+    name: string
+    resetUrl: string
+  }) => ({
+    to: '',
+    subject: 'Reset Your Password - ServiceCrew',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f97316; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .btn { display: inline-block; padding: 12px 24px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${data.name},</p>
+            <p>We received a request to reset your password. Click the button below to set a new password:</p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${data.resetUrl}" class="btn">Reset Password</a>
+            </p>
+            <p>This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+          </div>
+          <div class="footer">
+            <p>ServiceCrew - Home Services Management</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  }),
+
+  emailVerification: (data: {
+    name: string
+    verifyUrl: string
+  }) => ({
+    to: '',
+    subject: 'Verify Your Email - ServiceCrew',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f97316; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f8f9fa; }
+          .btn { display: inline-block; padding: 12px 24px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Verify Your Email</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${data.name},</p>
+            <p>Welcome to ServiceCrew! Please verify your email address by clicking the button below:</p>
+            <p style="text-align: center; margin: 30px 0;">
+              <a href="${data.verifyUrl}" class="btn">Verify Email</a>
+            </p>
+            <p>This link will expire in 24 hours.</p>
+          </div>
+          <div class="footer">
+            <p>ServiceCrew - Home Services Management</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  }),
+
   estimateSent: (data: {
     customerName: string
     estimateNumber: string

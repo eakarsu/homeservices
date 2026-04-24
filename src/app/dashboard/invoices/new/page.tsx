@@ -10,6 +10,12 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '@/lib/utils'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import type { FieldRules } from '@/lib/validation'
+
+const invoiceRules: FieldRules = {
+  customerId: [{ type: 'required', message: 'Customer is required' }],
+}
 
 interface LineItem {
   id: string
@@ -26,6 +32,8 @@ function NewInvoiceForm() {
   const queryClient = useQueryClient()
   const preSelectedCustomerId = searchParams.get('customerId') || ''
   const preSelectedJobId = searchParams.get('jobId') || ''
+
+  const { errors, touched, markTouched, validateOne, validateAll } = useFormValidation(invoiceRules)
 
   const [customerId, setCustomerId] = useState(preSelectedCustomerId)
   const [jobId, setJobId] = useState(preSelectedJobId)
@@ -149,9 +157,10 @@ function NewInvoiceForm() {
                   onChange={(e) => {
                     setCustomerId(e.target.value)
                     setJobId('')
+                    if (touched.customerId) validateOne('customerId', e.target.value)
                   }}
-                  className="input"
-                  required
+                  onBlur={() => { markTouched('customerId'); validateOne('customerId', customerId) }}
+                  className={`input ${touched.customerId && errors.customerId ? 'border-red-500' : ''}`}
                 >
                   <option value="">Select customer...</option>
                   {customers?.map((customer: { id: string; firstName?: string; lastName?: string; companyName?: string }) => (
@@ -160,6 +169,7 @@ function NewInvoiceForm() {
                     </option>
                   ))}
                 </select>
+                {touched.customerId && errors.customerId && <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>}
               </div>
               <div>
                 <label className="label">Related Job (optional)</label>
@@ -345,8 +355,12 @@ function NewInvoiceForm() {
           {/* Actions */}
           <div className="space-y-2">
             <button
-              onClick={() => createMutation.mutate()}
-              disabled={!customerId || lineItems.length === 0 || createMutation.isPending}
+              onClick={() => {
+                if (!validateAll({ customerId })) return
+                if (lineItems.length === 0) return
+                createMutation.mutate()
+              }}
+              disabled={lineItems.length === 0 || createMutation.isPending}
               className="btn-primary w-full"
             >
               {createMutation.isPending ? 'Creating...' : 'Create Invoice'}

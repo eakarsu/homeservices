@@ -29,7 +29,11 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        if (result.error.includes('verify your email')) {
+          setError('Please verify your email before signing in. Check your inbox or request a new verification link.')
+        } else {
+          setError('Invalid email or password')
+        }
       } else {
         router.push('/dashboard')
       }
@@ -55,6 +59,24 @@ function LoginForm() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
+          {error.includes('verify your email') && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (email) {
+                  await fetch('/api/auth/resend-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                  })
+                  setError('Verification email sent! Check your inbox.')
+                }
+              }}
+              className="block mt-2 text-primary-600 hover:text-primary-500 font-medium underline"
+            >
+              Resend verification email
+            </button>
+          )}
         </div>
       )}
 
@@ -135,9 +157,14 @@ function LoginForm() {
         </div>
 
         <div>
-          <label htmlFor="password" className="label">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="label">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"

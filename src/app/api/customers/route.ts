@@ -40,6 +40,17 @@ export async function GET(request: NextRequest) {
       where.type = type
     }
 
+    // Sort support
+    const sort = searchParams.get('sort')
+    let orderBy: Record<string, string> = { createdAt: 'desc' }
+    if (sort) {
+      const [field, direction] = sort.split(':')
+      const allowedFields = ['firstName', 'lastName', 'companyName', 'email', 'type', 'status', 'createdAt']
+      if (allowedFields.includes(field)) {
+        orderBy = { [field]: direction === 'asc' ? 'asc' : 'desc' }
+      }
+    }
+
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -55,7 +66,7 @@ export async function GET(request: NextRequest) {
             select: { totalAmount: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),

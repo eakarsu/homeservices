@@ -11,6 +11,12 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '@/lib/utils'
+import { useFormValidation } from '@/hooks/useFormValidation'
+import type { FieldRules } from '@/lib/validation'
+
+const estimateRules: FieldRules = {
+  customerId: [{ type: 'required', message: 'Customer is required' }],
+}
 
 interface LineItem {
   id: string
@@ -35,6 +41,8 @@ function NewEstimateForm() {
   const queryClient = useQueryClient()
   const preSelectedCustomerId = searchParams.get('customerId') || ''
   const preSelectedJobId = searchParams.get('jobId') || ''
+
+  const { errors, touched, markTouched, validateOne, validateAll } = useFormValidation(estimateRules)
 
   const [customerId, setCustomerId] = useState(preSelectedCustomerId)
   const [jobId, setJobId] = useState(preSelectedJobId)
@@ -186,9 +194,9 @@ function NewEstimateForm() {
           id="customerId"
           name="customerId"
           value={customerId}
-          onChange={(e) => setCustomerId(e.target.value)}
-          className="input"
-          required
+          onChange={(e) => { setCustomerId(e.target.value); if (touched.customerId) validateOne('customerId', e.target.value) }}
+          onBlur={() => { markTouched('customerId'); validateOne('customerId', customerId) }}
+          className={`input ${touched.customerId && errors.customerId ? 'border-red-500' : ''}`}
         >
           <option value="">Select customer...</option>
           {customers?.map((customer: { id: string; firstName?: string; lastName?: string; companyName?: string }) => (
@@ -197,6 +205,7 @@ function NewEstimateForm() {
             </option>
           ))}
         </select>
+        {touched.customerId && errors.customerId && <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>}
       </div>
 
       {/* Estimate Title */}
@@ -400,8 +409,11 @@ function NewEstimateForm() {
           Cancel
         </Link>
         <button
-          onClick={() => createMutation.mutate()}
-          disabled={!customerId || createMutation.isPending}
+          onClick={() => {
+            if (!validateAll({ customerId })) return
+            createMutation.mutate()
+          }}
+          disabled={createMutation.isPending}
           className="btn-primary"
         >
           {createMutation.isPending ? 'Creating...' : 'Create Estimate'}
