@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/apiAuth'
 
 import { prisma } from '@/lib/prisma'
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 import { differenceInMonths, differenceInYears, format } from 'date-fns'
 
 interface SampleEquipment {
@@ -28,6 +29,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: PredictiveRequest = await request.json()
@@ -246,7 +255,7 @@ For each piece of equipment, provide predictions in this JSON format:
         { temperature: 0.3, maxTokens: 3000 }
       )
 
-      const aiResult = JSON.parse(response)
+      const aiResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
 
       predictions = (aiResult.predictions || []).map((p: {
         equipmentIndex: number

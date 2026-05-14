@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { callAI } from '@/lib/ai'
 import { format, addMinutes } from 'date-fns'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface SampleTechnician {
   id: string
@@ -37,10 +38,19 @@ interface OptimizeRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
   try {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rl = aiRateLimiter(user.id)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     // Handle empty body gracefully
@@ -238,7 +248,12 @@ Provide optimal assignments in this exact JSON format:
         { temperature: 0.3, maxTokens: 2000 }
       )
 
-      const aiResult = JSON.parse(response)
+      const aiResult = parseAIJson<{
+        assignments?: Array<{ jobIndex: number; techIndex: number; estimatedTravelTime?: number; reason?: string }>
+        unassignedJobIndexes?: number[]
+        warnings?: string[]
+      }>(response)
+      if (!aiResult) throw new Error('Could not parse AI dispatch response')
       const now = new Date()
 
       for (const assignment of aiResult.assignments || []) {
@@ -332,6 +347,16 @@ Provide optimal assignments in this exact JSON format:
       }
     }
 
+    await logAIResult({
+      feature: 'optimize-dispatch',
+      userId: user.id,
+      companyId: user.companyId,
+      input: { jobs: jobsList.length, techs: techsList.length, optimizeFor },
+      output: { assignments: assignments.length, totalTravelTime, avgTravelTime, warnings: warnings.length },
+      durationMs: Date.now() - startedAt,
+      success: true,
+    })
+
     return NextResponse.json({
       assignments,
       metrics: {
@@ -341,9 +366,21 @@ Provide optimal assignments in this exact JSON format:
         unassignedJobs: unassignedCount,
       },
       warnings,
+      _meta: { model: AI_MODEL, rateLimit: { remaining: rl.remaining } },
     })
   } catch (error) {
     console.error('Optimize dispatch error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    await logAIResult({
+      feature: 'optimize-dispatch',
+      input: {},
+      output: {},
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'unknown',
+    })
+    return NextResponse.json(
+      { error: 'Optimization failed', message: error instanceof Error ? error.message : 'unknown' },
+      { status: 500 }
+    )
   }
 }

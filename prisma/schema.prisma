@@ -242,6 +242,10 @@ model Property {
 
   notes         String?
 
+  // GPS coordinates — populated by geocoder or mobile app for geofencing
+  lat           Decimal?  @db.Decimal(10, 7)
+  lng           Decimal?  @db.Decimal(10, 7)
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -369,6 +373,9 @@ model Job {
 
   notes         String?
   tags          String[]
+
+  // Customer portal — public share token (URL-safe random string, no auth required)
+  portalToken   String?     @unique
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -920,4 +927,30 @@ enum CommunicationType {
   SMS
   PHONE
   NOTE
+}
+
+// ============ AI RESULT LOG ============
+// Persists every AI call (input/output JSONB) for audit, analytics, and
+// retraining. Indexed by feature + user + company for ops reporting.
+model AIResult {
+  id            String    @id @default(cuid())
+  feature       String    // diagnostics, optimize-dispatch, optimize-route, etc.
+  model         String    // anthropic/claude-3-5-sonnet-20241022
+  userId        String?
+  companyId     String?
+  jobId         String?
+  customerId    String?
+  input         Json      // sanitised inputs
+  output        Json      // parsed model output
+  durationMs    Int?
+  success       Boolean   @default(true)
+  errorMessage  String?
+
+  createdAt     DateTime  @default(now())
+
+  @@index([feature])
+  @@index([userId])
+  @@index([companyId])
+  @@index([jobId])
+  @@index([createdAt])
 }

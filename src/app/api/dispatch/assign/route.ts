@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
-
 import { prisma } from '@/lib/prisma'
+import { emitJobAssigned } from '@/lib/socket'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +40,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job is already assigned to this technician' }, { status: 400 })
     }
 
+    // Fetch technician info for socket payload
+    const technician = await prisma.technician.findUnique({
+      where: { id: technicianId },
+      include: { user: { select: { firstName: true, lastName: true } } },
+    })
+
     // Create assignment
     const assignment = await prisma.jobAssignment.create({
       data: {
@@ -56,6 +62,18 @@ export async function POST(request: NextRequest) {
         data: { status: 'SCHEDULED' },
       })
     }
+
+    // Emit real-time event to dispatch board and technician
+    emitJobAssigned({
+      jobId: job.id,
+      jobNumber: job.jobNumber,
+      technicianId,
+      technicianName: technician
+        ? `${technician.user.firstName} ${technician.user.lastName}`
+        : technicianId,
+      companyId: job.companyId,
+      scheduledStart: job.scheduledStart?.toISOString() ?? null,
+    })
 
     return NextResponse.json(assignment)
   } catch (error) {

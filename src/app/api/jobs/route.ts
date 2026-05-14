@@ -2,6 +2,92 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { generateJobNumber } from '@/lib/utils'
+import { callAI } from '@/lib/ai'
+import crypto from 'crypto'
+
+/** Generates a cryptographically random URL-safe token for the customer portal. */
+function generatePortalToken(): string {
+  return crypto.randomBytes(24).toString('base64url')
+}
+
+/**
+ * Auto-dispatch: when a new job is created, asynchronously ask the AI
+ * to suggest the best available technician. The suggestion is logged and
+ * stored on the job record (dispatchSuggestion field) if it exists,
+ * otherwise just logged. The dispatch board can surface this to operators.
+ */
+async function runAutoDispatch(
+  jobId: string,
+  jobNumber: string,
+  companyId: string,
+  tradeType: string,
+): Promise<void> {
+  try {
+    // Fetch available technicians for the company with matching trade
+    const technicians = await prisma.technician.findMany({
+      where: {
+        user: { companyId, isActive: true },
+        status: { in: ['AVAILABLE'] },
+        tradeTypes: { has: tradeType as never },
+      },
+      include: {
+        user: { select: { firstName: true, lastName: true } },
+        assignments: {
+          where: { job: { status: { in: ['SCHEDULED', 'IN_PROGRESS', 'EN_ROUTE'] } } },
+          select: { id: true },
+        },
+      },
+      take: 10,
+    })
+
+    if (technicians.length === 0) {
+      console.log(`[auto-dispatch] No available ${tradeType} technicians for job ${jobNumber}`)
+      return
+    }
+
+    const techList = technicians.map((t, i) => ({
+      index: i + 1,
+      id: t.id,
+      name: `${t.user.firstName} ${t.user.lastName}`,
+      currentJobs: t.assignments.length,
+      skills: t.tradeTypes,
+    }))
+
+    const prompt = `A new ${tradeType} job (${jobNumber}) was just created.
+Available technicians:
+${techList.map(t => `${t.index}. ${t.name} — active jobs: ${t.currentJobs}, skills: ${t.skills.join(', ')}`).join('\n')}
+
+Suggest the best technician to assign and briefly explain why (1-2 sentences).
+Respond ONLY with JSON: {"technicianId": "<id>", "technicianName": "<name>", "reason": "<explanation>"}`
+
+    const aiResponse = await callAI(
+      [{ role: 'user', content: prompt }],
+      { temperature: 0.2, maxTokens: 200 },
+    )
+
+    const parsed = JSON.parse(aiResponse) as {
+      technicianId: string
+      technicianName: string
+      reason: string
+    }
+
+    console.log(
+      `[auto-dispatch] Job ${jobNumber} → suggested technician: ${parsed.technicianName} — ${parsed.reason}`,
+    )
+
+    // Persist the suggestion on the job if the schema supports it (non-fatal if not)
+    try {
+      await (prisma.job as any).update({
+        where: { id: jobId },
+        data: { dispatchSuggestion: JSON.stringify(parsed) },
+      })
+    } catch {
+      // Field doesn't exist yet — suggestion lives in the logs only
+    }
+  } catch (err) {
+    console.error(`[auto-dispatch] Failed for job ${jobNumber}:`, err)
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -198,6 +284,7 @@ export async function POST(request: NextRequest) {
         estimatedAmount: body.estimatedAmount,
         notes: body.notes,
         tags: body.tags || [],
+        portalToken: generatePortalToken(),
       },
       include: {
         customer: true,
@@ -205,6 +292,14 @@ export async function POST(request: NextRequest) {
         serviceType: true,
       },
     })
+
+    // ---- Auto-dispatch suggestion ----
+    // Fire-and-forget: run AI dispatch suggestion in background.
+    // Does NOT block the response — result is logged and can be consumed
+    // via the dispatch board or a follow-up GET /api/ai/optimize-dispatch.
+    runAutoDispatch(job.id, job.jobNumber, user.companyId, job.tradeType).catch(
+      (err) => console.error('[auto-dispatch] background error:', err),
+    )
 
     return NextResponse.json(job, { status: 201 })
   } catch (error) {

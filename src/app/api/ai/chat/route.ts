@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
@@ -26,10 +27,19 @@ Be helpful, professional, and concise. If asked about something outside home ser
 When providing technical advice, always recommend consulting a licensed professional for safety-critical work.`
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
   try {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rl = aiRateLimiter(user.id)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'AI rate limit exceeded', retryAfter: Math.ceil(rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: ChatRequest = await request.json()
@@ -58,15 +68,34 @@ export async function POST(request: NextRequest) {
       maxTokens: 2000,
     })
 
+    await logAIResult({
+      feature: 'chat',
+      userId: user.id,
+      companyId: user.companyId,
+      input: { turnCount: messages.length, contextLength: (context || '').length },
+      output: { responseLength: response.length },
+      durationMs: Date.now() - startedAt,
+      success: true,
+    })
+
     // Return format iOS app expects
     return NextResponse.json({
       success: true,
-      message: response
+      message: response,
+      _meta: { model: AI_MODEL, rateLimit: { remaining: rl.remaining } },
     })
   } catch (error) {
     console.error('AI Chat error:', error)
+    await logAIResult({
+      feature: 'chat',
+      input: {},
+      output: {},
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'unknown',
+    })
     return NextResponse.json(
-      { success: false, error: 'Failed to get AI response' },
+      { success: false, error: 'Failed to get AI response', message: error instanceof Error ? error.message : 'unknown' },
       { status: 500 }
     )
   }

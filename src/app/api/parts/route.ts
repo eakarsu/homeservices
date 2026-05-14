@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
+import { parsePaginationParams, buildPaginatedResponse } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,15 +30,20 @@ export async function GET(request: NextRequest) {
       where.category = category
     }
 
-    const parts = await prisma.part.findMany({
-      where,
-      orderBy: [
-        { category: 'asc' },
-        { name: 'asc' },
-      ],
-    })
+    const params = parsePaginationParams(request, 'name')
+    params.sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc'
 
-    return NextResponse.json(parts)
+    const [parts, total] = await Promise.all([
+      prisma.part.findMany({
+        where,
+        orderBy: [{ category: 'asc' }, { [params.sortBy]: params.sortOrder }],
+        skip: params.skip,
+        take: params.limit,
+      }),
+      prisma.part.count({ where }),
+    ])
+
+    return NextResponse.json(buildPaginatedResponse(parts, total, params))
   } catch (error) {
     console.error('Get parts error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

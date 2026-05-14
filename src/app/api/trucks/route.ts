@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
+import { parsePaginationParams, buildPaginatedResponse } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,39 +13,35 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includeStock = searchParams.get('includeStock') === 'true'
 
-    const trucks = await prisma.truck.findMany({
-      where: {
-        companyId: user.companyId,
-        isActive: true,
-      },
-      include: {
-        technicians: {
-          include: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-        stock: includeStock ? {
-          include: {
-            part: {
-              select: {
-                id: true,
-                partNumber: true,
-                name: true,
-                category: true,
-              },
-            },
-          },
-        } : false,
-      },
-      orderBy: { name: 'asc' },
-    })
+    const params = parsePaginationParams(request, 'name')
+    params.sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc'
+    const where = { companyId: user.companyId, isActive: true }
 
-    return NextResponse.json(trucks)
+    const [trucks, total] = await Promise.all([
+      prisma.truck.findMany({
+        where,
+        include: {
+          technicians: {
+            include: {
+              user: { select: { firstName: true, lastName: true } },
+            },
+          },
+          stock: includeStock
+            ? {
+                include: {
+                  part: { select: { id: true, partNumber: true, name: true, category: true } },
+                },
+              }
+            : false,
+        },
+        orderBy: { [params.sortBy]: params.sortOrder },
+        skip: params.skip,
+        take: params.limit,
+      }),
+      prisma.truck.count({ where }),
+    ])
+
+    return NextResponse.json(buildPaginatedResponse(trucks, total, params))
   } catch (error) {
     console.error('Get trucks error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

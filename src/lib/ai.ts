@@ -8,8 +8,9 @@ const API_BASE_URL = OPENROUTER_API_KEY
   ? OPENROUTER_BASE_URL
   : 'https://api.openai.com/v1'
 
-// Default model - can use OpenAI, Anthropic, or other models via OpenRouter
-const DEFAULT_MODEL = process.env.AI_MODEL || 'openai/gpt-4-turbo'
+// Default model — Claude 3.5 Sonnet via OpenRouter for cost/quality balance
+import { parseAIJson, AI_MODEL } from './ai-utils'
+const DEFAULT_MODEL = AI_MODEL
 
 interface Message {
   role: 'system' | 'user' | 'assistant'
@@ -124,19 +125,15 @@ Provide diagnostic analysis in this exact JSON format:
     { temperature: 0.3, maxTokens: 1500 }
   )
 
-  try {
-    return JSON.parse(response)
-  } catch {
-    return {
-      possibleCauses: [
-        { cause: 'Unable to determine', probability: 0.5, explanation: 'Please provide more details' }
-      ],
-      recommendedActions: ['Schedule on-site inspection'],
-      partsNeeded: [],
-      estimatedTime: 60,
-      urgencyLevel: 'MEDIUM'
-    }
-  }
+  const parsed = parseAIJson<{
+    possibleCauses: { cause: string; probability: number; explanation: string }[]
+    recommendedActions: string[]
+    partsNeeded: string[]
+    estimatedTime: number
+    urgencyLevel: string
+  }>(response)
+  if (!parsed) throw new Error('AI response could not be parsed for diagnostics')
+  return parsed
 }
 
 export async function optimizeDispatch(
@@ -196,18 +193,15 @@ Recommend the best technician assignment in this JSON format:
     { temperature: 0.3, maxTokens: 1000 }
   )
 
-  try {
-    return JSON.parse(response)
-  } catch {
-    const available = technicians.find(t => t.status === 'AVAILABLE')
-    return {
-      recommendedTechnicianId: available?.id || technicians[0]?.id || '',
-      score: 0.5,
-      reasoning: 'Auto-assigned based on availability',
-      estimatedArrivalTime: 30,
-      alternativeTechnicians: []
-    }
-  }
+  const parsed = parseAIJson<{
+    recommendedTechnicianId: string
+    score: number
+    reasoning: string
+    estimatedArrivalTime: number
+    alternativeTechnicians: { id: string; score: number; reason: string }[]
+  }>(response)
+  if (!parsed) throw new Error('AI response could not be parsed for dispatch optimisation')
+  return parsed
 }
 
 export async function optimizeRoute(
@@ -251,17 +245,15 @@ Optimize the route in this JSON format:
     { temperature: 0.3, maxTokens: 1000 }
   )
 
-  try {
-    return JSON.parse(response)
-  } catch {
-    return {
-      optimizedOrder: jobs.map(j => j.id),
-      totalDistance: jobs.length * 5,
-      totalTime: jobs.reduce((acc, j) => acc + j.estimatedDuration + 20, 0),
-      savings: { distance: 0, time: 0 },
-      reasoning: 'Route planned in order received'
-    }
-  }
+  const parsed = parseAIJson<{
+    optimizedOrder: string[]
+    totalDistance: number
+    totalTime: number
+    savings: { distance: number; time: number }
+    reasoning: string
+  }>(response)
+  if (!parsed) throw new Error('AI response could not be parsed for route optimisation')
+  return parsed
 }
 
 export async function generateEstimate(
@@ -318,23 +310,19 @@ Generate quote options in this JSON format:
     { temperature: 0.4, maxTokens: 2000 }
   )
 
-  try {
-    return JSON.parse(response)
-  } catch {
-    return {
-      options: [
-        {
-          name: 'Standard Service',
-          description: 'Basic service call',
-          laborHours: 1,
-          laborRate: 95,
-          parts: [],
-          total: 95,
-          warranty: '30 days labor'
-        }
-      ],
-      recommendation: 'Standard service recommended',
-      notes: 'Final pricing may vary based on on-site assessment'
-    }
-  }
+  const parsed = parseAIJson<{
+    options: {
+      name: string
+      description: string
+      laborHours: number
+      laborRate: number
+      parts: { name: string; cost: number; price: number }[]
+      total: number
+      warranty: string
+    }[]
+    recommendation: string
+    notes: string
+  }>(response)
+  if (!parsed) throw new Error('AI response could not be parsed for estimate generation')
+  return parsed
 }

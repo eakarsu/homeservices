@@ -102,6 +102,39 @@ const aiFeatures = [
       { label: 'Stockout Reduction', value: '-70%' },
       { label: 'Inventory Savings', value: '+20%' }
     ]
+  },
+  {
+    name: 'Photo Intake (Vision)',
+    description: 'Snap an equipment nameplate from the field; AI extracts make, model, serial, and auto-creates the Equipment record.',
+    href: '/dashboard/ai/photo-intake',
+    icon: SparklesIcon,
+    color: 'bg-fuchsia-500',
+    stats: [
+      { label: 'Field Time Saved', value: '+90%' },
+      { label: 'Data Accuracy', value: '+50%' }
+    ]
+  },
+  {
+    name: 'Subscription Health Monitor',
+    description: 'Scans active service-agreement plans + equipment age and proposes preventive visits with priority and reasoning.',
+    href: '/dashboard/ai/subscription-health',
+    icon: ChartBarIcon,
+    color: 'bg-emerald-500',
+    stats: [
+      { label: 'Plan Renewal', value: '+18%' },
+      { label: 'Preventive Bookings', value: '+30%' }
+    ]
+  },
+  {
+    name: 'Route Optimizer',
+    description: 'Reorders a technician\u2019s daily jobs into the most efficient sequence using priority, location and duration.',
+    href: '/dashboard/ai/route-optimizer',
+    icon: TruckIcon,
+    color: 'bg-cyan-500',
+    stats: [
+      { label: 'Distance Saved', value: '15-30%' },
+      { label: 'Jobs / Day', value: '+1' }
+    ]
   }
 ]
 

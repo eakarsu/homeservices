@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
-
 import { prisma } from '@/lib/prisma'
+import { emitJobCompleted } from '@/lib/socket'
 
 export async function GET(
   request: NextRequest,
@@ -127,6 +127,18 @@ export async function PUT(
       where: { id: params.id },
       data: updateData,
     })
+
+    // Emit real-time job:completed event when job transitions to COMPLETED
+    if (data.status === 'COMPLETED' && existing.status !== 'COMPLETED') {
+      emitJobCompleted({
+        jobId: job.id,
+        jobNumber: job.jobNumber,
+        technicianId: '', // primary technician resolved via room subscription
+        completedAt: new Date().toISOString(),
+        companyId: job.companyId,
+        actualAmount: job.actualAmount ? Number(job.actualAmount) : undefined,
+      })
+    }
 
     return NextResponse.json(job)
   } catch (error) {

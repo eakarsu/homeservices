@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface CustomerData {
   id: string
@@ -22,6 +23,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: InsightsRequest = await request.json()
@@ -124,7 +133,7 @@ Provide analysis in this JSON format:
         { temperature: 0.4, maxTokens: 4000 }
       )
 
-      const aiResult = JSON.parse(response)
+      const aiResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
 
       insights = (aiResult.insights || []).map((insight: {
         customerIndex: number

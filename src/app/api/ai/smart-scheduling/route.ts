@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/apiAuth'
 
 import { prisma } from '@/lib/prisma'
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 import { format, addDays, parseISO } from 'date-fns'
 
 interface SampleCustomer {
@@ -36,6 +37,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: SchedulingRequest = await request.json()
@@ -247,7 +256,7 @@ Suggest 3-5 optimal appointment slots for the next 7 days in this JSON format:
         { temperature: 0.4, maxTokens: 2000 }
       )
 
-      const aiResult = JSON.parse(response)
+      const aiResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
       suggestions = aiResult.suggestions || []
       bestOption = aiResult.bestOption || 0
       customerPreferenceMatch = aiResult.customerPreferenceMatch || 85

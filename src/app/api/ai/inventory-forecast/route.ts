@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface InventoryItem {
   id: string
@@ -58,6 +59,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: ForecastRequest = await request.json()
@@ -132,7 +141,7 @@ Generate a forecast in this exact JSON format:
         { temperature: 0.3, maxTokens: 4000 }
       )
 
-      forecastResult = JSON.parse(response)
+      forecastResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
 
       // Ensure required fields
       forecastResult.forecasts = forecastResult.forecasts || []

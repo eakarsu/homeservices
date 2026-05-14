@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { parsePaginationParams, buildPaginatedResponse } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,44 +11,48 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const technicians = await prisma.technician.findMany({
-      where: {
-        user: {
-          companyId: user.companyId,
-          isActive: true,
-        },
+    const params = parsePaginationParams(request, 'createdAt')
+    const where = {
+      user: {
+        companyId: user.companyId,
+        isActive: true,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            avatar: true,
-          },
-        },
-        truck: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        _count: {
-          select: {
-            assignments: true,
-          },
-        },
-      },
-      orderBy: {
-        user: {
-          firstName: 'asc',
-        },
-      },
-    })
+    }
 
-    return NextResponse.json(technicians)
+    const [technicians, total] = await Promise.all([
+      prisma.technician.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              avatar: true,
+            },
+          },
+          truck: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              assignments: true,
+            },
+          },
+        },
+        orderBy: { user: { firstName: 'asc' } },
+        skip: params.skip,
+        take: params.limit,
+      }),
+      prisma.technician.count({ where }),
+    ])
+
+    return NextResponse.json(buildPaginatedResponse(technicians, total, params))
   } catch (error) {
     console.error('Get technicians error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

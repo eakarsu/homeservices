@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
+import { parsePaginationParams, buildPaginatedResponse } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,21 +17,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Customer ID required' }, { status: 400 })
     }
 
-    const properties = await prisma.property.findMany({
-      where: {
-        customerId,
-        customer: { companyId: user.companyId }
-      },
-      include: {
-        equipment: true,
-        _count: {
-          select: { jobs: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const params = parsePaginationParams(request, 'createdAt')
+    const where = {
+      customerId,
+      customer: { companyId: user.companyId },
+    }
 
-    return NextResponse.json(properties)
+    const [properties, total] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        include: {
+          equipment: true,
+          _count: { select: { jobs: true } },
+        },
+        orderBy: { [params.sortBy]: params.sortOrder },
+        skip: params.skip,
+        take: params.limit,
+      }),
+      prisma.property.count({ where }),
+    ])
+
+    return NextResponse.json(buildPaginatedResponse(properties, total, params))
   } catch (error) {
     console.error('Get properties error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

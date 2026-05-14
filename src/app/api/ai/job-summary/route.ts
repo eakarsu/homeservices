@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface JobSummaryRequest {
   job: {
@@ -49,6 +50,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: JobSummaryRequest = await request.json()
@@ -125,7 +134,7 @@ Generate a comprehensive job report in this exact JSON format:
         { temperature: 0.3, maxTokens: 3000 }
       )
 
-      summaryResult = JSON.parse(response)
+      summaryResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
 
       // Ensure required fields
       summaryResult.summary = summaryResult.summary || 'Job completed successfully.'

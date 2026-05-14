@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
-
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface DiagnosticRequest {
   tradeType: string
@@ -12,10 +12,19 @@ interface DiagnosticRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
   try {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rl = aiRateLimiter(user.id)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: DiagnosticRequest = await request.json()
@@ -74,51 +83,38 @@ Provide 2-4 possible causes ranked by probability, 2-4 recommended actions, and 
       { temperature: 0.3, maxTokens: 2000 }
     )
 
-    try {
-      const result = JSON.parse(response)
-      return NextResponse.json(result)
-    } catch {
-      // Fallback response if AI doesn't return valid JSON
-      return NextResponse.json({
-        possibleCauses: [
-          {
-            cause: 'Unable to determine specific cause',
-            probability: 50,
-            explanation: 'Based on the symptoms provided, an on-site inspection is recommended to accurately diagnose the issue.'
-          }
-        ],
-        recommendedActions: [
-          {
-            action: 'Schedule on-site diagnostic visit',
-            priority: 'high',
-            estimatedTime: 60,
-            partsNeeded: []
-          },
-          {
-            action: 'Gather more information from customer',
-            priority: 'medium',
-            estimatedTime: 15,
-            partsNeeded: []
-          }
-        ],
-        additionalQuestions: [
-          'When did you first notice this issue?',
-          'Has the equipment been serviced recently?',
-          'Are there any unusual sounds or smells?'
-        ],
-        safetyWarnings: tradeType === 'ELECTRICAL'
-          ? ['Do not attempt electrical repairs without proper training', 'Turn off power at breaker before inspection']
-          : tradeType === 'PLUMBING' && symptoms.some(s => s.toLowerCase().includes('gas'))
-          ? ['If you smell gas, evacuate immediately and call gas company']
-          : [],
-        estimatedRepairCost: {
-          low: 150,
-          high: 500
-        }
-      })
+    const result = parseAIJson<unknown>(response)
+    if (!result) {
+      throw new Error('AI returned an unparseable response')
     }
+
+    await logAIResult({
+      feature: 'diagnostics',
+      userId: user.id,
+      companyId: user.companyId,
+      input: { tradeType, symptoms, equipmentType, equipmentAge },
+      output: result,
+      durationMs: Date.now() - startedAt,
+      success: true,
+    })
+
+    return NextResponse.json({
+      ...(result as Record<string, unknown>),
+      _meta: { model: AI_MODEL, rateLimit: { remaining: rl.remaining } },
+    })
   } catch (error) {
     console.error('Diagnostics error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    await logAIResult({
+      feature: 'diagnostics',
+      input: {},
+      output: {},
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorMessage: error instanceof Error ? error.message : 'unknown',
+    })
+    return NextResponse.json(
+      { error: 'Diagnostics failed', message: error instanceof Error ? error.message : 'unknown' },
+      { status: 500 }
+    )
   }
 }

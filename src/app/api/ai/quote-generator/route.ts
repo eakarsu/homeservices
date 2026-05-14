@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { callAI } from '@/lib/ai'
+import { aiRateLimiter, parseAIJson, logAIResult, AI_MODEL } from '@/lib/ai-utils'
 
 interface QuoteRequest {
   tradeType: string
@@ -40,6 +41,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const __rl = aiRateLimiter(user.id)
+    if (!__rl.allowed) {
+      return NextResponse.json(
+        { error: 'AI rate limit exceeded', retryAfter: Math.ceil(__rl.resetIn / 1000) },
+        { status: 429 }
+      )
     }
 
     const body: QuoteRequest = await request.json()
@@ -121,7 +130,7 @@ Provide a complete quote in this exact JSON format:
         { temperature: 0.4, maxTokens: 3000 }
       )
 
-      quoteResult = JSON.parse(response)
+      quoteResult = (parseAIJson<any>(response) ?? (() => { throw new Error("Invalid AI JSON") })())
 
       // Ensure required fields
       quoteResult.customerName = quoteResult.customerName || customerName
