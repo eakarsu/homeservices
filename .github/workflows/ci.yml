@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: homeservices
+          POSTGRES_PASSWORD: test-password
+          POSTGRES_DB: homeservices_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U homeservices -d homeservices_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://homeservices:test-password@localhost:5432/homeservices_test
+      NEXTAUTH_URL: https://app.example.test
+      CORS_ALLOWED_ORIGINS: https://app.example.test
+      TEMPLATE_ALLOWED_HOSTS: templates.example.test
+      EMAIL_DELIVERY_URL: https://mailer.example.test/v1/send
+      EMAIL_DELIVERY_ALLOWED_HOSTS: mailer.example.test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Generate ephemeral test secret
+        run: |
+          echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "EMAIL_DELIVERY_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npx prisma migrate deploy
+      - run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+      - run: npx prisma generate
+      - run: npm run demo-data:load
+      - run: npm run test:unit
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Core browser journeys
+        env:
+          NEXTAUTH_URL: http://localhost:3000
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+        run: npm test -- tests/auth.spec.ts tests/estimate-approval.spec.ts
+      - run: scripts/verify-immutable-controls.sh
+      - run: npm audit --omit=dev --audit-level=low
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2

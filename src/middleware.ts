@@ -16,9 +16,7 @@ function applyCors(request: NextRequest, response: NextResponse): NextResponse {
   const allowed = getAllowedOrigins()
   let allowOrigin: string | null = null
   if (origin) {
-    if (allowed.length === 0) allowOrigin = '*'
-    else if (allowed.includes('*')) allowOrigin = '*'
-    else if (allowed.includes(origin)) allowOrigin = origin
+    if (allowed.includes(origin)) allowOrigin = origin
   }
   if (allowOrigin) {
     response.headers.set('Access-Control-Allow-Origin', allowOrigin)
@@ -29,7 +27,7 @@ function applyCors(request: NextRequest, response: NextResponse): NextResponse {
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization, X-Requested-With'
   )
-  response.headers.set('Access-Control-Allow-Credentials', 'true')
+  response.headers.set('Access-Control-Allow-Credentials', allowOrigin ? 'true' : 'false')
   response.headers.set('Access-Control-Max-Age', '86400')
   return response
 }
@@ -58,7 +56,17 @@ function applySecurity(response: NextResponse): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
-  const isApi = request.nextUrl.pathname.startsWith('/api')
+  const pathname = request.nextUrl.pathname
+  const isApi = pathname.startsWith('/api')
+  const isGeneratedGap = pathname.startsWith('/api/gap-no-') || pathname.startsWith('/dashboard/batch10')
+  const isUngovernedAI = (pathname.startsWith('/api/ai/') && pathname !== '/api/ai/quote-generator')
+    || (pathname.startsWith('/dashboard/ai/') && pathname !== '/dashboard/ai/quote-generator')
+  const isUnsafeLegacyPublicInvoice = /^\/api\/invoices\/[^/]+\/public(?:\/|$)/.test(pathname) || pathname.startsWith('/pay/')
+  if (isGeneratedGap || isUngovernedAI || isUnsafeLegacyPublicInvoice) {
+    const disabled = NextResponse.json({ error: 'This workflow is not enabled for production use.' }, { status: 404 })
+    if (isApi) applyCors(request, disabled)
+    return applySecurity(disabled)
+  }
   if (isApi && request.method === 'OPTIONS') {
     const preflight = new NextResponse(null, { status: 204 })
     applyCors(request, preflight)

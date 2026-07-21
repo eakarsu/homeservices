@@ -68,6 +68,9 @@ tmp/
 coverage/
 .nyc_output/
 htmlcov/
+.auth/
+test-results/
+.playwright-report-runtime/
 
 # --- secrets (auto-added) ---
 .env

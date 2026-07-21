@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -14,7 +14,7 @@ export async function GET(
 
     const invoice = await prisma.invoice.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: {
           companyId: user.companyId,
         },
@@ -63,7 +63,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -75,7 +75,7 @@ export async function PUT(
 
     const existing = await prisma.invoice.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: {
           companyId: user.companyId,
         },
@@ -94,7 +94,7 @@ export async function PUT(
     if (data.terms !== undefined) updateData.terms = data.terms
 
     const invoice = await prisma.invoice.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: updateData,
     })
 
@@ -107,7 +107,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -117,7 +117,7 @@ export async function DELETE(
 
     const existing = await prisma.invoice.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: {
           companyId: user.companyId,
         },
@@ -129,7 +129,7 @@ export async function DELETE(
     }
 
     await prisma.invoice.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     })
 
     return NextResponse.json({ success: true })

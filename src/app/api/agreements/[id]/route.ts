@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -14,7 +14,7 @@ export async function GET(
 
     const agreement = await prisma.serviceAgreement.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId: user.companyId }
       },
       include: {
@@ -45,7 +45,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -58,7 +58,7 @@ export async function PUT(
     // Verify agreement belongs to company
     const existing = await prisma.serviceAgreement.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId: user.companyId }
       }
     })
@@ -68,7 +68,7 @@ export async function PUT(
     }
 
     const agreement = await prisma.serviceAgreement.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         status: data.status,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
@@ -103,7 +103,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -114,7 +114,7 @@ export async function DELETE(
     // Verify agreement belongs to company
     const existing = await prisma.serviceAgreement.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId: user.companyId }
       }
     })
@@ -124,7 +124,7 @@ export async function DELETE(
     }
 
     await prisma.serviceAgreement.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         status: 'CANCELLED',
         cancelledDate: new Date(),

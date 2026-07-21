@@ -3,9 +3,11 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { sendEmail, emailTemplates } from '@/lib/email'
+import { validateRuntimeConfig } from '@/lib/runtime-config'
 
 export async function POST(request: NextRequest) {
   try {
+    validateRuntimeConfig()
     const { email } = await request.json()
 
     if (!email) {
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const verifyUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/verify-email?token=${token}&email=${encodeURIComponent(email)}`
+    const verifyUrl = new URL(`/verify-email?token=${token}&email=${encodeURIComponent(email)}`, process.env.NEXTAUTH_URL).toString()
 
     await sendEmail(
       emailTemplates.emailVerification({

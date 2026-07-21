@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -21,7 +21,7 @@ export async function POST(
     // Verify job belongs to company
     const job = await prisma.job.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
     })
@@ -37,7 +37,7 @@ export async function POST(
     const updatedNotes = job.notes ? `${job.notes}\n\n${newNote}` : newNote
 
     const updatedJob = await prisma.job.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: { notes: updatedNotes },
       select: {
         id: true,
@@ -46,7 +46,7 @@ export async function POST(
     })
 
     return NextResponse.json({
-      id: params.id,
+      id: (await params).id,
       content,
       createdAt: new Date().toISOString(),
       createdBy: {

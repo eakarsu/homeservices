@@ -785,6 +785,7 @@ async function main() {
         status: status as 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED' | 'DECLINED' | 'EXPIRED',
         createdDate,
         expirationDate,
+        retentionUntil: new Date(createdDate.getTime() + 7 * 365 * 24 * 60 * 60 * 1000),
         approvedAt: status === 'APPROVED' ? new Date(createdDate.getTime() + 2 * 24 * 60 * 60 * 1000) : null,
         selectedOption: status === 'APPROVED' ? ['good', 'better', 'best'][i % 3] : null,
         subtotal: bestPrice,

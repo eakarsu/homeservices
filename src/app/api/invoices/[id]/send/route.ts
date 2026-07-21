@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -14,7 +14,7 @@ export async function POST(
 
     const invoice = await prisma.invoice.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId: user.companyId }
       },
       include: {
@@ -36,7 +36,7 @@ export async function POST(
     // For now, just update the status to SENT
 
     const updatedInvoice = await prisma.invoice.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: { status: 'SENT' }
     })
 

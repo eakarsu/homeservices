@@ -15,6 +15,9 @@
 
 import type { Server as HTTPServer } from 'http'
 import { Server as SocketIOServer, type Socket } from 'socket.io'
+import jwt from 'jsonwebtoken'
+import { prisma } from './prisma'
+import { getAuthSigningSecret } from './runtime-config'
 
 // Global singleton so hot-reload doesn't create multiple instances in dev
 declare global {
@@ -28,37 +31,58 @@ export function initIO(httpServer: HTTPServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
     path: '/api/socketio',
     cors: {
-      origin: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+      origin: process.env.NEXTAUTH_URL ? [process.env.NEXTAUTH_URL] : [],
       methods: ['GET', 'POST'],
       credentials: true,
     },
     transports: ['websocket', 'polling'],
   })
 
+  io.use((socket, next) => {
+    try {
+      const token = typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : ''
+      const claims = jwt.verify(token, getAuthSigningSecret(), {
+        algorithms: ['HS256'], issuer: 'servicecrew', audience: 'servicecrew-socket',
+      }) as { sub: string; companyId: string; role: string; technicianId?: string }
+      socket.data.auth = claims
+      next()
+    } catch {
+      next(new Error('Unauthorized'))
+    }
+  })
+
   io.on('connection', (socket: Socket) => {
-    console.log('[Socket.IO] Client connected:', socket.id)
+    const auth = socket.data.auth as { sub: string; companyId: string; role: string; technicianId?: string }
 
     // Client joins a job-specific room for targeted updates
-    socket.on('join:job', (jobId: string) => {
-      socket.join(`job:${jobId}`)
-      console.log(`[Socket.IO] ${socket.id} joined room job:${jobId}`)
+    socket.on('join:job', async (jobId: string) => {
+      if (typeof jobId !== 'string' || jobId.length > 100) return
+      const job = await prisma.job.findFirst({
+        where: {
+          id: jobId, companyId: auth.companyId,
+          ...(auth.role === 'TECHNICIAN' ? { assignments: { some: { technicianId: auth.technicianId || '__none__' } } } : {}),
+        },
+        select: { id: true },
+      })
+      if (job) await socket.join(`job:${job.id}`)
     })
 
     // Client joins a company-wide room (dispatch board)
     socket.on('join:company', (companyId: string) => {
-      socket.join(`company:${companyId}`)
-      console.log(`[Socket.IO] ${socket.id} joined room company:${companyId}`)
+      if (companyId === auth.companyId && auth.role !== 'TECHNICIAN') socket.join(`company:${companyId}`)
     })
 
     // Technician mobile client joins their own room
-    socket.on('join:technician', (technicianId: string) => {
-      socket.join(`technician:${technicianId}`)
-      console.log(`[Socket.IO] ${socket.id} joined room technician:${technicianId}`)
+    socket.on('join:technician', async (technicianId: string) => {
+      if (typeof technicianId !== 'string' || technicianId.length > 100) return
+      if (auth.role === 'TECHNICIAN' && technicianId !== auth.technicianId) return
+      const technician = await prisma.technician.findFirst({
+        where: { id: technicianId, user: { companyId: auth.companyId, isActive: true } }, select: { id: true },
+      })
+      if (technician) await socket.join(`technician:${technician.id}`)
     })
 
-    socket.on('disconnect', () => {
-      console.log('[Socket.IO] Client disconnected:', socket.id)
-    })
+    socket.on('disconnect', () => undefined)
   })
 
   global.__socketio = io

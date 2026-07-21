@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['html', { outputFolder: '.playwright-report-runtime', open: 'never' }]],
 
   // Global setup runs once before all tests to cache the admin auth state.
   // Individual specs that need auth use storageState: '.auth/admin.json'.

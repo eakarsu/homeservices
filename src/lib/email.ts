@@ -1,25 +1,8 @@
-import nodemailer from 'nodemailer'
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-})
-
 interface EmailOptions {
   to: string
   subject: string
   html: string
   text?: string
-  attachments?: {
-    filename: string
-    content: Buffer | string
-    contentType?: string
-  }[]
 }
 
 interface EmailResult {
@@ -29,27 +12,32 @@ interface EmailResult {
 }
 
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-    console.warn('Email credentials not configured')
+  const endpoint = process.env.EMAIL_DELIVERY_URL
+  const token = process.env.EMAIL_DELIVERY_TOKEN
+  const sender = process.env.EMAIL_FROM
+  const allowedHosts = (process.env.EMAIL_DELIVERY_ALLOWED_HOSTS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+  if (!endpoint || !token || !sender || !allowedHosts.length) {
     return { success: false, error: 'Email service not configured' }
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: `"Home Services" <${process.env.SMTP_USER}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      attachments: options.attachments,
+    const url = new URL(endpoint)
+    if (url.protocol !== 'https:' || !allowedHosts.includes(url.hostname.toLowerCase())) {
+      return { success: false, error: 'Email delivery endpoint is not approved' }
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: sender, to: options.to, subject: options.subject, html: options.html, text: options.text }),
+      signal: AbortSignal.timeout(10_000),
     })
-
+    if (!response.ok) return { success: false, error: 'Email provider rejected delivery' }
+    const result = await response.json().catch(() => ({})) as { id?: string; messageId?: string }
     return {
       success: true,
-      messageId: info.messageId,
+      messageId: result.id || result.messageId,
     }
-  } catch (error) {
-    console.error('Email sending error:', error)
+  } catch {
     return {
       success: false,
       error: 'Failed to send email',

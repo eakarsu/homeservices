@@ -5,7 +5,7 @@ import { addYears } from 'date-fns'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -16,7 +16,7 @@ export async function POST(
     // Get current agreement
     const agreement = await prisma.serviceAgreement.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: { companyId: user.companyId }
       },
       include: { plan: true }
@@ -35,7 +35,7 @@ export async function POST(
 
     // Update agreement
     const updatedAgreement = await prisma.serviceAgreement.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         status: 'ACTIVE',
         startDate: newStartDate,

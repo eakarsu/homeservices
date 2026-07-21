@@ -2,9 +2,8 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import AzureADProvider from 'next-auth/providers/azure-ad'
-import { compare, hash } from 'bcryptjs'
+import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
-import { seedDemoDataForCompany } from './seedDemoData'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -72,7 +71,7 @@ export const authOptions: NextAuthOptions = {
           include: { technician: true }
         })
 
-        if (existingUser) {
+        if (existingUser?.isActive && existingUser.emailVerified) {
           // User exists, update the token with their info
           user.id = existingUser.id
           user.role = existingUser.role
@@ -81,56 +80,9 @@ export const authOptions: NextAuthOptions = {
           return true
         }
 
-        // Create new user with company
-        const nameParts = (user.name || '').split(' ')
-        const firstName = nameParts[0] || 'User'
-        const lastName = nameParts.slice(1).join(' ') || ''
-
-        const result = await prisma.$transaction(async (tx) => {
-          // Create company
-          const company = await tx.company.create({
-            data: {
-              name: `${firstName}'s Company`,
-              email: user.email!,
-              phone: '',
-              address: '',
-              city: '',
-              state: '',
-              zip: '',
-            }
-          })
-
-          // Create user with random password (they'll use OAuth)
-          const randomPassword = await hash(Math.random().toString(36), 10)
-          const newUser = await tx.user.create({
-            data: {
-              email: user.email!,
-              password: randomPassword,
-              firstName,
-              lastName,
-              role: 'ADMIN',
-              companyId: company.id,
-              isActive: true,
-            }
-          })
-
-          return { company, user: newUser }
-        })
-
-        // Seed demo data for the new company
-        try {
-          await prisma.$transaction(async (tx) => {
-            await seedDemoDataForCompany(tx, result.company.id, result.user.id)
-          })
-        } catch (error) {
-          console.error('Error seeding demo data:', error)
-        }
-
-        // Update the user object with new user info
-        user.id = result.user.id
-        user.role = result.user.role
-        user.companyId = result.company.id
-        return true
+        // Tenant/role assignment is an administrative provisioning action.
+        // Never create a company or privileged user from an OAuth assertion.
+        return false
       }
 
       return true

@@ -3,9 +3,11 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { sendEmail, emailTemplates } from '@/lib/email'
+import { validateRuntimeConfig } from '@/lib/runtime-config'
 
 export async function POST(request: NextRequest) {
   try {
+    validateRuntimeConfig()
     const { email } = await request.json()
 
     if (!email) {
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`
+    const resetUrl = new URL(`/reset-password?token=${token}&email=${encodeURIComponent(email)}`, process.env.NEXTAUTH_URL).toString()
 
     await sendEmail(
       emailTemplates.passwordReset({

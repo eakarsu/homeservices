@@ -28,15 +28,15 @@ test.describe('Authentication', () => {
     })
 
     test('should display login form', async ({ page }) => {
-      await expect(page.getByRole('heading', { name: /home services ai/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /servicecrew ai/i })).toBeVisible()
       await expect(page.getByPlaceholder('you@example.com')).toBeVisible()
       await expect(page.getByPlaceholder('Enter your password')).toBeVisible()
       await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
     })
 
-    test('should display demo credentials', async ({ page }) => {
-      await expect(page.locator('text=Demo Credentials')).toBeVisible()
-      await expect(page.locator('text=admin@comfortpro.com')).toBeVisible()
+    test('should not expose demo credentials', async ({ page }) => {
+      await expect(page.getByText(/demo credentials/i)).toHaveCount(0)
+      await expect(page.getByText(/password123/i)).toHaveCount(0)
     })
 
     test('should show link to register page', async ({ page }) => {

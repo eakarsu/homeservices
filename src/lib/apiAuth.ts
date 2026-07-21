@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import jwt from 'jsonwebtoken'
+import { prisma } from '@/lib/prisma'
+import { getAuthSigningSecret, validateRuntimeConfig } from '@/lib/runtime-config'
 
 interface AuthUser {
   id: string
@@ -15,15 +17,25 @@ interface AuthUser {
  * Gets authenticated user from either NextAuth session (web) or JWT Bearer token (mobile)
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
+  validateRuntimeConfig()
   // First try NextAuth session (for web users)
   const session = await getServerSession(authOptions)
   if (session?.user) {
+    const currentUser = await prisma.user.findFirst({
+      where: {
+        id: session.user.id,
+        companyId: session.user.companyId,
+        isActive: true,
+      },
+      include: { technician: { select: { id: true } } },
+    })
+    if (!currentUser) return null
     return {
-      id: session.user.id,
-      email: session.user.email!,
-      role: session.user.role,
-      companyId: session.user.companyId,
-      technicianId: session.user.technicianId
+      id: currentUser.id,
+      email: currentUser.email,
+      role: currentUser.role,
+      companyId: currentUser.companyId,
+      technicianId: currentUser.technician?.id,
     }
   }
 
@@ -34,15 +46,20 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
     try {
       const decoded = jwt.verify(
         token,
-        process.env.NEXTAUTH_SECRET || 'fallback-secret'
+        getAuthSigningSecret(),
+        { algorithms: ['HS256'], issuer: 'servicecrew', audience: 'servicecrew-api' }
       ) as { sub: string; email: string; role: string; companyId: string; technicianId?: string }
-
+      const currentUser = await prisma.user.findFirst({
+        where: { id: decoded.sub, companyId: decoded.companyId, isActive: true },
+        include: { technician: { select: { id: true } } },
+      })
+      if (!currentUser) return null
       return {
-        id: decoded.sub,
-        email: decoded.email,
-        role: decoded.role,
-        companyId: decoded.companyId,
-        technicianId: decoded.technicianId
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role,
+        companyId: currentUser.companyId,
+        technicianId: currentUser.technician?.id,
       }
     } catch {
       return null

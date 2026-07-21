@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -14,7 +14,7 @@ export async function GET(
 
     const technician = await prisma.technician.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         user: { companyId: user.companyId }
       },
       include: {
@@ -118,7 +118,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -131,7 +131,7 @@ export async function PUT(
     // Verify technician belongs to company
     const existing = await prisma.technician.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         user: { companyId: user.companyId }
       }
     })
@@ -141,7 +141,7 @@ export async function PUT(
     }
 
     const technician = await prisma.technician.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         employeeId: data.employeeId,
         color: data.color,
@@ -173,7 +173,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -183,7 +183,7 @@ export async function DELETE(
 
     const existing = await prisma.technician.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         user: { companyId: user.companyId }
       }
     })
@@ -193,7 +193,7 @@ export async function DELETE(
     }
 
     await prisma.technician.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     })
 
     return NextResponse.json({ success: true })

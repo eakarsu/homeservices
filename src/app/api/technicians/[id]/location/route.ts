@@ -35,7 +35,7 @@ const GEOFENCE_METRES = 500
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await getAuthUser(request)
@@ -43,7 +43,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: technicianId } = params
+    const { id: technicianId } = await params
 
     // Authorization: technicians can only update their own location
     if (user.role === 'TECHNICIAN' && user.technicianId !== technicianId) {

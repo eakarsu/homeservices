@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { compare } from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { getAuthSigningSecret, validateRuntimeConfig } from '@/lib/runtime-config'
 
 interface MobileLoginRequest {
   email: string
@@ -10,6 +11,7 @@ interface MobileLoginRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    validateRuntimeConfig()
     const body: MobileLoginRequest = await request.json()
     const { email, password } = body
 
@@ -62,8 +64,8 @@ export async function POST(request: NextRequest) {
         technicianId: user.technician?.id,
         companyId: user.companyId,
       },
-      process.env.NEXTAUTH_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
+      getAuthSigningSecret(),
+      { algorithm: 'HS256', issuer: 'servicecrew', audience: 'servicecrew-api', expiresIn: '12h' }
     )
 
     // Return user data and token (matching iOS User model format)

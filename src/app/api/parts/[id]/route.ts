@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -14,7 +14,7 @@ export async function GET(
 
     const part = await prisma.part.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
       include: {
@@ -45,7 +45,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -57,7 +57,7 @@ export async function PUT(
 
     const existing = await prisma.part.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
     })
@@ -67,7 +67,7 @@ export async function PUT(
     }
 
     const part = await prisma.part.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         partNumber: data.partNumber,
         name: data.name,
@@ -93,7 +93,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -103,7 +103,7 @@ export async function DELETE(
 
     const existing = await prisma.part.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
     })
@@ -114,7 +114,7 @@ export async function DELETE(
 
     // Soft delete by setting isActive to false
     await prisma.part.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: { isActive: false },
     })
 

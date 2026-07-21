@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -20,7 +20,7 @@ export async function POST(
 
     const invoice = await prisma.invoice.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         customer: {
           companyId: user.companyId,
         },
@@ -34,7 +34,7 @@ export async function POST(
     // Create payment
     const payment = await prisma.payment.create({
       data: {
-        invoiceId: params.id,
+        invoiceId: (await params).id,
         amount,
         method: method || 'CASH',
         reference,
@@ -49,7 +49,7 @@ export async function POST(
     const newStatus = newBalanceDue <= 0 ? 'PAID' : newPaidAmount > 0 ? 'PARTIAL' : invoice.status
 
     await prisma.invoice.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         paidAmount: newPaidAmount,
         balanceDue: Math.max(0, newBalanceDue),

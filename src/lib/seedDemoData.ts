@@ -419,6 +419,7 @@ export async function seedDemoDataForCompany(
         status: statuses[i] as 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED',
         createdDate,
         expirationDate,
+        retentionUntil: new Date(createdDate.getTime() + 7 * 365 * 24 * 60 * 60 * 1000),
         approvedAt: statuses[i] === 'APPROVED' ? new Date() : null,
         selectedOption: statuses[i] === 'APPROVED' ? 'better' : null,
         subtotal: goodPrice * 1.3,

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { emitJobCompleted } from '@/lib/socket'
+import { canEditJob, canReadJob, isValidJobTransition } from '@/lib/operations-governance'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -15,7 +16,7 @@ export async function GET(
 
     const job = await prisma.job.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
       include: {
@@ -66,6 +67,7 @@ export async function GET(
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
+    if (!canReadJob(user, job)) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
 
     return NextResponse.json(job)
   } catch (error) {
@@ -76,7 +78,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -88,13 +90,23 @@ export async function PUT(
 
     const existing = await prisma.job.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         companyId: user.companyId,
       },
+      include: { assignments: { select: { technicianId: true } } },
     })
 
     if (!existing) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
+    if (!canEditJob(user, existing)) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    if (data.status !== undefined && !isValidJobTransition(existing.status, data.status)) {
+      return NextResponse.json({ error: `Invalid job transition: ${existing.status} to ${data.status}` }, { status: 409 })
+    }
+    if (user.role === 'TECHNICIAN') {
+      const allowedFields = new Set(['status', 'workPerformed', 'customerSignature'])
+      if (Object.keys(data).some(field => !allowedFields.has(field))) return NextResponse.json({ error: 'Technicians may only update assigned job execution fields' }, { status: 403 })
+      if (data.status && !['EN_ROUTE', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED'].includes(data.status)) return NextResponse.json({ error: 'Technician status transition is not allowed' }, { status: 403 })
     }
 
     const updateData: Record<string, unknown> = {}
@@ -108,23 +120,26 @@ export async function PUT(
     if (data.timeWindowStart !== undefined) updateData.timeWindowStart = data.timeWindowStart
     if (data.timeWindowEnd !== undefined) updateData.timeWindowEnd = data.timeWindowEnd
     if (data.estimatedDuration !== undefined) updateData.estimatedDuration = data.estimatedDuration
-    if (data.actualDuration !== undefined) updateData.actualDuration = data.actualDuration
+    if (data.workPerformed !== undefined) updateData.workPerformed = data.workPerformed
+    if (data.customerSignature !== undefined) updateData.customerSignature = data.customerSignature
 
     if (data.status === 'IN_PROGRESS' && existing.status !== 'IN_PROGRESS') {
       updateData.actualStart = new Date()
     }
     if (data.status === 'COMPLETED' && existing.status !== 'COMPLETED') {
+      const workPerformed = data.workPerformed ?? existing.workPerformed
+      const customerSignature = data.customerSignature ?? existing.customerSignature
+      if (typeof workPerformed !== 'string' || workPerformed.trim().length < 10 || typeof customerSignature !== 'string' || customerSignature.length < 20) {
+        return NextResponse.json({ error: 'Completion requires work performed and a customer signature' }, { status: 422 })
+      }
       updateData.completedAt = new Date()
       if (existing.actualStart) {
-        const duration = Math.round(
-          (new Date().getTime() - new Date(existing.actualStart).getTime()) / 60000
-        )
         updateData.actualEnd = new Date()
       }
     }
 
     const job = await prisma.job.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: updateData,
     })
 
@@ -149,7 +164,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
@@ -157,22 +172,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const existing = await prisma.job.findFirst({
-      where: {
-        id: params.id,
-        companyId: user.companyId,
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
-    }
-
-    await prisma.job.delete({
-      where: { id: params.id },
-    })
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ error: 'Operational jobs are retained; cancel the job instead of deleting it' }, { status: 405 })
   } catch (error) {
     console.error('Delete job error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
