@@ -2,6 +2,12 @@ import { PrismaClient, Prisma } from '@prisma/client'
 
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 export async function seedDemoDataForCompany(
   tx: TransactionClient,
   companyId: string,
@@ -99,7 +105,7 @@ export async function seedDemoDataForCompany(
     tx.user.create({
       data: {
         email: `demo.tech1.${companyId.slice(0, 8)}@example.com`,
-        password: 'demo-not-for-login',
+        password: requireDemoPassword(),
         firstName: 'Tom',
         lastName: 'Wilson',
         phone: '(555) 100-0001',
@@ -111,7 +117,7 @@ export async function seedDemoDataForCompany(
     tx.user.create({
       data: {
         email: `demo.tech2.${companyId.slice(0, 8)}@example.com`,
-        password: 'demo-not-for-login',
+        password: requireDemoPassword(),
         firstName: 'Sarah',
         lastName: 'Martinez',
         phone: '(555) 100-0002',
@@ -123,7 +129,7 @@ export async function seedDemoDataForCompany(
     tx.user.create({
       data: {
         email: `demo.tech3.${companyId.slice(0, 8)}@example.com`,
-        password: 'demo-not-for-login',
+        password: requireDemoPassword(),
         firstName: 'Mike',
         lastName: 'Johnson',
         phone: '(555) 100-0003',
