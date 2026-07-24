@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
-project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-app_dir="${RUNTIME_PROJECT_SOURCE:-$project_dir}"
-runtime_port="${PORT:-${BACKEND_PORT:-}}"
-[[ "$runtime_port" =~ ^[0-9]+$ ]] || { echo "PORT or BACKEND_PORT must be an assigned numeric port" >&2; exit 2; }
-if lsof -tiTCP:"$runtime_port" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Assigned port $runtime_port is already in use; no process was stopped" >&2
-  exit 1
-fi
-export PORT="$runtime_port"
-if [[ "${NODE_ENV:-development}" != production ]]; then
-  frontend_port="${FRONTEND_PORT:-${CLIENT_PORT:-}}"
-  [[ "$frontend_port" =~ ^[0-9]+$ ]] || { echo "FRONTEND_PORT or CLIENT_PORT must be an assigned numeric port" >&2; exit 2; }
-  export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-http://127.0.0.1:$frontend_port}"
-  export TEMPLATE_ALLOWED_HOSTS="${TEMPLATE_ALLOWED_HOSTS:-templates.example.test}"
-  export EMAIL_DELIVERY_URL="${EMAIL_DELIVERY_URL:-https://email-provider.example.test/v1/send}"
-  export EMAIL_DELIVERY_ALLOWED_HOSTS="${EMAIL_DELIVERY_ALLOWED_HOSTS:-email-provider.example.test}"
-  export EMAIL_DELIVERY_TOKEN="${EMAIL_DELIVERY_TOKEN:-${SECRET_KEY:-}}"
-fi
-cd "$app_dir"
-if [[ "${NODE_ENV:-development}" == production ]]; then
-  exec npm start -- -H 127.0.0.1 -p "$runtime_port"
-fi
-exec npm run dev -- -H 127.0.0.1 -p "$runtime_port"
+# Runtime governance modes: check|migrate|start. Prisma schema changes remain explicit.
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$PROJECT_DIR/.env"
+load_env_file(){ local line key value;while IFS= read -r line||[ -n "$line" ];do [[ "$line" =~ ^[[:space:]]*# || "$line" =~ ^[[:space:]]*$ ]]&&continue;line="${line#export }";key="${line%%=*}";value="${line#*=}";key="${key//[[:space:]]/}";[[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]||continue;[ -n "${!key+x}" ]&&continue;if [[ "$value" == \"*\" && "$value" == *\" ]];then value="${value:1:${#value}-2}";elif [[ "$value" == \'*\' && "$value" == *\' ]];then value="${value:1:${#value}-2}";fi;export "$key=$value";done < "$ENV_FILE"; }
+[ -f "$ENV_FILE" ]||{ echo "Missing required file: $ENV_FILE" >&2;exit 1; };load_env_file
+export PATH="/opt/homebrew/bin:$PATH"
+case "${1:-start}" in
+  check) cd "$PROJECT_DIR";npm run typecheck ;;
+  migrate) [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]||{ echo "Set ALLOW_SCHEMA_MIGRATION=1 for explicit migration" >&2;exit 1; };cd "$PROJECT_DIR";exec npm run db:push ;;
+  start) ;;
+  *) echo "Usage: $0 [start|check|migrate]" >&2;exit 64 ;;
+esac
+: "${BACKEND_PORT:?BACKEND_PORT is required}";: "${FRONTEND_PORT:?FRONTEND_PORT is required}";: "${DATABASE_URL:?DATABASE_URL is required}"
+: "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required}";: "${OPENROUTER_MODEL:?OPENROUTER_MODEL is required}"
+[ "${OPENROUTER_BASE_URL:-}" = "https://openrouter.ai/api/v1" ]||{ echo "Exact OPENROUTER_BASE_URL is required" >&2;exit 1; }
+[ "$BACKEND_PORT" != "$FRONTEND_PORT" ]||{ echo "Assigned ports must differ" >&2;exit 1; }
+for assigned_port in "$BACKEND_PORT" "$FRONTEND_PORT";do [[ "$assigned_port" =~ ^[0-9]+$ ]]||exit 1;nc -z 127.0.0.1 "$assigned_port" >/dev/null 2>&1&&{ echo "Assigned port $assigned_port is occupied" >&2;exit 1; };done
+[ -d "$PROJECT_DIR/node_modules" ]&&[ -d "$PROJECT_DIR/runtime" ]||{ echo "Runtime dependencies are missing" >&2;exit 1; }
+export RUNTIME_PROJECT_NAME=homeservices RUNTIME_AI_ENDPOINT=/api/ai/home-service-operations-review RUNTIME_AI_FEATURE=home-service-operations-review
+export RUNTIME_AI_SYSTEM_PROMPT='You are a home-services operations assistant. Review scheduling, dispatch, technician, customer, estimate, invoice, inventory, safety, and approval evidence with explicit human decision gates.'
+node "$PROJECT_DIR/runtime/setup.mjs"
+CHILD_PIDS=()
+(cd "$PROJECT_DIR"&&exec node runtime/api.mjs)&CHILD_PIDS+=("$!")
+(cd "$PROJECT_DIR"&&exec npm run dev -- -H 127.0.0.1 -p "$FRONTEND_PORT")&CHILD_PIDS+=("$!")
+cleanup(){ trap - EXIT INT TERM;for pid in "${CHILD_PIDS[@]}";do kill "$pid" 2>/dev/null||true;done;for pid in "${CHILD_PIDS[@]}";do wait "$pid" 2>/dev/null||true;done; }
+trap cleanup EXIT INT TERM
+wait "${CHILD_PIDS[@]}"

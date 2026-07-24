@@ -65,7 +65,7 @@
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
-    "next": "15.5.20",
+    "next": "15.5.21",
     "next-auth": "^4.24.14",
     "openai": "^6.48.0",
     "react": "^18.3.1",
@@ -117,8 +117,9 @@
     "socket.io-parser": "4.2.7",
     "uuid": "$uuid",
     "ws": "8.21.1",
+    "sharp": "0.35.3",
     "next": {
-      "postcss": "8.5.10"
+      "postcss": "8.5.22"
     }
   }
 }
