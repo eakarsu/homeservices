@@ -14,7 +14,25 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
+
+  const fillDemoCredentials = async () => {
+    setError('')
+    setIsDemoLoading(true)
+    try {
+      const response = await fetch('/api/auth/demo-credentials', { cache: 'no-store' })
+      if (!response.ok) throw new Error('Demo credentials are unavailable')
+      const credentials = await response.json() as { email?: string; password?: string }
+      if (!credentials.email || !credentials.password) throw new Error('Demo credentials are unavailable')
+      setEmail(credentials.email)
+      setPassword(credentials.password)
+    } catch {
+      setError('Demo credentials are unavailable')
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -180,19 +198,19 @@ function LoginForm() {
 
         <button
           type="button"
-          onClick={() => { setEmail(process.env.NEXT_PUBLIC_DEMO_EMAIL || ''); setPassword(process.env.NEXT_PUBLIC_DEMO_PASSWORD || ''); }}
-          disabled={!process.env.NEXT_PUBLIC_DEMO_EMAIL || !process.env.NEXT_PUBLIC_DEMO_PASSWORD}
+          onClick={fillDemoCredentials}
+          disabled={isDemoLoading || isLoading}
           aria-label="Auto Fill Demo Credentials"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
-          Auto Fill Demo Credentials
+          {isDemoLoading ? 'Loading Demo Credentials…' : 'Auto Fill Demo Credentials'}
         </button>
         <button
           type="submit"
           disabled={isLoading || isOAuthLoading !== null}
           className="w-full btn-primary py-3 text-lg"
         >
-          {isLoading ? 'Signing in...' : 'Sign in'}
+          {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 

@@ -98,6 +98,14 @@ for assigned_port in "$BACKEND_PORT" "$FRONTEND_PORT";do [[ "$assigned_port" =~ 
 export RUNTIME_PROJECT_NAME=homeservices RUNTIME_AI_ENDPOINT=/api/ai/home-service-operations-review RUNTIME_AI_FEATURE=home-service-operations-review
 export RUNTIME_AI_SYSTEM_PROMPT='You are a home-services operations assistant. Review scheduling, dispatch, technician, customer, estimate, invoice, inventory, safety, and approval evidence with explicit human decision gates.'
 node "$PROJECT_DIR/runtime/setup.mjs"
+if [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]; then
+  app_schema_exists="$(psql "$DATABASE_URL" -Atqc "SELECT to_regclass('public.\"Company\"') IS NOT NULL")"
+  if [ "$app_schema_exists" != t ]; then
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20251203123121_init/migration.sql"
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20260720000000_governed_estimates/migration.sql"
+  fi
+fi
+npm --prefix "$PROJECT_DIR" run create-admin
 CHILD_PIDS=()
 (cd "$PROJECT_DIR"&&exec node runtime/api.mjs)&CHILD_PIDS+=("$!")
 (cd "$PROJECT_DIR"&&exec npm run dev -- -H 127.0.0.1 -p "$FRONTEND_PORT")&CHILD_PIDS+=("$!")

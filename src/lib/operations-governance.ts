@@ -151,13 +151,21 @@ export function validateQuoteDraft(result: unknown, authoritativeSubtotal: numbe
   const blockers: string[] = []
   const quote = result as { options?: Array<Record<string, unknown>> } | null
   if (!quote || !Array.isArray(quote.options) || quote.options.length !== 3) return ['Exactly three quote options are required']
+  if (!Number.isFinite(authoritativeSubtotal) || authoritativeSubtotal < 0) return ['A valid pricebook subtotal is required']
+  const tiers = new Set<string>()
+  const cents = (value: unknown) => (typeof value === 'number' || typeof value === 'string') && /^\d+(?:\.\d{1,2})?$/.test(String(value)) && Number.isSafeInteger(Math.round(Number(value) * 100))
   for (const [index, option] of quote.options.entries()) {
+    if (!option || typeof option !== 'object') { blockers.push(`Option ${index + 1} is missing`); continue }
+    const tier = String(option.tier)
+    if (!['good','better','best'].includes(tier) || tiers.has(tier)) blockers.push('Each quote tier must appear exactly once')
+    tiers.add(tier)
+    if (![option.laborCost, option.partsCost, option.totalCost].every(cents)) blockers.push(`Option ${index + 1} requires explicit amounts with at most two decimals`)
     const labor = Number(option.laborCost)
     const parts = Number(option.partsCost)
     const total = Number(option.totalCost)
     if (![labor, parts, total].every(value => Number.isFinite(value) && value >= 0)) blockers.push(`Option ${index + 1} contains an invalid amount`)
-    if (Math.abs(labor + parts - total) > 0.01) blockers.push(`Option ${index + 1} total does not equal labor plus parts`)
-    if (authoritativeSubtotal > 0 && (total < authoritativeSubtotal * 0.5 || total > authoritativeSubtotal * 2)) {
+    if (Math.round(labor * 100) + Math.round(parts * 100) !== Math.round(total * 100)) blockers.push(`Option ${index + 1} total does not equal labor plus parts`)
+    if (total < authoritativeSubtotal * 0.5 || total > authoritativeSubtotal * 2) {
       blockers.push(`Option ${index + 1} is outside the allowed pricebook variance`)
     }
   }

@@ -38,7 +38,7 @@ test('estimate review enforces property jurisdiction and authoritative template 
 
 test('AI quote validation blocks arithmetic errors and pricebook outliers', () => {
   const option = { laborCost: 40, partsCost: 60, totalCost: 100 }
-  assert.deepEqual(validateQuoteDraft({ options: [option, option, option] }, 100), [])
+  assert.deepEqual(validateQuoteDraft({ options: ['good','better','best'].map(tier => ({...option,tier})) }, 100), [])
   const blockers = validateQuoteDraft({ options: [option, option, { laborCost: 1, partsCost: 1, totalCost: 500 }] }, 100)
   assert.ok(blockers.some(value => value.includes('does not equal')))
   assert.ok(blockers.some(value => value.includes('variance')))

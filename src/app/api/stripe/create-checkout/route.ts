@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/apiAuth'
+import { canManageEstimate } from '@/lib/operations-governance'
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!canManageEstimate(user)) return NextResponse.json({ error: 'Billing role required' }, { status: 403 })
     const body = await request.json()
     const { invoiceId } = body
 
-    if (!invoiceId) {
+    if (typeof invoiceId !== 'string' || !invoiceId.trim()) {
       return NextResponse.json({ error: 'Invoice ID required' }, { status: 400 })
     }
 
     // Get invoice with customer details
-    const invoice = await prisma.invoice.findUnique({
-      where: { id: invoiceId },
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, customer: { companyId: user.companyId } },
       include: {
         customer: true,
         lineItems: true,
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const balanceDue = Number(invoice.balanceDue)
-    if (balanceDue <= 0) {
+    if (!Number.isFinite(balanceDue) || !Number.isSafeInteger(Math.round(balanceDue * 100)) || balanceDue <= 0) {
       return NextResponse.json({ error: 'No balance due' }, { status: 400 })
     }
 
@@ -60,8 +65,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXTAUTH_URL}/pay/${invoice.id}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/pay/${invoice.id}`,
+      success_url: `${process.env.NEXTAUTH_URL}/dashboard/invoices/${invoice.id}?checkout=complete`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/invoices/${invoice.id}`,
     })
 
     return NextResponse.json({ url: session.url })

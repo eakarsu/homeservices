@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!rateLimit.allowed) return NextResponse.json({ error: 'AI rate limit exceeded', retryAfter: Math.ceil(rateLimit.resetIn / 1000) }, { status: 429 })
 
   const body = await request.json()
-  if (typeof body.jobId !== 'string' || !Array.isArray(body.pricebookItemIds) || body.pricebookItemIds.length < 1 || body.pricebookItemIds.length > 20) {
+  if (typeof body.jobId !== 'string' || !Array.isArray(body.pricebookItemIds) || body.pricebookItemIds.length < 1 || body.pricebookItemIds.length > 20 || body.pricebookItemIds.some((id: unknown) => typeof id !== 'string' || !id.trim())) {
     return NextResponse.json({ error: 'jobId and 1-20 authoritative pricebookItemIds are required' }, { status: 422 })
   }
   const job = await prisma.job.findFirst({
