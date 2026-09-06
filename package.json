@@ -48,7 +48,8 @@
     "mobile:dev:android": "npm run cap:run:android",
     "demo-data:verify": "tsx scripts/verify-demo-data.ts",
     "test:operations:isolated": "node scripts/test-operations-isolated.cjs",
-    "test:restore": "node scripts/verify-restore.cjs"
+    "test:restore": "node scripts/verify-restore.cjs",
+    "test:startup": "node scripts/test-port-cleanup.cjs"
   },
   "dependencies": {
     "@capacitor/camera": "^7.0.2",

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import LogoutButton from '@/components/LogoutButton'
 import Link from 'next/link'
 import { WrenchScrewdriverIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 
@@ -10,6 +12,7 @@ interface PublicHeaderProps {
 
 export default function PublicHeader({ variant = 'default' }: PublicHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session } = useSession()
 
   const navLinks = [
     { name: 'Features', href: '/#features' },
@@ -51,12 +54,12 @@ export default function PublicHeader({ variant = 'default' }: PublicHeaderProps)
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/login" className="text-gray-700 hover:text-gray-900 font-medium">
-              Sign In
+            <Link href={session ? '/dashboard' : '/login'} className="text-gray-700 hover:text-gray-900 font-medium">
+              {session ? 'Dashboard' : 'Log In'}
             </Link>
-            <Link href="/register" className="btn-primary">
+            {session ? <LogoutButton /> : <Link href="/register" className="btn-primary">
               Start Free Trial
-            </Link>
+            </Link>}
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,19 +92,19 @@ export default function PublicHeader({ variant = 'default' }: PublicHeaderProps)
               ))}
               <hr className="border-gray-200" />
               <Link
-                href="/login"
+                href={session ? '/dashboard' : '/login'}
                 className="text-gray-700 hover:text-gray-900 font-medium py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Sign In
+                {session ? 'Dashboard' : 'Log In'}
               </Link>
-              <Link
+              {session ? <LogoutButton /> : <Link
                 href="/register"
                 className="btn-primary text-center py-3"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Start Free Trial
-              </Link>
+              </Link>}
             </div>
           </div>
         )}

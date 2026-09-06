@@ -115,3 +115,9 @@ Validation: **26 tests passed** (14 unit checks and 12 PostgreSQL integration sc
 Migration `20260906050000_software_billing` was applied after private backup `~/.codex/backups/homeservices/before-software-billing-1788724195046.dump`. Startup now checks for the software billing schema. Remaining major scope includes accounting synchronization, service-agreement recurring billing, real message/payment/map adapters and acceptance, consented fleet tracking, offline/native/device workflows, full role/legacy-route acceptance and the release checklist.
 
 A fresh full restore rehearsal after the latest schema changes passed: 55 public tables, 176 constraints, zero invalid indexes, and successful reads of every restored table. Temporary restore databases were removed; private verified archives remain under this project's backup directory.
+
+### September 6 — local startup and autofill follow-up
+
+`start.sh` releases existing listeners owned by this project before migrations or builds, including the prior server process tree. It validates all port owners first and preserves unrelated applications. `npm run test:startup` passed for this project; a real repeated HomeServices startup also released both occupied ports and restarted successfully. Local autofill and authenticated browser login were verified across all five apps without changing account passwords. Local `.env` opt-ins and credentials remain untracked.
+
+The dashboard has a persistent top-right **Log Out** button and **View website** link. The public landing page renders for both signed-in and signed-out visitors. Desktop/mobile browser checks confirmed autofill, login, landing-page navigation, logout, session removal and protected API denial after logout.

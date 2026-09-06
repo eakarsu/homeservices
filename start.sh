@@ -93,7 +93,7 @@ esac
 # AI is optional; non-AI workflows can start without provider credentials.
 [ -z "${OPENROUTER_BASE_URL:-}" ] || [ "${OPENROUTER_BASE_URL:-}" = "https://openrouter.ai/api/v1" ]||{ echo "Exact OPENROUTER_BASE_URL is required" >&2;exit 1; }
 [ "$BACKEND_PORT" != "$FRONTEND_PORT" ]||{ echo "Assigned ports must differ" >&2;exit 1; }
-for assigned_port in "$BACKEND_PORT" "$FRONTEND_PORT";do [[ "$assigned_port" =~ ^[0-9]+$ ]]||exit 1;nc -z 127.0.0.1 "$assigned_port" >/dev/null 2>&1&&{ echo "Assigned port $assigned_port is occupied" >&2;exit 1; };done
+node "$PROJECT_DIR/scripts/clear-project-ports.cjs" "$BACKEND_PORT" "$FRONTEND_PORT"
 [ -d "$PROJECT_DIR/node_modules" ]&&[ -d "$PROJECT_DIR/runtime" ]||{ echo "Runtime dependencies are missing" >&2;exit 1; }
 export RUNTIME_PROJECT_NAME=homeservices RUNTIME_AI_ENDPOINT=/api/ai/home-service-operations-review RUNTIME_AI_FEATURE=home-service-operations-review
 export RUNTIME_AI_SYSTEM_PROMPT='You are a home-services operations assistant. Review scheduling, dispatch, technician, customer, estimate, invoice, inventory, safety, and approval evidence with explicit human decision gates.'

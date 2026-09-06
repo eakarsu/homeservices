@@ -17,7 +17,17 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isDemoLoading, setIsDemoLoading] = useState(false)
+  const [demoEnabled, setDemoEnabled] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch('/api/auth/demo-credentials?status=1', { cache: 'no-store', signal: controller.signal })
+      .then(async response => response.ok ? response.json() : { enabled: false })
+      .then(result => setDemoEnabled(result.enabled === true))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
 
   const fillDemoCredentials = async () => {
     setError('')
@@ -25,8 +35,11 @@ function LoginForm() {
     try {
       const response = await fetch('/api/auth/demo-credentials', { cache: 'no-store' })
       if (!response.ok) throw new Error('Demo credentials are unavailable')
-      const credentials = await response.json() as { email?: string; password?: string }
-      if (!credentials.email || !credentials.password) throw new Error('Demo credentials are unavailable')
+      const credentials = await response.json() as { enabled?: boolean; email?: string; password?: string }
+      if (!credentials.enabled || !credentials.email || !credentials.password) {
+        setDemoEnabled(false)
+        throw new Error('Demo credentials are unavailable')
+      }
       setEmail(credentials.email)
       setPassword(credentials.password)
     } catch {
@@ -198,7 +211,7 @@ function LoginForm() {
           />
         </div>
 
-        <button
+        {demoEnabled && <button
           type="button"
           onClick={fillDemoCredentials}
           disabled={!ready || isDemoLoading || isLoading}
@@ -206,7 +219,7 @@ function LoginForm() {
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
           {isDemoLoading ? 'Loading Demo Credentials…' : 'Auto Fill Demo Credentials'}
-        </button>
+        </button>}
         <button
           type="submit"
           disabled={!ready || isLoading || isOAuthLoading !== null}

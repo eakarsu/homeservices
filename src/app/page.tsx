@@ -1,9 +1,4 @@
-'use client'
-
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import {
   WrenchScrewdriverIcon,
   BoltIcon,
@@ -20,28 +15,6 @@ import PublicHeader from '@/components/layout/PublicHeader'
 import PublicFooter from '@/components/layout/PublicFooter'
 
 export default function LandingPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-
-  // Redirect to dashboard if already logged in
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push('/dashboard')
-    }
-  }, [status, router])
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  if (status === 'authenticated') {
-    return null // Will redirect
-  }
-
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}

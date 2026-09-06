@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
+import LogoutButton from '@/components/LogoutButton'
+import Link from 'next/link'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -35,6 +37,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen">
       <Sidebar />
       <main className="lg:pl-64">
+        <header aria-label="Account controls" className="sticky top-0 z-30 flex items-center justify-end gap-4 border-b border-gray-200 bg-white px-6 py-3">
+          <Link href="/" className="text-sm font-medium text-gray-700 hover:text-primary-600">View website</Link>
+          <LogoutButton />
+        </header>
         <div className="p-6 lg:p-8">
           {children}
         </div>
