@@ -19,9 +19,9 @@ export async function appendAuditEvent(
   const previous = await tx.auditEvent.findFirst({
     where: { companyId: input.companyId },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    select: { eventHash: true },
+    select: { eventHash: true, createdAt: true },
   })
-  const createdAt = new Date()
+  const createdAt = new Date(Math.max(Date.now(), (previous?.createdAt.getTime() || 0) + 1))
   const previousHash = previous?.eventHash || null
   const eventHash = calculateAuditHash({
     companyId: input.companyId,

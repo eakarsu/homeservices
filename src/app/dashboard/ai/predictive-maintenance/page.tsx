@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation } from '@tanstack/react-query'
@@ -273,9 +274,7 @@ export default function PredictiveMaintenancePage() {
   const { data: equipment = [], isLoading: loadingEquipment } = useQuery<Equipment[]>({
     queryKey: ['equipment-list'],
     queryFn: async () => {
-      const res = await fetch('/api/equipment?includeCustomer=true')
-      if (!res.ok) throw new Error('Failed to fetch equipment')
-      return res.json()
+      return fetchCollection('/api/equipment?includeCustomer=true')
     },
     enabled: !sampleMode
   })

@@ -30,7 +30,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading, isError, refetch } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const res = await fetch('/api/dashboard/stats')
@@ -39,7 +39,7 @@ export default function DashboardPage() {
     },
   })
 
-  const { data: recentJobs } = useQuery({
+  const { data: recentJobs, isLoading: jobsLoading, isError: jobsError, refetch: refetchJobs } = useQuery({
     queryKey: ['recent-jobs'],
     queryFn: async () => {
       const res = await fetch('/api/jobs?limit=5&sort=createdAt:desc')
@@ -56,6 +56,19 @@ export default function DashboardPage() {
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="skeleton h-32" />
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || !stats) {
+    return (
+      <div className="space-y-6">
+        <h1 className="page-title">Dashboard</h1>
+        <div role="alert" className="card border-red-200 space-y-3">
+          <h2 className="section-title">Dashboard data could not be loaded</h2>
+          <p className="text-gray-600">Your totals are unavailable. Retry to load the latest figures.</p>
+          <button type="button" className="btn-primary" onClick={() => void refetch()}>Retry dashboard</button>
         </div>
       </div>
     )
@@ -150,9 +163,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue Section */}
+      <p className="text-sm text-gray-500">Verified receipts less settled refunds, in the company timezone. Credits and unverified legacy payments are excluded.</p>
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="section-title mb-0">Revenue Overview</h2>
+          <h2 className="section-title mb-0">Net receipts</h2>
           <ArrowTrendingUpIcon className="w-5 h-5 text-green-600" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -178,7 +192,14 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentJobs?.data?.length ? (
+            {jobsLoading ? (
+              <p className="text-gray-500 py-4" role="status">Loading recent jobs…</p>
+            ) : jobsError ? (
+              <div role="alert" className="space-y-2 py-4">
+                <p className="text-red-700">Recent jobs could not be loaded.</p>
+                <button type="button" className="btn-secondary" onClick={() => void refetchJobs()}>Retry recent jobs</button>
+              </div>
+            ) : recentJobs?.data?.length ? (
               recentJobs.data.map((job: {
                 id: string
                 jobNumber: string

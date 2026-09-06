@@ -1,3 +1,4 @@
+import {dayBounds,zonedMidnight} from '@/lib/workflows/calendar'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 
@@ -10,16 +11,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-
-    const weekStart = new Date(today)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+    if(user.role==='TECHNICIAN')return NextResponse.json({error:'Office dashboard access required'},{status:403})
+    const company=await prisma.company.findUniqueOrThrow({where:{id:user.companyId},select:{timezone:true}}), bounds=dayBounds(new Date(),company.timezone),today=bounds.start,tomorrow=bounds.end
+    const weekDate=new Date(bounds.date+'T12:00:00Z');weekDate.setUTCDate(weekDate.getUTCDate()-weekDate.getUTCDay());const weekStart=zonedMidnight(weekDate.toISOString().slice(0,10),company.timezone),monthStart=zonedMidnight(bounds.date.slice(0,8)+'01',company.timezone)
 
     // Get job stats
     const [todayJobs, pendingJobs, completedToday] = await Promise.all([
@@ -50,37 +44,12 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    // Get revenue from invoices
-    const [todayInvoices, weekInvoices, monthInvoices] = await Promise.all([
-      prisma.invoice.aggregate({
-        where: {
-          status: 'PAID',
-          paidDate: {
-            gte: today,
-            lt: tomorrow,
-          },
-        },
-        _sum: { totalAmount: true },
-      }),
-      prisma.invoice.aggregate({
-        where: {
-          status: 'PAID',
-          paidDate: {
-            gte: weekStart,
-          },
-        },
-        _sum: { totalAmount: true },
-      }),
-      prisma.invoice.aggregate({
-        where: {
-          status: 'PAID',
-          paidDate: {
-            gte: monthStart,
-          },
-        },
-        _sum: { totalAmount: true },
-      }),
-    ])
+    // Cash receipts less settled refunds; credits and legacy unverified rows are excluded.
+    const netReceipts=async(start:Date)=>{const [payments,refunds]=await Promise.all([
+      prisma.payment.aggregate({where:{invoice:{customer:{companyId:user.companyId}},verifiedAt:{gte:start,lt:tomorrow}},_sum:{amount:true}}),
+      prisma.paymentRefund.aggregate({where:{companyId:user.companyId,status:'SUCCEEDED',settledAt:{gte:start,lt:tomorrow}},_sum:{amountCents:true}})
+    ]);return (Math.round(Number(payments._sum.amount||0)*100)-(refunds._sum.amountCents||0))/100}
+    const [todayRevenue,weekRevenue,monthRevenue]=await Promise.all([netReceipts(today),netReceipts(weekStart),netReceipts(monthStart)])
 
     // Get technician availability
     const techniciansAvailable = await prisma.technician.count({
@@ -135,9 +104,9 @@ export async function GET(request: NextRequest) {
       pendingJobs,
       completedToday,
       revenue: {
-        today: Number(todayInvoices._sum.totalAmount) || 0,
-        week: Number(weekInvoices._sum.totalAmount) || 0,
-        month: Number(monthInvoices._sum.totalAmount) || 0,
+        today: todayRevenue,
+        week: weekRevenue,
+        month: monthRevenue,
       },
       techniciansAvailable,
       openEstimates,

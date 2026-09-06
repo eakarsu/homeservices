@@ -1,3 +1,5 @@
+import {handle,bodyFor} from '@/lib/workflows/core'
+import {savePart} from '@/lib/workflows/stock'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from "@/lib/apiAuth"
 import { prisma } from '@/lib/prisma'
@@ -43,84 +45,5 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const data = await request.json()
-
-    const existing = await prisma.part.findFirst({
-      where: {
-        id: (await params).id,
-        companyId: user.companyId,
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
-    }
-
-    const part = await prisma.part.update({
-      where: { id: (await params).id },
-      data: {
-        partNumber: data.partNumber,
-        name: data.name,
-        description: data.description,
-        category: data.category,
-        manufacturer: data.manufacturer,
-        cost: data.cost,
-        price: data.price,
-        quantityOnHand: data.quantityOnHand,
-        reorderLevel: data.reorderLevel,
-        reorderQty: data.reorderQty,
-        warehouseLocation: data.warehouseLocation,
-        isActive: data.isActive ?? true,
-      },
-    })
-
-    return NextResponse.json(part)
-  } catch (error) {
-    console.error('Update part error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const existing = await prisma.part.findFirst({
-      where: {
-        id: (await params).id,
-        companyId: user.companyId,
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
-    }
-
-    // Soft delete by setting isActive to false
-    await prisma.part.update({
-      where: { id: (await params).id },
-      data: { isActive: false },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete part error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+export const PUT=(request:NextRequest,context:{params:Promise<{id:string}>})=>handle(request,async user=>savePart(user,await bodyFor(request),(await context.params).id))
+export const DELETE=(request:NextRequest,context:{params:Promise<{id:string}>})=>handle(request,async user=>savePart(user,{isActive:false},(await context.params).id))

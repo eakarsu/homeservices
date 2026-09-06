@@ -1,3 +1,4 @@
+import {zonedMidnight} from '@/lib/workflows/calendar'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
     })
 
     // Build where clause - if user is technician, show their jobs; otherwise show all company jobs
-    const whereClause: Record<string, unknown> = {}
+    const whereClause: Record<string, unknown> = {companyId:user.companyId}
+    if(user.role==='TECHNICIAN'&&!technician)return NextResponse.json({error:'Technician profile required'},{status:403})
 
     if (technician) {
       // Technician: show only their assigned jobs
@@ -31,14 +33,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (dateStr) {
-      const date = new Date(dateStr)
-      const startOfDay = new Date(date)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(date)
-      endOfDay.setHours(23, 59, 59, 999)
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)||!Number.isFinite(Date.parse(dateStr))||new Date(dateStr).toISOString().slice(0,10)!==dateStr)return NextResponse.json({error:'Invalid date'},{status:400})
+      const company=await prisma.company.findUniqueOrThrow({where:{id:user.companyId},select:{timezone:true}}),startOfDay=zonedMidnight(dateStr,company.timezone),next=new Date(dateStr+'T12:00:00Z');next.setUTCDate(next.getUTCDate()+1);const endOfDay=zonedMidnight(next.toISOString().slice(0,10),company.timezone)
       whereClause.scheduledStart = {
         gte: startOfDay,
-        lte: endOfDay
+        lt: endOfDay
       }
     }
 

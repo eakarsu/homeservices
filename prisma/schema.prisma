@@ -42,6 +42,7 @@ model Company {
   serviceTypes   ServiceType[]
   agreementPlans AgreementPlan[]
   auditEvents    AuditEvent[]
+  followUps      FollowUpTask[]
 }
 
 model User {
@@ -76,6 +77,7 @@ model User {
   createdJobs       Job[]             @relation("CreatedByUser")
   auditEvents       AuditEvent[]
   estimateVersions  EstimateVersion[]
+  assignedFollowUps FollowUpTask[]
   reviewedEstimates Estimate[]        @relation("EstimateReviewedBy")
 }
 
@@ -105,6 +107,7 @@ model Technician {
   status             TechStatus @default(AVAILABLE)
   currentLat         Decimal?   @db.Decimal(10, 7)
   currentLng         Decimal?   @db.Decimal(10, 7)
+  locationConsentAt  DateTime?
   lastLocationUpdate DateTime?
 
   createdAt DateTime @default(now())
@@ -203,6 +206,7 @@ model Customer {
   invoices       Invoice[]
   agreements     ServiceAgreement[]
   communications Communication[]
+  followUps      FollowUpTask[]
 }
 
 enum CustomerType {
@@ -402,6 +406,7 @@ model Job {
   estimates      Estimate[]
   invoices       Invoice[]
   auditEvents    AuditEvent[]
+  followUps      FollowUpTask[]
 }
 
 enum JobStatus {
@@ -467,11 +472,16 @@ model JobAssignment {
 }
 
 model TimeEntry {
-  id        String        @id @default(cuid())
-  type      TimeEntryType @default(WORK)
-  startTime DateTime
-  endTime   DateTime?
-  duration  Int? // minutes
+  approvalStatus String        @default("DRAFT")
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  version        Int           @default(1)
+  id             String        @id @default(cuid())
+  type           TimeEntryType @default(WORK)
+  startTime      DateTime
+  endTime        DateTime?
+  duration       Int? // minutes
 
   notes String?
 
@@ -491,6 +501,10 @@ enum TimeEntryType {
 }
 
 model JobPhoto {
+  bytes Bytes?
+  mediaType String?
+  contentHash String?
+  actorId String?
   id       String    @id @default(cuid())
   type     PhotoType @default(DURING)
   filePath String
@@ -628,6 +642,11 @@ model EstimateLineItem {
 // ============ INVOICES ============
 
 model Invoice {
+  version Int @default(1)
+  reviewedAt DateTime?
+  reviewedById String?
+  creditCents Int @default(0)
+  currency String @default("USD")
   id            String        @id @default(cuid())
   invoiceNumber String        @unique
   status        InvoiceStatus @default(DRAFT)
@@ -660,6 +679,7 @@ model Invoice {
 }
 
 enum InvoiceStatus {
+  ISSUED
   DRAFT
   SENT
   VIEWED
@@ -683,6 +703,9 @@ model InvoiceLineItem {
 }
 
 model Payment {
+  verifiedAt DateTime?
+  actorId String?
+  source String?
   id        String        @id @default(cuid())
   amount    Decimal       @db.Decimal(10, 2)
   method    PaymentMethod
@@ -809,9 +832,14 @@ model TruckStock {
 }
 
 model PurchaseOrder {
-  id            String   @id @default(cuid())
-  poNumber      String   @unique
-  status        POStatus @default(DRAFT)
+  companyId     String?
+  vendorId      String?
+  approvedById  String?
+  approvedAt    DateTime?
+  version       Int       @default(1)
+  id            String    @id @default(cuid())
+  poNumber      String    @unique
+  status        POStatus  @default(DRAFT)
   vendorName    String
   vendorContact String?
 
@@ -958,18 +986,25 @@ enum CommunicationType {
 // Persists every AI call (input/output JSONB) for audit, analytics, and
 // retraining. Indexed by feature + user + company for ops reporting.
 model AIResult {
-  id           String  @id @default(cuid())
-  feature      String // diagnostics, optimize-dispatch, optimize-route, etc.
-  model        String // anthropic/claude-3-5-sonnet-20241022
-  userId       String?
-  companyId    String?
-  jobId        String?
-  customerId   String?
-  input        Json // sanitised inputs
-  output       Json // parsed model output
-  durationMs   Int?
-  success      Boolean @default(true)
-  errorMessage String?
+  promptTokens     Int?
+  completionTokens Int?
+  costUsd          Decimal?  @db.Decimal(12, 6)
+  providerReceipt  String?
+  reviewedText     String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  id               String    @id @default(cuid())
+  feature          String // diagnostics, optimize-dispatch, optimize-route, etc.
+  model            String // anthropic/claude-3-5-sonnet-20241022
+  userId           String?
+  companyId        String?
+  jobId            String?
+  customerId       String?
+  input            Json // sanitised inputs
+  output           Json // parsed model output
+  durationMs       Int?
+  success          Boolean   @default(true)
+  errorMessage     String?
 
   createdAt DateTime @default(now())
 
@@ -1020,4 +1055,319 @@ model AuditEvent {
   @@index([entityType, entityId, createdAt])
   @@index([jobId, createdAt])
   @@index([estimateId, createdAt])
+}
+
+// Internal follow-up work. Customer messages are drafts, never delivery receipts.
+model FollowUpTask {
+  id           String    @id @default(cuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id])
+  customerId   String
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  jobId        String?
+  job          Job?      @relation(fields: [jobId], references: [id])
+  assigneeId   String?
+  assignee     User?     @relation(fields: [assigneeId], references: [id])
+  title        String
+  notes        String    @default("")
+  messageDraft String    @default("")
+  checklist    Json      @default("[]")
+  dueAt        DateTime
+  status       String    @default("OPEN")
+  completedAt  DateTime?
+  aiResultId   String?
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([companyId, status, dueAt])
+  @@index([customerId])
+  @@index([jobId])
+}
+
+// Typed office workflows: payload validation and transitions live in workflows/catalog.ts.
+model WorkflowRecord {
+  id          String   @id @default(cuid())
+  companyId   String
+  module      String
+  title       String
+  status      String   @default("DRAFT")
+  customerId  String?
+  jobId       String?
+  data        Json
+  version     Int      @default(1)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, module, status])
+}
+
+model BookingRequest {
+  id            String   @id @default(cuid())
+  companyId     String
+  customerId    String
+  propertyId    String?
+  serviceTypeId String
+  technicianId  String?
+  jobId         String?  @unique
+  title         String
+  notes         String?
+  startAt       DateTime
+  endAt         DateTime
+  status        String   @default("REQUESTED")
+  version       Int      @default(1)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId, status, startAt])
+}
+
+model JobChecklist {
+  id          String   @id @default(cuid())
+  jobId       String   @unique
+  companyId   String
+  items       Json
+  version     Int      @default(1)
+  updatedById String
+  updatedAt   DateTime @updatedAt
+}
+
+model StockMovement {
+  id         String   @id @default(cuid())
+  companyId  String
+  partId     String
+  quantity   Int
+  kind       String
+  sourceId   String
+  requestKey String
+  actorId    String
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, requestKey])
+  @@index([companyId, partId, createdAt])
+}
+
+model Delivery {
+  contactAuthorized Boolean @default(false)
+  recipient String?
+  id           String    @id @default(cuid())
+  companyId    String
+  customerId   String
+  jobId        String?
+  channel      String
+  subject      String?
+  body         String
+  status       String    @default("DRAFT")
+  scheduledAt  DateTime
+  approvedById String?
+  approvedAt   DateTime?
+  providerId   String?
+  attempts     Int       @default(0)
+  lastError    String?
+  requestKey   String
+  version      Int       @default(1)
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([companyId, requestKey])
+  @@index([companyId, status, scheduledAt])
+}
+
+model PortalGrant {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([companyId, customerId])
+}
+
+model CustomerReview {
+  id         String   @id @default(cuid())
+  companyId  String
+  customerId String
+  jobId      String   @unique
+  rating     Int
+  comment    String
+  createdAt  DateTime @default(now())
+
+  @@index([companyId, createdAt])
+}
+
+model IntegrationConnection {
+  id              String   @id @default(cuid())
+  companyId       String
+  provider        String
+  config          Json
+  encryptedSecret String
+  enabled         Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, provider])
+}
+
+model IntegrationRun {
+  id          String   @id @default(cuid())
+  companyId   String
+  provider    String
+  action      String
+  status      String
+  requestKey  String
+  input       Json
+  output      Json
+  attempts    Int      @default(0)
+  lastError   String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, requestKey])
+  @@index([companyId, provider, createdAt])
+}
+
+model ProviderEvent {
+  id         String   @id @default(cuid())
+  provider   String
+  externalId String
+  companyId  String?
+  status     String
+  payload    Json
+  lastError  String?
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provider, externalId])
+}
+
+model PaymentCheckout {
+  invoiceVersion Int @default(1)
+  id              String   @id @default(cuid())
+  companyId       String
+  invoiceId       String
+  sessionId       String?  @unique
+  paymentIntentId String?  @unique
+  amountCents     Int
+  status          String   @default("PENDING")
+  requestKey      String
+  createdAt       DateTime @default(now())
+
+  @@unique([companyId, requestKey])
+}
+
+model PaymentRefund {
+  @@index([companyId, settledAt])
+  settledAt DateTime?
+  creditInvoice Boolean @default(false)
+  kind String @default("STRIPE")
+  id          String   @id @default(cuid())
+  companyId   String
+  invoiceId   String
+  paymentId   String
+  amountCents Int
+  reason      String
+  providerId  String?  @unique
+  status      String   @default("PENDING")
+  requestKey  String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([companyId, requestKey])
+}
+
+model WorkflowMutation {
+  id String @id
+  companyId String
+  actorId String
+  action String
+  inputHash String
+  response Json
+  createdAt DateTime @default(now())
+  @@index([companyId, createdAt])
+}
+model TechnicianTimeOff {
+  id String @id @default(cuid())
+  companyId String
+  technicianId String
+  startAt DateTime
+  endAt DateTime
+  reason String
+  createdById String
+  createdAt DateTime @default(now())
+  @@index([technicianId, startAt])
+}
+
+model AssistantRequest {
+  id String @id
+  companyId String
+  userId String
+  feature String
+  model String
+  inputHash String
+  state String @default("PROCESSING")
+  budgetMicros Int
+  actualMicros Int?
+  resultId String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([companyId, createdAt])
+}
+
+model InvoiceCredit {
+  id String @id @default(cuid())
+  companyId String
+  invoiceId String
+  amountCents Int
+  reason String
+  actorId String
+  createdAt DateTime @default(now())
+  @@index([invoiceId, createdAt])
+}
+
+model SoftwareSubscription {
+  companyId String @id
+  customerId String? @unique
+  subscriptionId String? @unique
+  planKey String?
+  priceId String?
+  status String @default("UNSUBSCRIBED")
+  paidThrough DateTime?
+  periodStart DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+  checkedAt DateTime?
+  updatedAt DateTime @updatedAt
+}
+
+model SoftwareBillingAttempt {
+  id String @id @default(cuid())
+  companyId String
+  actorId String
+  requestKey String
+  planKey String
+  priceId String
+  amountCents Int
+  interval String
+  status String @default("PENDING")
+  sessionId String? @unique
+  customerId String?
+  customerName String
+  params Json?
+  error String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([companyId, requestKey])
+  @@index([companyId, status])
+}
+
+model SoftwareBillingEvent {
+  id String @id
+  payloadHash String
+  createdAt DateTime @default(now())
 }

@@ -346,7 +346,7 @@ export default function PartDetailPage() {
                   <label className="label">Quantity On Hand</label>
                   <input
                     type="number"
-                    value={formData.quantityOnHand || 0}
+                    disabled value={formData.quantityOnHand || 0}
                     onChange={(e) => setFormData({ ...formData, quantityOnHand: parseInt(e.target.value) || 0 })}
                     className="input"
                     min="0"

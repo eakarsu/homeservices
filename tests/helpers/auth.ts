@@ -1,6 +1,7 @@
 import { Page, expect } from '@playwright/test'
+import { TEST_CREDENTIALS } from './testData'
 
-export async function login(page: Page, email = 'admin@comfortpro.com', password = 'password123') {
+export async function login(page: Page, email = TEST_CREDENTIALS.admin.email, password = TEST_CREDENTIALS.admin.password) {
   await page.goto('/login')
   await page.waitForLoadState('networkidle')
 

@@ -16,12 +16,13 @@ export const AI_MODEL =
 const _store = new Map<string, { count: number; resetAt: number }>()
 
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const cleanup = setInterval(() => {
     const now = Date.now()
     _store.forEach((v, k) => {
       if (v.resetAt < now) _store.delete(k)
     })
   }, 5 * 60 * 1000)
+  cleanup.unref?.()
 }
 
 export function aiRateLimiter(userId: string): {

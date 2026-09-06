@@ -51,7 +51,7 @@ elif [ -n "${DEFAULT_EMAIL:-}" ] && [ -n "${DEFAULT_PASSWORD:-}" ]; then
   demo_credentials_email="$DEFAULT_EMAIL"
   demo_credentials_password="$DEFAULT_PASSWORD"
 fi
-if [ "${NODE_ENV:-development}" != production ] && [ "${ENABLE_DEMO_CREDENTIAL_AUTOFILL:-true}" = true ] && [ -n "$demo_credentials_email" ] && [ -n "$demo_credentials_password" ]; then
+if [ "${NODE_ENV:-development}" != production ] && [ "${ENABLE_DEMO_CREDENTIAL_AUTOFILL:-false}" = true ] && [ -n "$demo_credentials_email" ] && [ -n "$demo_credentials_password" ]; then
   export NEXT_PUBLIC_ENABLE_DEMO_CREDENTIAL_AUTOFILL=true
   export NEXT_PUBLIC_DEMO_EMAIL="$demo_credentials_email"
   export NEXT_PUBLIC_DEMO_PASSWORD="$demo_credentials_password"
@@ -84,28 +84,68 @@ load_env_file(){ local line key value;while IFS= read -r line||[ -n "$line" ];do
 [ -f "$ENV_FILE" ]||{ echo "Missing required file: $ENV_FILE" >&2;exit 1; };load_env_file
 export PATH="/opt/homebrew/bin:$PATH"
 case "${1:-start}" in
-  check) cd "$PROJECT_DIR";npm run typecheck ;;
-  migrate) [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]||{ echo "Set ALLOW_SCHEMA_MIGRATION=1 for explicit migration" >&2;exit 1; };cd "$PROJECT_DIR";exec npm run db:push ;;
+  check) cd "$PROJECT_DIR";exec npm run typecheck ;;
+  migrate) [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]||{ echo "Set ALLOW_SCHEMA_MIGRATION=1 for explicit migration" >&2;exit 1; };cd "$PROJECT_DIR";exec node runtime/migrate.mjs ;;
   start) ;;
   *) echo "Usage: $0 [start|check|migrate]" >&2;exit 64 ;;
 esac
 : "${BACKEND_PORT:?BACKEND_PORT is required}";: "${FRONTEND_PORT:?FRONTEND_PORT is required}";: "${DATABASE_URL:?DATABASE_URL is required}"
-: "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required}";: "${OPENROUTER_MODEL:?OPENROUTER_MODEL is required}"
-[ "${OPENROUTER_BASE_URL:-}" = "https://openrouter.ai/api/v1" ]||{ echo "Exact OPENROUTER_BASE_URL is required" >&2;exit 1; }
+# AI is optional; non-AI workflows can start without provider credentials.
+[ -z "${OPENROUTER_BASE_URL:-}" ] || [ "${OPENROUTER_BASE_URL:-}" = "https://openrouter.ai/api/v1" ]||{ echo "Exact OPENROUTER_BASE_URL is required" >&2;exit 1; }
 [ "$BACKEND_PORT" != "$FRONTEND_PORT" ]||{ echo "Assigned ports must differ" >&2;exit 1; }
 for assigned_port in "$BACKEND_PORT" "$FRONTEND_PORT";do [[ "$assigned_port" =~ ^[0-9]+$ ]]||exit 1;nc -z 127.0.0.1 "$assigned_port" >/dev/null 2>&1&&{ echo "Assigned port $assigned_port is occupied" >&2;exit 1; };done
 [ -d "$PROJECT_DIR/node_modules" ]&&[ -d "$PROJECT_DIR/runtime" ]||{ echo "Runtime dependencies are missing" >&2;exit 1; }
 export RUNTIME_PROJECT_NAME=homeservices RUNTIME_AI_ENDPOINT=/api/ai/home-service-operations-review RUNTIME_AI_FEATURE=home-service-operations-review
 export RUNTIME_AI_SYSTEM_PROMPT='You are a home-services operations assistant. Review scheduling, dispatch, technician, customer, estimate, invoice, inventory, safety, and approval evidence with explicit human decision gates.'
 node "$PROJECT_DIR/runtime/setup.mjs"
+runtime_psql(){ node "$PROJECT_DIR/runtime/psql.mjs" "$@"; }
 if [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]; then
-  app_schema_exists="$(psql "$DATABASE_URL" -Atqc "SELECT to_regclass('public.\"Company\"') IS NOT NULL")"
+  app_schema_exists="$(runtime_psql -Atqc "SELECT to_regclass('public.\"Company\"') IS NOT NULL")"
   if [ "$app_schema_exists" != t ]; then
-    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20251203123121_init/migration.sql"
-    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20260720000000_governed_estimates/migration.sql"
+    runtime_psql -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20251203123121_init/migration.sql"
+    runtime_psql -v ON_ERROR_STOP=1 -f "$PROJECT_DIR/prisma/migrations/20260720000000_governed_estimates/migration.sql"
+  fi
+  follow_up_schema_exists="$(runtime_psql -Atqc "SELECT to_regclass('public.\"FollowUpTask\"') IS NOT NULL")"
+  if [ "$follow_up_schema_exists" != t ]; then
+    runtime_psql -v ON_ERROR_STOP=1 -1 -f "$PROJECT_DIR/prisma/migrations/20260905000000_follow_up_tasks/migration.sql"
   fi
 fi
+operations_schema_exists="$(runtime_psql -Atqc "SELECT to_regclass('public.\"WorkflowMutation\"') IS NOT NULL")"
+if [ "$operations_schema_exists" != t ]; then
+  if [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]; then
+    runtime_psql -v ON_ERROR_STOP=1 -1 -f "$PROJECT_DIR/prisma/migrations/20260906000000_operations_expansion/migration.sql"
+  else
+    echo "Operations migration is required. Back up the database, then start with ALLOW_SCHEMA_MIGRATION=1." >&2
+    exit 1
+  fi
+fi
+assistant_schema_exists="$(runtime_psql -Atqc "SELECT to_regclass('public.\"AssistantRequest\"') IS NOT NULL")"
+if [ "$assistant_schema_exists" != t ]; then
+  if [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]; then
+    runtime_psql -v ON_ERROR_STOP=1 -1 -f "$PROJECT_DIR/prisma/migrations/20260906010000_assistant_delivery/migration.sql"
+  else
+    echo "AI workspace migration is required. Back up the database, then start with ALLOW_SCHEMA_MIGRATION=1." >&2
+    exit 1
+  fi
+fi
+if [[ "${ALLOW_SCHEMA_MIGRATION:-}" =~ ^(1|true)$ ]]; then
+  (cd "$PROJECT_DIR" && node runtime/migrate.mjs)
+fi
+finance_schema_exists="$(runtime_psql -Atqc "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='PaymentRefund' AND column_name='settledAt') AND EXISTS(SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='Payment_verified_stripe_receipt')")"
+if [ "$finance_schema_exists" != t ]; then
+  echo "Finance migration is required. Back up the database, then start with ALLOW_SCHEMA_MIGRATION=1." >&2
+  exit 1
+fi
+software_schema_exists="$(runtime_psql -Atqc "SELECT to_regclass('public.\"SoftwareSubscription\"') IS NOT NULL")"
+if [ "$software_schema_exists" != t ]; then
+  echo "Software billing migration is required. Back up the database, then run ALLOW_SCHEMA_MIGRATION=1 ./start.sh migrate." >&2
+  exit 1
+fi
+(cd "$PROJECT_DIR" && npx prisma generate)
 npm --prefix "$PROJECT_DIR" run create-admin
+if [ "${LOAD_DEMO_DATA:-false}" = true ] && [ "${NODE_ENV:-development}" != production ]; then
+  (cd "$PROJECT_DIR" && npm run demo-data:load)
+fi
 CHILD_PIDS=()
 (cd "$PROJECT_DIR"&&exec node runtime/api.mjs)&CHILD_PIDS+=("$!")
 (cd "$PROJECT_DIR"&&exec npm run dev -- -H 127.0.0.1 -p "$FRONTEND_PORT")&CHILD_PIDS+=("$!")

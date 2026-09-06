@@ -25,12 +25,16 @@ import {
 import { useState } from 'react'
 
 const navigation = [
+  {name:'Operations',href:'/dashboard/operations',icon:ClipboardDocumentCheckIcon},
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
+  { name: 'Follow-ups', href: '/dashboard/follow-ups', icon: ClipboardDocumentCheckIcon },
   { name: 'Jobs', href: '/dashboard/jobs', icon: WrenchScrewdriverIcon },
   { name: 'Dispatch', href: '/dashboard/dispatch', icon: MapIcon },
   { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarDaysIcon },
   { name: 'Estimates', href: '/dashboard/estimates', icon: DocumentTextIcon },
+  { name: 'Software subscription', href: '/dashboard/billing', icon: CurrencyDollarIcon },
+  { name: 'Payments & refunds', href: '/dashboard/finance', icon: CurrencyDollarIcon },
   { name: 'Invoices', href: '/dashboard/invoices', icon: CurrencyDollarIcon },
   { name: 'Inventory', href: '/dashboard/inventory', icon: CubeIcon },
   { name: 'Agreements', href: '/dashboard/agreements', icon: ClipboardDocumentCheckIcon },
@@ -41,6 +45,7 @@ const navigation = [
 ]
 
 const techNavigation = [
+  {name:'Timesheets',href:'/dashboard/operations/timesheets',icon:ClipboardDocumentCheckIcon},
   { name: "Today's Jobs", href: '/tech', icon: WrenchScrewdriverIcon },
   { name: 'Truck Inventory', href: '/tech/inventory', icon: CubeIcon },
 ]

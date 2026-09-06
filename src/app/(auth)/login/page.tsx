@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
 
 function LoginForm() {
+  const [ready,setReady]=useState(false)
+  useEffect(()=>setReady(true),[])
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get('registered')
@@ -103,7 +105,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={() => handleOAuthSignIn('google')}
-          disabled={isLoading || isOAuthLoading !== null}
+          disabled={!ready || isLoading || isOAuthLoading !== null}
           className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -132,7 +134,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={() => handleOAuthSignIn('azure-ad')}
-          disabled={isLoading || isOAuthLoading !== null}
+          disabled={!ready || isLoading || isOAuthLoading !== null}
           className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 23 23">
@@ -156,14 +158,14 @@ function LoginForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form method="post" onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="label">
             Email address
           </label>
           <input
             id="email"
-            name="email"
+            name="email" disabled={!ready}
             type="email"
             autoComplete="email"
             required
@@ -185,7 +187,7 @@ function LoginForm() {
           </div>
           <input
             id="password"
-            name="password"
+            name="password" disabled={!ready}
             type="password"
             autoComplete="current-password"
             required
@@ -199,7 +201,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={fillDemoCredentials}
-          disabled={isDemoLoading || isLoading}
+          disabled={!ready || isDemoLoading || isLoading}
           aria-label="Auto Fill Demo Credentials"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
@@ -207,7 +209,7 @@ function LoginForm() {
         </button>
         <button
           type="submit"
-          disabled={isLoading || isOAuthLoading !== null}
+          disabled={!ready || isLoading || isOAuthLoading !== null}
           className="w-full btn-primary py-3 text-lg"
         >
           {isLoading ? 'Signing in...' : 'Sign In'}

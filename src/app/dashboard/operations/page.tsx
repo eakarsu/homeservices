@@ -1,0 +1,4 @@
+import Link from 'next/link'
+import {operationsModules} from '@/lib/workflows/definitions'
+const available=new Set(['bookings','timesheets','purchasing','workforce','stock','communications','portal','reviews','integrations','leads','vendors','subcontractors','warranties','maintenance','documents'])
+export default function Page(){return <div className="space-y-6"><h1 className="text-2xl font-bold">Operations</h1><p>Manage service requests, field work and office review. Provider delivery and payment acceptance are tracked separately.</p><div className="grid gap-4 md:grid-cols-3">{operationsModules.filter(m=>available.has(m.slug)).map(m=><Link className="card p-5 hover:border-primary-500" href={`/dashboard/operations/${m.slug}`} key={m.slug}><h2 className="font-semibold">{m.name}</h2><p className="text-sm text-gray-600 mt-2">{m.description}</p></Link>)}</div></div>}

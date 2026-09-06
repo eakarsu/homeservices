@@ -1,141 +1,151 @@
-'use client'
+"use client";
 
-import { useState, Suspense } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useWorkflowFetch } from "@/hooks/useWorkflowFetch";
+import { useState, Suspense } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeftIcon,
   PlusIcon,
-  TrashIcon
-} from '@heroicons/react/24/outline'
-import { formatCurrency } from '@/lib/utils'
-import { useFormValidation } from '@/hooks/useFormValidation'
-import type { FieldRules } from '@/lib/validation'
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { formatCurrency } from "@/lib/utils";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import type { FieldRules } from "@/lib/validation";
 
 const invoiceRules: FieldRules = {
-  customerId: [{ type: 'required', message: 'Customer is required' }],
-}
+  customerId: [{ type: "required", message: "Customer is required" }],
+};
 
 interface LineItem {
-  id: string
-  description: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  category: string
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  category: string;
 }
 
 function NewInvoiceForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const queryClient = useQueryClient()
-  const preSelectedCustomerId = searchParams.get('customerId') || ''
-  const preSelectedJobId = searchParams.get('jobId') || ''
+  const workflowFetch = useWorkflowFetch();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const preSelectedCustomerId = searchParams.get("customerId") || "";
+  const preSelectedJobId = searchParams.get("jobId") || "";
 
-  const { errors, touched, markTouched, validateOne, validateAll } = useFormValidation(invoiceRules)
+  const { errors, touched, markTouched, validateOne, validateAll } =
+    useFormValidation(invoiceRules);
 
-  const [customerId, setCustomerId] = useState(preSelectedCustomerId)
-  const [jobId, setJobId] = useState(preSelectedJobId)
+  const [customerId, setCustomerId] = useState(preSelectedCustomerId);
+  const [jobId, setJobId] = useState(preSelectedJobId);
   const [dueDate, setDueDate] = useState(() => {
-    const date = new Date()
-    date.setDate(date.getDate() + 30)
-    return date.toISOString().split('T')[0]
-  })
-  const [notes, setNotes] = useState('')
-  const [terms, setTerms] = useState('Payment due within 30 days. Late fees may apply.')
-  const [taxRate, setTaxRate] = useState(0.1)
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().split("T")[0];
+  });
+  const [notes, setNotes] = useState("");
+  const [terms, setTerms] = useState(
+    "Payment due within 30 days. Late fees may apply.",
+  );
+  const [taxRate, setTaxRate] = useState(0);
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
 
   const { data: customers } = useQuery({
-    queryKey: ['customers-list'],
+    queryKey: ["customers-list"],
     queryFn: async () => {
-      const res = await fetch('/api/customers?pageSize=100')
-      if (!res.ok) throw new Error('Failed to fetch customers')
-      const data = await res.json()
-      return data.data || []
+      const res = await fetch("/api/customers?pageSize=100");
+      if (!res.ok) throw new Error("Failed to fetch customers");
+      const data = await res.json();
+      return data.data || [];
     },
-  })
+  });
 
   const { data: jobs } = useQuery({
-    queryKey: ['customer-jobs', customerId],
+    queryKey: ["customer-jobs", customerId],
     queryFn: async () => {
-      if (!customerId) return []
-      const res = await fetch(`/api/jobs?customerId=${customerId}`)
-      if (!res.ok) throw new Error('Failed to fetch jobs')
-      const data = await res.json()
-      return data.data || []
+      if (!customerId) return [];
+      const res = await fetch(`/api/jobs?customerId=${customerId}`);
+      if (!res.ok) throw new Error("Failed to fetch jobs");
+      const data = await res.json();
+      return data.data || [];
     },
     enabled: !!customerId,
-  })
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId,
-          jobId: jobId || undefined,
-          dueDate,
-          notes,
-          terms,
-          taxRate,
-          lineItems,
-        }),
-      })
-      if (!res.ok) throw new Error('Failed to create invoice')
-      return res.json()
+      const res = await workflowFetch("/api/invoices", {
+        customerId,
+        jobId: jobId || undefined,
+        dueDate,
+        notes,
+        terms,
+        taxRate,
+        lineItems,
+      });
+      if (!res.ok)
+        throw new Error((await res.json()).error || "Failed to create invoice");
+      return res.json();
     },
     onSuccess: (invoice) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] })
-      router.push(`/dashboard/invoices/${invoice.id}`)
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      router.push(`/dashboard/invoices/${invoice.id}`);
     },
-  })
+  });
 
   const addLineItem = () => {
     const newItem: LineItem = {
       id: `temp-${Date.now()}`,
-      description: '',
+      description: "",
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      category: 'Labor',
-    }
-    setLineItems([...lineItems, newItem])
-  }
+      category: "Labor",
+    };
+    setLineItems([...lineItems, newItem]);
+  };
 
   const updateLineItem = (index: number, updates: Partial<LineItem>) => {
-    const newItems = [...lineItems]
-    const item = { ...newItems[index], ...updates }
-    item.totalPrice = item.quantity * item.unitPrice
-    newItems[index] = item
-    setLineItems(newItems)
-  }
+    const newItems = [...lineItems];
+    const item = { ...newItems[index], ...updates };
+    item.totalPrice = item.quantity * item.unitPrice;
+    newItems[index] = item;
+    setLineItems(newItems);
+  };
 
   const removeLineItem = (index: number) => {
-    const newItems = [...lineItems]
-    newItems.splice(index, 1)
-    setLineItems(newItems)
-  }
+    const newItems = [...lineItems];
+    newItems.splice(index, 1);
+    setLineItems(newItems);
+  };
 
-  const subtotal = lineItems.reduce((sum, item) => sum + item.totalPrice, 0)
-  const taxAmount = subtotal * taxRate
-  const total = subtotal + taxAmount
+  const subtotal = lineItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const taxAmount = subtotal * taxRate;
+  const total = subtotal + taxAmount;
 
-  const getCustomerName = (customer: { firstName?: string; lastName?: string; companyName?: string }) => {
-    const personalName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim()
+  const getCustomerName = (customer: {
+    firstName?: string;
+    lastName?: string;
+    companyName?: string;
+  }) => {
+    const personalName =
+      `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
     if (personalName && customer.companyName) {
-      return `${personalName} (${customer.companyName})`
+      return `${personalName} (${customer.companyName})`;
     }
-    return personalName || customer.companyName || 'Unknown'
-  }
+    return personalName || customer.companyName || "Unknown";
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/invoices" className="p-2 hover:bg-gray-100 rounded-lg">
+        <Link
+          href="/dashboard/invoices"
+          className="p-2 hover:bg-gray-100 rounded-lg"
+        >
           <ArrowLeftIcon className="w-5 h-5" />
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">New Invoice</h1>
@@ -149,27 +159,44 @@ function NewInvoiceForm() {
             <h2 className="font-semibold mb-4">Customer & Job</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="customerId" className="label">Customer *</label>
+                <label htmlFor="customerId" className="label">
+                  Customer *
+                </label>
                 <select
                   id="customerId"
                   name="customerId"
                   value={customerId}
                   onChange={(e) => {
-                    setCustomerId(e.target.value)
-                    setJobId('')
-                    if (touched.customerId) validateOne('customerId', e.target.value)
+                    setCustomerId(e.target.value);
+                    setJobId("");
+                    if (touched.customerId)
+                      validateOne("customerId", e.target.value);
                   }}
-                  onBlur={() => { markTouched('customerId'); validateOne('customerId', customerId) }}
-                  className={`input ${touched.customerId && errors.customerId ? 'border-red-500' : ''}`}
+                  onBlur={() => {
+                    markTouched("customerId");
+                    validateOne("customerId", customerId);
+                  }}
+                  className={`input ${touched.customerId && errors.customerId ? "border-red-500" : ""}`}
                 >
                   <option value="">Select customer...</option>
-                  {customers?.map((customer: { id: string; firstName?: string; lastName?: string; companyName?: string }) => (
-                    <option key={customer.id} value={customer.id}>
-                      {getCustomerName(customer)}
-                    </option>
-                  ))}
+                  {customers?.map(
+                    (customer: {
+                      id: string;
+                      firstName?: string;
+                      lastName?: string;
+                      companyName?: string;
+                    }) => (
+                      <option key={customer.id} value={customer.id}>
+                        {getCustomerName(customer)}
+                      </option>
+                    ),
+                  )}
                 </select>
-                {touched.customerId && errors.customerId && <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>}
+                {touched.customerId && errors.customerId && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.customerId}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="label">Related Job (optional)</label>
@@ -180,11 +207,13 @@ function NewInvoiceForm() {
                   disabled={!customerId}
                 >
                   <option value="">Select job...</option>
-                  {jobs?.map((job: { id: string; jobNumber: string; title: string }) => (
-                    <option key={job.id} value={job.id}>
-                      {job.jobNumber} - {job.title}
-                    </option>
-                  ))}
+                  {jobs?.map(
+                    (job: { id: string; jobNumber: string; title: string }) => (
+                      <option key={job.id} value={job.id}>
+                        {job.jobNumber} - {job.title}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
             </div>
@@ -222,7 +251,11 @@ function NewInvoiceForm() {
                         <input
                           type="text"
                           value={item.description}
-                          onChange={(e) => updateLineItem(index, { description: e.target.value })}
+                          onChange={(e) =>
+                            updateLineItem(index, {
+                              description: e.target.value,
+                            })
+                          }
                           className="input"
                           placeholder="Description"
                         />
@@ -230,7 +263,9 @@ function NewInvoiceForm() {
                       <td className="py-2">
                         <select
                           value={item.category}
-                          onChange={(e) => updateLineItem(index, { category: e.target.value })}
+                          onChange={(e) =>
+                            updateLineItem(index, { category: e.target.value })
+                          }
                           className="input text-sm"
                         >
                           <option value="Labor">Labor</option>
@@ -243,7 +278,11 @@ function NewInvoiceForm() {
                         <input
                           type="number"
                           value={item.quantity}
-                          onChange={(e) => updateLineItem(index, { quantity: parseInt(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            updateLineItem(index, {
+                              quantity: parseInt(e.target.value) || 0,
+                            })
+                          }
                           className="input text-right"
                           min="1"
                         />
@@ -252,7 +291,11 @@ function NewInvoiceForm() {
                         <input
                           type="number"
                           value={item.unitPrice}
-                          onChange={(e) => updateLineItem(index, { unitPrice: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            updateLineItem(index, {
+                              unitPrice: parseFloat(e.target.value) || 0,
+                            })
+                          }
                           className="input text-right"
                           step="0.01"
                         />
@@ -342,12 +385,16 @@ function NewInvoiceForm() {
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%)</span>
+                <span className="text-gray-600">
+                  Tax ({(taxRate * 100).toFixed(1)}%)
+                </span>
                 <span>{formatCurrency(taxAmount)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
                 <span>Total</span>
-                <span className="text-primary-600">{formatCurrency(total)}</span>
+                <span className="text-primary-600">
+                  {formatCurrency(total)}
+                </span>
               </div>
             </div>
           </div>
@@ -356,27 +403,32 @@ function NewInvoiceForm() {
           <div className="space-y-2">
             <button
               onClick={() => {
-                if (!validateAll({ customerId })) return
-                if (lineItems.length === 0) return
-                createMutation.mutate()
+                if (!validateAll({ customerId })) return;
+                if (lineItems.length === 0) return;
+                createMutation.mutate();
               }}
               disabled={lineItems.length === 0 || createMutation.isPending}
               className="btn-primary w-full"
             >
-              {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
+              {createMutation.isPending ? "Creating..." : "Create Invoice"}
             </button>
-            <Link href="/dashboard/invoices" className="btn-secondary w-full text-center block">
+            <Link
+              href="/dashboard/invoices"
+              className="btn-secondary w-full text-center block"
+            >
               Cancel
             </Link>
           </div>
 
           {createMutation.isError && (
-            <p className="text-red-600 text-sm">{createMutation.error.message}</p>
+            <p className="text-red-600 text-sm">
+              {createMutation.error.message}
+            </p>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function NewInvoicePage() {
@@ -384,5 +436,5 @@ export default function NewInvoicePage() {
     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
       <NewInvoiceForm />
     </Suspense>
-  )
+  );
 }

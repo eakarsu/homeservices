@@ -1,5 +1,7 @@
 'use client'
 
+import JobWorkPanel from '@/components/JobWorkPanel'
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
@@ -110,9 +112,9 @@ export default function JobDetailPage() {
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, updatedAt: (job as unknown as {updatedAt:string})?.updatedAt, ...(newStatus==='CANCELLED'?{reason:window.prompt('Cancellation reason')}:{} ) }),
       })
-      if (!res.ok) throw new Error('Failed to update status')
+      if (!res.ok) throw new Error((await res.json()).error || 'Failed to update status')
       return res.json()
     },
     onSuccess: () => {
@@ -168,6 +170,7 @@ export default function JobDetailPage() {
 
   return (
     <div className="space-y-6">
+      {updateStatusMutation.error&&<p role="alert" className="text-red-700">{updateStatusMutation.error.message}</p>}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -188,7 +191,7 @@ export default function JobDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {nextStatuses.map((status) => (
+          {nextStatuses.filter(status=>status!=='COMPLETED').map((status) => (
             <button
               key={status}
               onClick={() => updateStatusMutation.mutate(status)}
@@ -205,20 +208,15 @@ export default function JobDetailPage() {
               {status.replace('_', ' ')}
             </button>
           ))}
-          <Link href={`/dashboard/jobs/${jobId}/edit`} className="btn-secondary flex items-center gap-2">
+          {!["COMPLETED","INVOICED","CANCELLED"].includes(job.status)&&<Link href={`/dashboard/jobs/${jobId}/edit`} className="btn-secondary flex items-center gap-2">
             <PencilIcon className="w-4 h-4" />
             Edit
-          </Link>
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <TrashIcon className="w-4 h-4" />
-            Delete
-          </button>
+          </Link>}
+
         </div>
       </div>
 
+      <JobWorkPanel jobId={jobId}/>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">

@@ -1,62 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from "@/lib/apiAuth"
-import { prisma } from '@/lib/prisma'
-
-export async function POST(
+import { NextRequest } from "next/server";
+import {
+  handle,
+  bodyFor,
+  withReceipt,
+  txFor,
+  office,
+  fail,
+} from "@/lib/workflows/core";
+import { invoiceFor } from "@/lib/workflows/invoices";
+import { messages } from "@/lib/workflows/communications";
+export const POST = (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        id: (await params).id,
-        customer: { companyId: user.companyId }
-      },
-      include: {
-        customer: {
-          select: {
-            email: true,
-            firstName: true,
-            lastName: true,
-          }
-        }
-      }
-    })
-
-    if (!invoice) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
-    }
-
-    // In a real implementation, this would send an email
-    // For now, just update the status to SENT
-
-    const updatedInvoice = await prisma.invoice.update({
-      where: { id: (await params).id },
-      data: { status: 'SENT' }
-    })
-
-    // Log communication
-    if (invoice.customer.email) {
-      await prisma.communication.create({
-        data: {
+  { params }: { params: Promise<{ id: string }> },
+) =>
+  handle(request, async (user) => {
+    office(user);
+    const id = (await params).id,
+      body = await bodyFor(request),
+      key = request.headers.get("Idempotency-Key");
+    return withReceipt(user, key, "invoice.message", { id, ...body }, () =>
+      txFor(user, async (tx) => {
+        const invoice = await invoiceFor(tx, user, id);
+        if (!invoice.reviewedAt || invoice.status === "VOID")
+          fail("Issue and review the invoice first", 409);
+        if (body.version !== invoice.version)
+          fail("Invoice changed; reload before preparing its message", 409);
+        return messages(user, {
           customerId: invoice.customerId,
-          type: 'EMAIL',
-          direction: 'outbound',
-          subject: `Invoice #${invoice.invoiceNumber}`,
-          message: `Invoice sent to ${invoice.customer.email}`,
-          status: 'sent'
-        }
-      })
-    }
-
-    return NextResponse.json(updatedInvoice)
-  } catch (error) {
-    console.error('Send invoice error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+          jobId: invoice.jobId,
+          channel: "EMAIL",
+          subject: `Invoice ${invoice.invoiceNumber}`,
+          body: `Invoice ${invoice.invoiceNumber}\n${invoice.lineItems.map((l) => `${l.description}: ${l.quantity} × $${Number(l.unitPrice).toFixed(2)} = $${Number(l.totalPrice).toFixed(2)}`).join("\n")}\nTotal USD $${Number(invoice.totalAmount).toFixed(2)}\nCredits $${(invoice.creditCents / 100).toFixed(2)}\nBalance $${Number(invoice.balanceDue).toFixed(2)}\nDue ${invoice.dueDate.toISOString().slice(0, 10)}\n${invoice.terms || ""}\nContact the office for your private customer portal link.`,
+          scheduledAt: new Date().toISOString(),
+          contactAuthorized: body.contactAuthorized,
+          requestKey: key,
+        });
+      }),
+    );
+  });

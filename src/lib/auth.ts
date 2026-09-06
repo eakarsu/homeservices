@@ -5,6 +5,8 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
 
+const secureCookies=process.env.AUTH_COOKIE_SECURE==='true'||process.env.NEXTAUTH_URL?.startsWith('https:')===true
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -131,48 +133,48 @@ export const authOptions: NextAuthOptions = {
   // Cookie configuration for HTTPS behind proxy
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      name: secureCookies ? '__Secure-homeservices.session-token' : 'homeservices.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: secureCookies,
       },
     },
     callbackUrl: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.callback-url' : 'next-auth.callback-url',
+      name: secureCookies ? '__Secure-homeservices.callback-url' : 'homeservices.callback-url',
       options: {
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: secureCookies,
       },
     },
     csrfToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
+      name: secureCookies ? '__Host-homeservices.csrf-token' : 'homeservices.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: secureCookies,
       },
     },
     pkceCodeVerifier: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.pkce.code_verifier' : 'next-auth.pkce.code_verifier',
+      name: secureCookies ? '__Secure-homeservices.pkce.code_verifier' : 'homeservices.pkce.code_verifier',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: secureCookies,
         maxAge: 900,
       },
     },
     state: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.state' : 'next-auth.state',
+      name: secureCookies ? '__Secure-homeservices.state' : 'homeservices.state',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: secureCookies,
         maxAge: 900,
       },
     },

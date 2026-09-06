@@ -4,7 +4,7 @@
  */
 
 export const TEST_CREDENTIALS = {
-  admin: { email: 'admin@comfortpro.com', password: 'password123' },
+  admin: { email: process.env.ADMIN_EMAIL || 'admin@comfortpro.com', password: process.env.ADMIN_PASSWORD || 'password123' },
   dispatcher: { email: 'sarah@comfortpro.com', password: 'password123' },
   technician: { email: 'tom@comfortpro.com', password: 'password123' },
 }

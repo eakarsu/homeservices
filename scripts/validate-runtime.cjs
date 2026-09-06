@@ -14,7 +14,8 @@ if (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET.length < 32 || /
 if (!process.env.NEXTAUTH_URL?.startsWith('https://')) failures.push('NEXTAUTH_URL (HTTPS required)')
 if (!process.env.DATABASE_URL?.startsWith('postgresql://') || /(?:password|localhost)/i.test(process.env.DATABASE_URL)) failures.push('DATABASE_URL (external PostgreSQL required)')
 if (!origins.length || origins.includes('*') || origins.some(origin => !origin.startsWith('https://'))) failures.push('CORS_ALLOWED_ORIGINS (explicit HTTPS origins required)')
-if (!templateHosts.length || templateHosts.some(host => host.includes('://') || host === '*' || /localhost/i.test(host))) failures.push('TEMPLATE_ALLOWED_HOSTS (explicit external hostnames required)')
+if (templateHosts.some(host => host.includes('://') || host === '*' || /localhost/i.test(host))) failures.push('TEMPLATE_ALLOWED_HOSTS (explicit external hostnames required)')
+if(process.env.EMAIL_DELIVERY_URL||process.env.EMAIL_DELIVERY_TOKEN||deliveryHosts.length){
 if (!process.env.EMAIL_DELIVERY_URL?.startsWith('https://')) failures.push('EMAIL_DELIVERY_URL (HTTPS required)')
 if (!deliveryHosts.length || deliveryHosts.some(host => host.includes('://') || host === '*' || /localhost/i.test(host))) failures.push('EMAIL_DELIVERY_ALLOWED_HOSTS (explicit external hostnames required)')
 if (!process.env.EMAIL_DELIVERY_TOKEN || process.env.EMAIL_DELIVERY_TOKEN.length < 16) failures.push('EMAIL_DELIVERY_TOKEN')
@@ -24,6 +25,7 @@ try {
   if (deliveryHost && !deliveryHosts.includes(deliveryHost)) failures.push('EMAIL_DELIVERY_URL host must be allowlisted')
 } catch {
   // The HTTPS check above already records an invalid URL.
+}
 }
 
 if (failures.length) {

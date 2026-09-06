@@ -1,5 +1,7 @@
 'use client'
+import {useWorkflowFetch} from '@/hooks/useWorkflowFetch'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -37,6 +39,7 @@ interface Truck {
 }
 
 export default function TruckInventoryPage() {
+  const mutate=useWorkflowFetch()
   const queryClient = useQueryClient()
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null)
   const [showTransferModal, setShowTransferModal] = useState(false)
@@ -50,18 +53,14 @@ export default function TruckInventoryPage() {
   const { data: trucks, isLoading } = useQuery<Truck[]>({
     queryKey: ['trucks-inventory'],
     queryFn: async () => {
-      const res = await fetch('/api/trucks?includeStock=true')
-      if (!res.ok) throw new Error('Failed to fetch trucks')
-      return res.json()
+      return fetchCollection('/api/trucks?includeStock=true')
     },
   })
 
   const { data: parts } = useQuery({
     queryKey: ['parts-list'],
     queryFn: async () => {
-      const res = await fetch('/api/parts')
-      if (!res.ok) throw new Error('Failed to fetch parts')
-      return res.json()
+      return fetchCollection<{ id: string; name: string; partNumber: string }>('/api/parts')
     },
   })
 
@@ -82,12 +81,8 @@ export default function TruckInventoryPage() {
 
   const transferMutation = useMutation({
     mutationFn: async (data: typeof transferData) => {
-      const res = await fetch('/api/inventory/transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error('Failed to transfer stock')
+      const res = await mutate('/api/inventory/transfer',data)
+      if (!res.ok) throw new Error((await res.json()).error||'Failed to transfer stock')
       return res.json()
     },
     onSuccess: () => {

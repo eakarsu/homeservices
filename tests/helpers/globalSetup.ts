@@ -15,6 +15,7 @@
 import { chromium } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
+import { TEST_CREDENTIALS } from './testData'
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 const AUTH_DIR = path.join(process.cwd(), '.auth')
@@ -33,8 +34,8 @@ export default async function globalSetup() {
     await page.goto(`${BASE_URL}/login`)
     await page.waitForLoadState('networkidle')
 
-    await page.getByPlaceholder('you@example.com').fill('admin@comfortpro.com')
-    await page.getByPlaceholder('Enter your password').fill('password123')
+    await page.getByPlaceholder('you@example.com').fill(TEST_CREDENTIALS.admin.email)
+    await page.getByPlaceholder('Enter your password').fill(TEST_CREDENTIALS.admin.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // Wait for successful login redirect

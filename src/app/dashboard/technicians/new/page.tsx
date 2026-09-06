@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -47,9 +48,7 @@ export default function NewTechnicianPage() {
   const { data: trucks } = useQuery<Truck[]>({
     queryKey: ['trucks'],
     queryFn: async () => {
-      const res = await fetch('/api/trucks')
-      if (!res.ok) throw new Error('Failed to fetch trucks')
-      return res.json()
+      return fetchCollection('/api/trucks')
     },
   })
 

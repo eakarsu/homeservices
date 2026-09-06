@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // Public endpoint - no auth required
 // Only returns limited invoice info for payment
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params
+    const { id } = await params;
 
     const invoice = await prisma.invoice.findUnique({
       where: { id },
@@ -28,13 +28,13 @@ export async function GET(
             unitPrice: true,
             totalPrice: true,
           },
-          orderBy: { sortOrder: 'asc' },
+          orderBy: { sortOrder: "asc" },
         },
       },
-    })
+    });
 
     if (!invoice) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
     // Return limited public info
@@ -49,13 +49,17 @@ export async function GET(
       totalAmount: invoice.totalAmount,
       paidAmount: invoice.paidAmount,
       balanceDue: invoice.balanceDue,
-      customerName: invoice.customer.companyName ||
-        `${invoice.customer.firstName || ''} ${invoice.customer.lastName || ''}`.trim() ||
-        'Customer',
+      customerName:
+        invoice.customer.companyName ||
+        `${invoice.customer.firstName || ""} ${invoice.customer.lastName || ""}`.trim() ||
+        "Customer",
       lineItems: invoice.lineItems,
-    })
+    });
   } catch (error) {
-    console.error('Public invoice fetch error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Public invoice fetch error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

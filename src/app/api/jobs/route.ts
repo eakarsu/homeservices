@@ -1,3 +1,6 @@
+import {dayBounds} from '@/lib/workflows/calendar'
+import {handle,bodyFor,withReceipt} from '@/lib/workflows/core'
+import {createJob} from '@/lib/workflows/execution'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
@@ -71,10 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (filter === 'today') {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
+      const company=await prisma.company.findUniqueOrThrow({where:{id:user.companyId},select:{timezone:true}}),{start:today,end:tomorrow}=dayBounds(new Date(),company.timezone)
 
       where.scheduledStart = {
         gte: today,
@@ -98,10 +98,10 @@ export async function GET(request: NextRequest) {
     let orderBy: Record<string, string> = { createdAt: 'desc' }
     if (sort) {
       const [field, direction] = sort.split(':')
-      orderBy = { [field]: direction || 'desc' }
+      if(['createdAt','scheduledStart','jobNumber','title','status','priority'].includes(field)&&['asc','desc'].includes(direction||'desc'))orderBy = { [field]: direction || 'desc' }
     }
 
-    const take = limit ? parseInt(limit) : pageSize
+    const take = limit ? Math.min(1000,Math.max(1,parseInt(limit)||10)) : pageSize
 
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
@@ -161,78 +161,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    if (!canManageEstimate(user) && user.role !== 'DISPATCHER') {
-      return NextResponse.json({ error: 'Office scheduling role required' }, { status: 403 })
-    }
-
-    const body = await request.json()
-
-    const [customer, property, serviceType] = await Promise.all([
-      prisma.customer.findFirst({ where: { id: body.customerId, companyId: user.companyId }, select: { id: true } }),
-      body.propertyId ? prisma.property.findFirst({ where: { id: body.propertyId, customerId: body.customerId, customer: { companyId: user.companyId } }, select: { id: true, address: true, city: true, state: true, zip: true } }) : null,
-      body.serviceTypeId ? prisma.serviceType.findFirst({ where: { id: body.serviceTypeId, companyId: user.companyId }, select: { id: true } }) : null,
-    ])
-    if (!customer || (body.propertyId && !property) || (body.serviceTypeId && !serviceType)) {
-      return NextResponse.json({ error: 'Customer, property, or service type is outside the authenticated company' }, { status: 422 })
-    }
-
-    // Get property address if propertyId is provided
-    let address = body.address || ''
-    let city = body.city || ''
-    let state = body.state || ''
-    let zip = body.zip || ''
-
-    if (body.propertyId) {
-      if (property) {
-        address = property.address
-        city = property.city
-        state = property.state
-        zip = property.zip
-      }
-    }
-
-    const job = await prisma.job.create({
-      data: {
-        jobNumber: generateJobNumber(),
-        companyId: user.companyId,
-        customerId: body.customerId,
-        propertyId: body.propertyId,
-        serviceTypeId: body.serviceTypeId,
-        createdById: user.id,
-        tradeType: body.tradeType,
-        type: body.type || 'SERVICE_CALL',
-        status: body.status || 'PENDING',
-        priority: body.priority || 'NORMAL',
-        title: body.title,
-        description: body.description,
-        customerPO: body.customerPO,
-        scheduledStart: body.scheduledStart ? new Date(body.scheduledStart) : null,
-        scheduledEnd: body.scheduledEnd ? new Date(body.scheduledEnd) : null,
-        estimatedDuration: body.estimatedDuration,
-        timeWindowStart: body.timeWindowStart,
-        timeWindowEnd: body.timeWindowEnd,
-        source: body.source,
-        estimatedAmount: body.estimatedAmount,
-        notes: body.notes,
-        tags: body.tags || [],
-        portalToken: generatePortalToken(),
-      },
-      include: {
-        customer: true,
-        property: true,
-        serviceType: true,
-      },
-    })
-
-    return NextResponse.json(job, { status: 201 })
-  } catch (error) {
-    console.error('Create job error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+export const POST=(request:NextRequest)=>handle(request,async user=>{const body=await bodyFor(request);return withReceipt(user,request.headers.get('Idempotency-Key'),'job.create',body,()=>createJob(user,body))})

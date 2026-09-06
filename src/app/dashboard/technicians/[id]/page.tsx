@@ -53,7 +53,7 @@ interface TechnicianDetail {
   } | null
   stats: {
     completedJobs: number
-    avgRating: number
+    avgRating: number | null
     totalReviews: number
     avgJobDuration: number
     revenueGenerated: number
@@ -234,7 +234,7 @@ export default function TechnicianDetailPage() {
               <div className="text-center p-4 bg-yellow-50 rounded-lg">
                 <div className="flex items-center justify-center gap-1">
                   <StarIcon className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                  <span className="text-3xl font-bold text-yellow-600">{technician.stats.avgRating.toFixed(1)}</span>
+                  <span className="text-3xl font-bold text-yellow-600">{technician.stats.avgRating===null?'No reviews':technician.stats.avgRating.toFixed(1)}</span>
                 </div>
                 <p className="text-sm text-yellow-700">{technician.stats.totalReviews} Reviews</p>
               </div>

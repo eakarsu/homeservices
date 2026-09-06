@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -60,9 +61,7 @@ export default function PartsPage() {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       if (categoryFilter) params.set('category', categoryFilter)
-      const res = await fetch(`/api/parts?${params}`)
-      if (!res.ok) throw new Error('Failed to fetch parts')
-      return res.json()
+      return fetchCollection(`/api/parts?${params}`)
     },
   })
 
@@ -377,7 +376,7 @@ export default function PartsPage() {
                 <label className="label">Quantity On Hand</label>
                 <input
                   type="number"
-                  value={formData.quantityOnHand}
+                  disabled={!!editingPart} value={formData.quantityOnHand}
                   onChange={(e) => setFormData({ ...formData, quantityOnHand: parseInt(e.target.value) || 0 })}
                   className="input"
                   min="0"

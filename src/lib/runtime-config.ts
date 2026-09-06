@@ -22,8 +22,9 @@ export function validateRuntimeConfig(env = process.env): void {
   const templateHosts = allowedTemplateHosts(env)
   const deliveryHosts = (env.EMAIL_DELIVERY_ALLOWED_HOSTS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
   if (!origins.length || origins.includes('*')) failures.push('CORS_ALLOWED_ORIGINS must list explicit origins')
-  if (!templateHosts.length || templateHosts.some(host => host.includes('://') || host === '*')) failures.push('TEMPLATE_ALLOWED_HOSTS must list authoritative source hostnames')
+  if (templateHosts.some(host => host.includes('://') || host === '*')) failures.push('TEMPLATE_ALLOWED_HOSTS must list authoritative source hostnames')
   if (!env.DATABASE_URL?.startsWith('postgresql://')) failures.push('DATABASE_URL must identify PostgreSQL')
+  if(env.EMAIL_DELIVERY_URL||env.EMAIL_DELIVERY_TOKEN||deliveryHosts.length){
   if (!env.EMAIL_DELIVERY_URL?.startsWith('https://')) failures.push('EMAIL_DELIVERY_URL must use HTTPS')
   if (!deliveryHosts.length || deliveryHosts.some(host => host.includes('://') || host === '*')) failures.push('EMAIL_DELIVERY_ALLOWED_HOSTS must list provider hostnames')
   if (!env.EMAIL_DELIVERY_TOKEN || env.EMAIL_DELIVERY_TOKEN.length < 16) failures.push('EMAIL_DELIVERY_TOKEN is required')
@@ -32,6 +33,7 @@ export function validateRuntimeConfig(env = process.env): void {
     if (deliveryHost && !deliveryHosts.includes(deliveryHost)) failures.push('EMAIL_DELIVERY_URL host must be allowlisted')
   } catch {
     // Invalid URLs are already rejected by the HTTPS requirement.
+  }
   }
   if (env.NODE_ENV === 'production') {
     if (!env.NEXTAUTH_URL?.startsWith('https://')) failures.push('NEXTAUTH_URL must use HTTPS in production')

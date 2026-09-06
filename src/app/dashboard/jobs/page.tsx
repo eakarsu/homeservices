@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -55,12 +55,13 @@ interface Job {
   }[]
 }
 
-export default function JobsPage() {
+function JobsPageContent() {
+  const url=useSearchParams(), deepFilter=url.get("filter")||"", deepCustomer=url.get("customerId")||"", deepTechnician=url.get("technicianId")||"";
   const router = useRouter()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [priorityFilter, setPriorityFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(url.get('status')||'')
+  const [priorityFilter, setPriorityFilter] = useState(url.get('priority')||'')
   const [tradeFilter, setTradeFilter] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState('createdAt')
@@ -111,7 +112,7 @@ export default function JobsPage() {
 
   const bulkUpdateMutation = useMutation({
     mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
-      const res = await fetch('/api/jobs/bulk', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, status }) })
+      const res = await fetch('/api/jobs/bulk', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, status, ...(status==='CANCELLED'?{reason:window.prompt('Cancellation reason for selected jobs')}:{} ) }) })
       if (!res.ok) throw new Error('Failed to update jobs')
       return res.json()
     },
@@ -119,10 +120,11 @@ export default function JobsPage() {
     onError: () => toast.error('Failed to update jobs')
   })
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['jobs', search, statusFilter, priorityFilter, tradeFilter, page, sortField, sortDirection],
+  const { data, isLoading, error: listError, refetch } = useQuery({
+    queryKey: ['jobs', deepFilter, deepCustomer, deepTechnician, search, statusFilter, priorityFilter, tradeFilter, page, sortField, sortDirection],
     queryFn: async () => {
       const params = new URLSearchParams({ page: page.toString(), pageSize: '10', sort: `${sortField}:${sortDirection}` })
+      if(deepFilter)params.set('filter',deepFilter);if(deepCustomer)params.set('customerId',deepCustomer);if(deepTechnician)params.set('technicianId',deepTechnician);
       if (search) params.set('search', search)
       if (statusFilter) params.set('status', statusFilter)
       if (priorityFilter) params.set('priority', priorityFilter)
@@ -181,6 +183,8 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6">
+      {listError&&<div role="alert" className="text-red-700">{listError.message} <button onClick={()=>void refetch()}>Retry</button></div>}
+      {deepFilter&&<p>Filter: {deepFilter} <Link href="/dashboard/jobs">Clear</Link></p>}
       <div className="page-header">
         <h1 className="page-title">Jobs</h1>
         <div className="flex gap-2">
@@ -205,7 +209,6 @@ export default function JobsPage() {
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
-            <button onClick={() => setBulkDeleteOpen(true)} className="btn-primary bg-red-600 hover:bg-red-700 text-sm">Delete Selected</button>
             <button onClick={clearSelection} className="btn-secondary text-sm">Clear</button>
           </div>
         </div>
@@ -277,7 +280,6 @@ export default function JobsPage() {
                     <td className="table-cell"><span className={`badge ${getPriorityColor(job.priority)}`}>{job.priority}</span></td>
                     <td className="table-cell"><span className={`badge ${getStatusColor(job.status)}`}>{job.status.replace('_', ' ')}</span></td>
                     <td className="table-cell text-center">
-                      <button onClick={(e) => { e.stopPropagation(); setJobToDelete(job); setDeleteModalOpen(true) }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete job"><TrashIcon className="w-5 h-5" /></button>
                     </td>
                   </tr>
                 ))}
@@ -300,3 +302,5 @@ export default function JobsPage() {
     </div>
   )
 }
+
+export default function JobsPage(){return <Suspense fallback={<p>Loading jobs…</p>}><JobsPageContent/></Suspense>}

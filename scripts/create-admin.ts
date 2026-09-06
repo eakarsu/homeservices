@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import { loadEnvConfig } from '@next/env'
+
+loadEnvConfig(process.cwd())
 
 const prisma = new PrismaClient()
 
@@ -11,6 +14,8 @@ async function main() {
   if (password.length < 12) throw new Error('ADMIN_PASSWORD must contain at least 12 characters')
 
   const companyEmail = `runtime-${Buffer.from(companyName).toString('hex').slice(0, 24)}@example.invalid`
+  const existing = await prisma.user.findUnique({ where: { email }, include: { company: true } })
+  if(existing){console.log('Existing administrator preserved');return}
   let company = await prisma.company.findFirst({ where: { email: companyEmail } })
   if (!company) {
     company = await prisma.company.create({
@@ -25,8 +30,7 @@ async function main() {
       role: 'ADMIN', companyId: company.id, isActive: true, emailVerified: true,
     },
     update: {
-      password: passwordHash, firstName: 'Runtime', lastName: 'Administrator',
-      role: 'ADMIN', companyId: company.id, isActive: true, emailVerified: true,
+      password: passwordHash, isActive: true, emailVerified: true,
     },
   })
   console.log(`Provisioned administrator ${email}`)

@@ -106,11 +106,11 @@ export default function InvoicesPage() {
 
   const stats = {
     total: invoices.length,
-    outstanding: invoices.filter(i => ['SENT', 'VIEWED', 'PARTIAL'].includes(i.status)).length,
+    outstanding: invoices.filter(i => ['ISSUED', 'SENT', 'VIEWED', 'PARTIAL', 'OVERDUE'].includes(i.status)).length,
     overdue: invoices.filter(i => isOverdue(i)).length,
     paid: invoices.filter(i => i.status === 'PAID').length,
-    totalOutstanding: invoices.filter(i => ['SENT', 'VIEWED', 'PARTIAL'].includes(i.status)).reduce((sum, i) => sum + i.balanceDue, 0),
-    totalPaid: invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + i.paidAmount, 0),
+    totalOutstanding: invoices.filter(i => ['ISSUED', 'SENT', 'VIEWED', 'PARTIAL', 'OVERDUE'].includes(i.status)).reduce((sum, i) => sum + Number(i.balanceDue), 0),
+    totalPaid: invoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + Number(i.paidAmount), 0),
   }
 
   const handleExportCSV = () => {
@@ -150,7 +150,7 @@ export default function InvoicesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card"><p className="text-sm text-gray-500">Outstanding</p><p className="text-2xl font-bold text-blue-600">{stats.outstanding}</p><p className="text-sm text-gray-600">{formatCurrency(stats.totalOutstanding)}</p></div>
         <div className="card"><p className="text-sm text-gray-500">Overdue</p><p className="text-2xl font-bold text-red-600">{stats.overdue}</p>{stats.overdue > 0 && <p className="text-xs text-red-500 flex items-center gap-1 mt-1"><ExclamationTriangleIcon className="w-3 h-3" />Needs attention</p>}</div>
-        <div className="card"><p className="text-sm text-gray-500">Paid (This Month)</p><p className="text-2xl font-bold text-green-600">{stats.paid}</p><p className="text-sm text-gray-600">{formatCurrency(stats.totalPaid)}</p></div>
+        <div className="card"><p className="text-sm text-gray-500">Settled (displayed invoices)</p><p className="text-2xl font-bold text-green-600">{stats.paid}</p><p className="text-sm text-gray-600">{formatCurrency(stats.totalPaid)}</p></div>
         <div className="card"><p className="text-sm text-gray-500">Total Invoices</p><p className="text-2xl font-bold text-gray-900">{stats.total}</p></div>
       </div>
 
@@ -158,10 +158,6 @@ export default function InvoicesPage() {
         <div className="bg-primary-50 border border-primary-200 rounded-lg px-4 py-3 flex items-center justify-between">
           <span className="text-sm font-medium text-primary-700">{selectedCount} selected</span>
           <div className="flex items-center gap-2">
-            <select className="select text-sm" value={bulkStatus} onChange={(e) => { setBulkStatus(e.target.value); if (e.target.value) setBulkStatusOpen(true) }}>
-              <option value="">Change Status...</option><option value="DRAFT">Draft</option><option value="SENT">Sent</option><option value="PAID">Paid</option><option value="VOID">Void</option>
-            </select>
-            <button onClick={() => setBulkDeleteOpen(true)} className="btn-primary bg-red-600 hover:bg-red-700 text-sm">Delete Selected</button>
             <button onClick={clearSelection} className="btn-secondary text-sm">Clear</button>
           </div>
         </div>
@@ -170,7 +166,7 @@ export default function InvoicesPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1"><MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search invoices..." value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" /></div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-full sm:w-40">
-          <option value="all">All Status</option><option value="DRAFT">Draft</option><option value="SENT">Sent</option><option value="VIEWED">Viewed</option><option value="PARTIAL">Partial</option><option value="PAID">Paid</option><option value="OVERDUE">Overdue</option><option value="VOID">Void</option>
+          <option value="all">All Status</option><option value="DRAFT">Draft</option><option value="ISSUED">Issued</option><option value="SENT">Sent</option><option value="VIEWED">Viewed</option><option value="PARTIAL">Partial</option><option value="PAID">Paid</option><option value="OVERDUE">Overdue</option><option value="VOID">Void</option>
         </select>
       </div>
 
@@ -206,7 +202,6 @@ export default function InvoicesPage() {
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       {invoice.balanceDue > 0 && (<><button onClick={(e) => copyPaymentLink(e, invoice.id)} className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Copy payment link"><LinkIcon className="w-5 h-5" /></button><button onClick={(e) => openPaymentPage(e, invoice.id)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Open payment page"><CreditCardIcon className="w-5 h-5" /></button></>)}
-                      <button onClick={(e) => { e.stopPropagation(); setInvoiceToDelete(invoice); setDeleteModalOpen(true) }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete invoice"><TrashIcon className="w-5 h-5" /></button>
                     </div>
                   </td>
                 </tr>

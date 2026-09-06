@@ -99,12 +99,13 @@ export async function GET(
       take: 10
     })
 
+    const reviews=await prisma.customerReview.aggregate({where:{companyId:user.companyId,jobId:{in:(await prisma.jobAssignment.findMany({where:{technicianId:technician.id,job:{companyId:user.companyId}},select:{jobId:true}})).map(a=>a.jobId)}},_avg:{rating:true},_count:{id:true}})
     return NextResponse.json({
       ...technician,
       stats: {
         completedJobs,
-        avgRating: 4.8, // Placeholder
-        totalReviews: Math.floor(completedJobs * 0.3),
+        avgRating: reviews._avg.rating,
+        totalReviews: reviews._count.id,
         avgJobDuration,
         revenueGenerated,
       },
@@ -126,7 +127,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if(!['ADMIN','MANAGER'].includes(user.role))return NextResponse.json({error:'Manager access required'},{status:403})
     const data = await request.json()
+    if(data.truckId&&!await prisma.truck.findFirst({where:{id:data.truckId,companyId:user.companyId,isActive:true}}))return NextResponse.json({error:'Truck not found'},{status:404})
 
     // Verify technician belongs to company
     const existing = await prisma.technician.findFirst({
@@ -171,34 +174,4 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const existing = await prisma.technician.findFirst({
-      where: {
-        id: (await params).id,
-        user: { companyId: user.companyId }
-      }
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Technician not found' }, { status: 404 })
-    }
-
-    await prisma.technician.delete({
-      where: { id: (await params).id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete technician error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+export async function DELETE(request:NextRequest){const user=await getAuthUser(request);return NextResponse.json({error:user?'Technician history is retained; deactivate the user account instead':'Unauthorized'},{status:user?405:401})}

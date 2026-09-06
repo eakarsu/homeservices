@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -61,9 +62,7 @@ export default function DispatchMapPage() {
   const { data: technicians } = useQuery<Technician[]>({
     queryKey: ['technicians-map'],
     queryFn: async () => {
-      const res = await fetch('/api/technicians')
-      if (!res.ok) throw new Error('Failed to fetch technicians')
-      return res.json()
+      return fetchCollection('/api/technicians')
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   })

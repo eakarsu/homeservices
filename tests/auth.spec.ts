@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { login } from './helpers/auth'
+import { TEST_CREDENTIALS } from './helpers/testData'
 
 test.describe('Authentication', () => {
   test.describe('Landing Page', () => {
@@ -44,8 +45,8 @@ test.describe('Authentication', () => {
     })
 
     test('should login with valid credentials and redirect to dashboard', async ({ page }) => {
-      await page.getByPlaceholder('you@example.com').fill('admin@comfortpro.com')
-      await page.getByPlaceholder('Enter your password').fill('password123')
+      await page.getByPlaceholder('you@example.com').fill(TEST_CREDENTIALS.admin.email)
+      await page.getByPlaceholder('Enter your password').fill(TEST_CREDENTIALS.admin.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard', { timeout: 15000 })
     })

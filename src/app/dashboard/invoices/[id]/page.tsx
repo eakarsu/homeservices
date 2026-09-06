@@ -1,486 +1,437 @@
-'use client'
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useState } from 'react'
-import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  PaperAirplaneIcon,
-  CurrencyDollarIcon,
-  PrinterIcon,
-  CheckCircleIcon,
-  LinkIcon,
-  CreditCardIcon
-} from '@heroicons/react/24/outline'
-import toast from 'react-hot-toast'
-import { formatCurrency, getStatusColor, formatDate } from '@/lib/utils'
-import ConfirmDialog from '@/components/ConfirmDialog'
-
-interface Invoice {
-  id: string
-  invoiceNumber: string
-  status: string
-  issueDate: string
-  dueDate: string
-  paidDate?: string
-  subtotal: number
-  taxRate: number
-  taxAmount: number
-  totalAmount: number
-  paidAmount: number
-  balanceDue: number
-  notes?: string
-  terms?: string
-  customer: {
-    id: string
-    firstName?: string
-    lastName?: string
-    companyName?: string
-    email?: string
-    phone?: string
-    billingAddress?: string
-    billingCity?: string
-    billingState?: string
-    billingZip?: string
-  }
-  job?: {
-    id: string
-    jobNumber: string
-    title: string
-  }
-  lineItems: Array<{
-    id: string
-    description: string
-    quantity: number
-    unitPrice: number
-    totalPrice: number
-    category?: string
-  }>
-  payments: Array<{
-    id: string
-    amount: number
-    method: string
-    reference?: string
-    date: string
-    notes?: string
-  }>
-}
-
-export default function InvoiceDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  const invoiceId = params.id as string
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [paymentAmount, setPaymentAmount] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD')
-  const [paymentReference, setPaymentReference] = useState('')
-
-  const { data: invoice, isLoading } = useQuery<Invoice>({
-    queryKey: ['invoice', invoiceId],
+"use client";
+import InvoiceDraftEditor from "@/components/InvoiceDraftEditor";
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWorkflowFetch } from "@/hooks/useWorkflowFetch";
+type Invoice = {
+  id: string;
+  invoiceNumber: string;
+  status: string;
+  version: number;
+  reviewedAt: string | null;
+  dueDate: string;
+  subtotal: string;
+  taxAmount: string;
+  taxRate:string;
+  totalAmount: string;
+  paidAmount: string;
+  balanceDue: string;
+  creditCents: number;
+  notes: string;
+  terms: string;
+  customer: { firstName: string; lastName: string; companyName: string };
+  lineItems: {
+    id: string;
+    description: string;
+    quantity: string;
+    unitPrice: string;
+    totalPrice: string;
+  }[];
+  payments: {
+    id: string;
+    amount: string;
+    method: string;
+    reference: string;
+    verifiedAt: string | null;
+    date: string;
+  }[];
+};
+const usd = (n: unknown) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    Number(n),
+  );
+export default function Page() {
+  const id = String(useParams().id),
+    send = useWorkflowFetch(),
+    cache = useQueryClient(),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [busy, setBusy] = useState(false),
+    [review, setReview] = useState(false),
+    [contact, setContact] = useState(false),
+    [received, setReceived] = useState(false),
+    [amount, setAmount] = useState(""),
+    [method, setMethod] = useState("CASH"),
+    [reference, setReference] = useState(""),
+    [reason, setReason] = useState(""),
+    [credit, setCredit] = useState("");
+  const q = useQuery<Invoice>({
+    queryKey: ["invoice", id],
     queryFn: async () => {
-      const res = await fetch(`/api/invoices/${invoiceId}`)
-      if (!res.ok) throw new Error('Failed to fetch invoice')
-      return res.json()
+      const r = await fetch(`/api/invoices/${id}`),
+        j = await r.json();
+      if (!r.ok) throw Error(j.error);
+      return j;
     },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/invoices/${invoiceId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to delete invoice')
-      return res.json()
-    },
-    onSuccess: () => {
-      toast.success('Invoice deleted successfully')
-      router.push('/dashboard/invoices')
-    },
-    onError: () => {
-      toast.error('Failed to delete invoice')
-    },
-  })
-
-  const sendInvoiceMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/invoices/${invoiceId}/send`, {
-        method: 'POST',
-      })
-      if (!res.ok) throw new Error('Failed to send invoice')
-      return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] })
-    },
-  })
-
-  const recordPaymentMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/invoices/${invoiceId}/payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseFloat(paymentAmount),
-          method: paymentMethod,
-          reference: paymentReference,
-        }),
-      })
-      if (!res.ok) throw new Error('Failed to record payment')
-      return res.json()
-    },
-    onSuccess: () => {
-      setShowPaymentModal(false)
-      setPaymentAmount('')
-      setPaymentReference('')
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] })
-    },
-  })
-
-  const getCustomerName = () => {
-    const personalName = `${invoice?.customer?.firstName || ''} ${invoice?.customer?.lastName || ''}`.trim()
-    if (personalName && invoice?.customer?.companyName) {
-      return `${personalName} (${invoice.customer.companyName})`
+  });
+  async function act(path: string, body: unknown, verb = "POST") {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const r = await send(path, body, verb),
+        j = await r.json();
+      if (!r.ok) throw Error(j.error || "Request failed");
+      await cache.invalidateQueries({ queryKey: ["invoice", id] });
+      if (j.url) {
+        const u = new URL(j.url);
+        if (u.protocol !== "https:" || u.hostname !== "checkout.stripe.com")
+          throw Error("Unexpected payment destination");
+        window.location.assign(u.href);
+      } else
+        setNotice(
+          path.endsWith("/send")
+            ? "Message draft saved. Review and send it from Communications."
+            : "Saved.",
+        );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Request failed");
+    } finally {
+      setBusy(false);
     }
-    return personalName || invoice?.customer?.companyName || 'Unknown'
   }
-
-  const isOverdue = () => {
-    if (!invoice?.dueDate || invoice.status === 'PAID') return false
-    return new Date(invoice.dueDate) < new Date()
-  }
-
-  if (isLoading) {
+  if (q.isPending) return <p>Loading invoice…</p>;
+  if (q.error || !q.data)
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div role="alert">
+        {q.error?.message || "Invoice unavailable"}{" "}
+        <button onClick={() => q.refetch()}>Retry</button>
       </div>
-    )
-  }
-
-  if (!invoice) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Invoice not found</p>
-        <Link href="/dashboard/invoices" className="text-primary-600 hover:underline mt-2 inline-block">
-          Back to invoices
-        </Link>
-      </div>
-    )
-  }
-
-  const canSend = invoice.status === 'DRAFT'
-  const canRecordPayment = invoice.balanceDue > 0
-  const paymentUrl = `${window.location.origin}/pay/${invoice.id}`
-
-  const copyPaymentLink = () => {
-    navigator.clipboard.writeText(paymentUrl)
-    toast.success('Payment link copied to clipboard!')
-  }
-
-  const openPaymentPage = () => {
-    window.open(paymentUrl, '_blank')
-  }
-
+    );
+  const i = q.data,
+    payable = !!i.reviewedAt && Number(i.balanceDue) > 0 && i.status !== "VOID";
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/invoices" className="p-2 hover:bg-gray-100 rounded-lg">
-            <ArrowLeftIcon className="w-5 h-5" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{invoice.invoiceNumber}</h1>
-              <span className={`badge ${getStatusColor(invoice.status)}`}>
-                {invoice.status}
-              </span>
-              {isOverdue() && (
-                <span className="badge bg-red-100 text-red-700">OVERDUE</span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500">
-              Issued {formatDate(invoice.issueDate)} • Due {formatDate(invoice.dueDate)}
-            </p>
-          </div>
+    <main className="space-y-6">
+      <Link href="/dashboard/invoices">← Invoices</Link>
+      <div className="flex flex-wrap justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{i.invoiceNumber}</h1>
+          <p>
+            {i.status} · Version {i.version} · Due {i.dueDate.slice(0, 10)}
+          </p>
+          <p>
+            {i.customer.companyName ||
+              `${i.customer.firstName || ""} ${i.customer.lastName || ""}`}
+          </p>
         </div>
-        <div className="flex gap-2">
-          {canSend && (
-            <button
-              onClick={() => sendInvoiceMutation.mutate()}
-              disabled={sendInvoiceMutation.isPending}
-              className="btn-primary flex items-center gap-2"
-            >
-              <PaperAirplaneIcon className="w-4 h-4" />
-              Send to Customer
-            </button>
-          )}
-          {canRecordPayment && (
-            <>
-              <button
-                onClick={() => {
-                  setPaymentAmount(invoice.balanceDue.toString())
-                  setShowPaymentModal(true)
-                }}
-                className="btn-primary bg-green-600 hover:bg-green-700 flex items-center gap-2"
-              >
-                <CurrencyDollarIcon className="w-4 h-4" />
-                Record Payment
-              </button>
-              <button
-                onClick={copyPaymentLink}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <LinkIcon className="w-4 h-4" />
-                Copy Payment Link
-              </button>
-              <button
-                onClick={openPaymentPage}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <CreditCardIcon className="w-4 h-4" />
-                Pay Online
-              </button>
-            </>
-          )}
-          <Link
-            href={`/dashboard/invoices/${invoiceId}/edit`}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <PencilIcon className="w-4 h-4" />
-            Edit
-          </Link>
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <TrashIcon className="w-4 h-4" />
-            Delete
-          </button>
-          <button className="btn-secondary flex items-center gap-2">
-            <PrinterIcon className="w-4 h-4" />
-            Print
-          </button>
-        </div>
+        <button
+          className="btn-secondary print:hidden"
+          onClick={() => window.print()}
+        >
+          Print invoice
+        </button>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Line Items */}
-          <div className="card">
-            <h2 className="font-semibold mb-4">Line Items</h2>
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-sm text-gray-500 border-b">
-                  <th className="pb-2">Description</th>
-                  <th className="pb-2 text-right">Qty</th>
-                  <th className="pb-2 text-right">Unit Price</th>
-                  <th className="pb-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.lineItems.map((item) => (
-                  <tr key={item.id} className="border-b last:border-0">
-                    <td className="py-3">
-                      <p>{item.description}</p>
-                      {item.category && (
-                        <p className="text-xs text-gray-500">{item.category}</p>
-                      )}
-                    </td>
-                    <td className="py-3 text-right">{item.quantity}</td>
-                    <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
-                    <td className="py-3 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={3} className="pt-4 text-right text-gray-500">Subtotal</td>
-                  <td className="pt-4 text-right">{formatCurrency(invoice.subtotal)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="pt-1 text-right text-gray-500">
-                    Tax ({(invoice.taxRate * 100).toFixed(1)}%)
-                  </td>
-                  <td className="pt-1 text-right">{formatCurrency(invoice.taxAmount)}</td>
-                </tr>
-                <tr className="font-bold text-lg">
-                  <td colSpan={3} className="pt-2 text-right border-t">Total</td>
-                  <td className="pt-2 text-right border-t">{formatCurrency(invoice.totalAmount)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Payments */}
-          {invoice.payments.length > 0 && (
-            <div className="card">
-              <h2 className="font-semibold mb-4">Payment History</h2>
-              <div className="space-y-2">
-                {invoice.payments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-green-800">{formatCurrency(payment.amount)}</p>
-                      <p className="text-sm text-green-600">
-                        {payment.method.replace('_', ' ')}
-                        {payment.reference && ` • ${payment.reference}`}
-                      </p>
-                      <p className="text-xs text-gray-500">{formatDate(payment.date)}</p>
-                    </div>
-                    <CheckCircleIcon className="w-6 h-6 text-green-600" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {(invoice.notes || invoice.terms) && (
-            <div className="card">
-              {invoice.notes && (
-                <div className="mb-4">
-                  <h3 className="font-medium mb-2">Notes</h3>
-                  <p className="text-gray-700">{invoice.notes}</p>
-                </div>
-              )}
-              {invoice.terms && (
-                <div>
-                  <h3 className="font-medium mb-2">Terms</h3>
-                  <p className="text-sm text-gray-600">{invoice.terms}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Balance */}
-          <div className={`card ${invoice.balanceDue > 0 ? 'bg-orange-50' : 'bg-green-50'}`}>
-            <h2 className="font-semibold mb-2">Balance Due</h2>
-            <p className={`text-3xl font-bold ${invoice.balanceDue > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-              {formatCurrency(invoice.balanceDue)}
-            </p>
-            {invoice.paidAmount > 0 && (
-              <p className="text-sm text-gray-600 mt-1">
-                Paid: {formatCurrency(invoice.paidAmount)}
-              </p>
-            )}
-          </div>
-
-          {/* Customer */}
-          <div className="card">
-            <h2 className="font-semibold mb-4">Bill To</h2>
-            <Link
-              href={`/dashboard/customers/${invoice.customer.id}`}
-              className="block hover:bg-gray-50 -mx-2 px-2 py-2 rounded"
-            >
-              <p className="font-medium text-primary-600">{getCustomerName()}</p>
-              {invoice.customer.billingAddress && (
-                <p className="text-sm text-gray-600">
-                  {invoice.customer.billingAddress}<br />
-                  {invoice.customer.billingCity}, {invoice.customer.billingState} {invoice.customer.billingZip}
-                </p>
-              )}
-              {invoice.customer.email && (
-                <p className="text-sm text-gray-600 mt-1">{invoice.customer.email}</p>
-              )}
-            </Link>
-          </div>
-
-          {/* Related Job */}
-          {invoice.job && (
-            <div className="card">
-              <h2 className="font-semibold mb-4">Related Job</h2>
-              <Link
-                href={`/dashboard/jobs/${invoice.job.id}`}
-                className="block hover:bg-gray-50 -mx-2 px-2 py-2 rounded"
-              >
-                <p className="font-medium text-primary-600">{invoice.job.jobNumber}</p>
-                <p className="text-sm text-gray-600">{invoice.job.title}</p>
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <ConfirmDialog
-        isOpen={deleteModalOpen}
-        title="Delete Invoice"
-        message="Are you sure you want to delete this invoice? This action cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
-        isLoading={deleteMutation.isPending}
-        onConfirm={() => deleteMutation.mutate()}
-        onCancel={() => setDeleteModalOpen(false)}
-      />
-
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-bold mb-4">Record Payment</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Amount</label>
-                <input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="input"
-                  step="0.01"
-                  max={invoice.balanceDue}
-                />
-              </div>
-              <div>
-                <label className="label">Payment Method</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="input"
-                >
-                  <option value="CASH">Cash</option>
-                  <option value="CHECK">Check</option>
-                  <option value="CREDIT_CARD">Credit Card</option>
-                  <option value="DEBIT_CARD">Debit Card</option>
-                  <option value="ACH">ACH/Bank Transfer</option>
-                  <option value="FINANCING">Financing</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Reference (optional)</label>
-                <input
-                  type="text"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value)}
-                  className="input"
-                  placeholder="Check number, last 4 digits, etc."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => recordPaymentMutation.mutate()}
-                disabled={!paymentAmount || recordPaymentMutation.isPending}
-                className="btn-primary"
-              >
-                {recordPaymentMutation.isPending ? 'Recording...' : 'Record Payment'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {error && (
+        <p role="alert" className="text-red-700">
+          {error}
+        </p>
       )}
-    </div>
-  )
+      {notice && (
+        <p role="status" className="text-green-700">
+          {notice}
+        </p>
+      )}
+      {!i.reviewedAt && i.status !== "DRAFT" && (
+        <p className="p-4 bg-amber-50">
+          This legacy invoice has no recorded review. Its historical balances
+          are retained; it cannot accept new payments until the office
+          reconciles and replaces it with a reviewed invoice.
+        </p>
+      )}
+      <section className="card overflow-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Quantity</th>
+              <th>Unit price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {i.lineItems.map((l) => (
+              <tr key={l.id} className="border-t">
+                <td className="py-3">{l.description}</td>
+                <td>{l.quantity}</td>
+                <td>{usd(l.unitPrice)}</td>
+                <td>{usd(l.totalPrice)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <dl className="mt-4 grid grid-cols-2 gap-2">
+          <dt>Subtotal</dt>
+          <dd>{usd(i.subtotal)}</dd>
+          <dt>Tax</dt>
+          <dd>{usd(i.taxAmount)}</dd>
+          <dt>Total</dt>
+          <dd>{usd(i.totalAmount)}</dd>
+          <dt>Credit notes</dt>
+          <dd>{usd(i.creditCents / 100)}</dd>
+          <dt>Net payments</dt>
+          <dd>{usd(i.paidAmount)}</dd>
+          <dt>Outstanding</dt>
+          <dd className="font-bold">{usd(i.balanceDue)}</dd>
+        </dl>
+        <p className="mt-4 whitespace-pre-wrap">{i.terms}</p>
+        <p className="mt-4 whitespace-pre-wrap">{i.notes}</p>
+      </section>
+      {i.status==="DRAFT"&&<InvoiceDraftEditor key={i.version} invoice={i} onSaved={()=>void cache.invalidateQueries({queryKey:["invoice",id]})}/>}
+      <div className="grid lg:grid-cols-2 gap-6 print:hidden">
+        {i.status === "DRAFT" && (
+          <section className="card space-y-3">
+            <h2 className="font-semibold">Review and issue</h2>
+            <p>
+              A manager must review scope, quantities, prices and tax before the
+              invoice becomes payable.
+            </p>
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={review}
+                onChange={(e) => setReview(e.target.checked)}
+              />
+              I reviewed the invoice and tax calculation.
+            </label>
+            <button
+              disabled={busy || !review}
+              className="btn-primary"
+              onClick={() =>
+                act(
+                  `/api/invoices/${id}`,
+                  {
+                    action: "issue",
+                    version: i.version,
+                    reviewConfirmed: review,
+                  },
+                  "PUT",
+                )
+              }
+            >
+              Issue invoice
+            </button>
+          </section>
+        )}
+        {i.reviewedAt && i.status !== "VOID" && (
+          <section className="card space-y-3">
+            <h2 className="font-semibold">Customer message</h2>
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={contact}
+                onChange={(e) => setContact(e.target.checked)}
+              />
+              The customer authorized service email contact.
+            </label>
+            <button
+              disabled={busy || !contact}
+              className="btn-primary"
+              onClick={() =>
+                act(`/api/invoices/${id}/send`, {
+                  version: i.version,
+                  contactAuthorized: contact,
+                })
+              }
+            >
+              Prepare invoice email
+            </button>
+            <p>
+              <Link
+                className="text-blue-700"
+                href="/dashboard/operations/communications"
+              >
+                Review drafts and delivery receipts →
+              </Link>
+            </p>
+            <p>
+              <Link
+                className="text-blue-700"
+                href="/dashboard/operations/portal"
+              >
+                Create a private customer portal link →
+              </Link>
+            </p>
+          </section>
+        )}
+        {payable && (
+          <section className="card space-y-3">
+            <h2 className="font-semibold">Record funds received</h2>
+            <label className="block">
+              Amount (USD)
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                max={i.balanceDue}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              Method
+              <select
+                className="input"
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+              >
+                <option>CASH</option>
+                <option>CHECK</option>
+                <option>ACH</option>
+              </select>
+            </label>
+            <label className="block">
+              Reference (required for check or ACH)
+              <input
+                className="input"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
+            </label>
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={received}
+                onChange={(e) => setReceived(e.target.checked)}
+              />
+              I confirm these funds have actually been received.
+            </label>
+            <button
+              className="btn-primary"
+              disabled={busy || !received || !amount}
+              onClick={() =>
+                act(`/api/invoices/${id}/payment`, {
+                  amount,
+                  method,
+                  reference,
+                  receivedConfirmed: received,
+                })
+              }
+            >
+              Record payment
+            </button>
+            <hr />
+            <p>
+              Card payments use the configured company Stripe account and
+              require a verified receipt.
+            </p>
+            <button
+              className="btn-secondary"
+              disabled={busy}
+              onClick={() =>
+                act("/api/stripe/create-checkout", { invoiceId: id })
+              }
+            >
+              Open Stripe checkout
+            </button>
+          </section>
+        )}
+        {i.status !== "VOID" && (
+          <section className="card space-y-3">
+            <h2 className="font-semibold">Manager adjustments</h2>
+            <label className="block">
+              Reason
+              <textarea
+                className="input"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </label>
+            {payable && (
+              <>
+                <label className="block">
+                  Credit amount (USD)
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    max={i.balanceDue}
+                    className="input"
+                    value={credit}
+                    onChange={(e) => setCredit(e.target.value)}
+                  />
+                </label>
+                <button
+                  className="btn-secondary"
+                  disabled={busy || !reason || !credit}
+                  onClick={() =>
+                    act(
+                      `/api/invoices/${id}`,
+                      {
+                        action: "credit",
+                        version: i.version,
+                        reason,
+                        amount: credit,
+                      },
+                      "PUT",
+                    )
+                  }
+                >
+                  Apply credit note
+                </button>
+              </>
+            )}
+            {!i.payments.length && (
+              <button
+                className="btn-secondary"
+                disabled={busy || !reason}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Void this unpaid invoice and retain its history?",
+                    )
+                  )
+                    act(
+                      `/api/invoices/${id}`,
+                      { action: "void", version: i.version, reason },
+                      "PUT",
+                    );
+                }}
+              >
+                Void unpaid invoice
+              </button>
+            )}
+            <p>
+              <Link className="text-blue-700" href="/dashboard/finance">
+                Refunds and provider reconciliation →
+              </Link>
+            </p>
+          </section>
+        )}
+      </div>
+      <section className="card overflow-auto">
+        <h2 className="font-semibold mb-3">Payment receipts</h2>
+        {!i.payments.length ? (
+          <p>No payments recorded.</p>
+        ) : (
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th>Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              {i.payments.map((p) => (
+                <tr key={p.id} className="border-t">
+                  <td className="py-3">{p.date.slice(0, 10)}</td>
+                  <td>{usd(p.amount)}</td>
+                  <td>{p.method}</td>
+                  <td>{p.reference || "—"}</td>
+                  <td>
+                    {p.verifiedAt ? "Recorded receipt" : "Legacy; not verified"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </main>
+  );
 }

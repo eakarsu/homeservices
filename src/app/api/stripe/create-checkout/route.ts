@@ -1,77 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getStripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
-import { getAuthUser } from '@/lib/apiAuth'
-import { canManageEstimate } from '@/lib/operations-governance'
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!canManageEstimate(user)) return NextResponse.json({ error: 'Billing role required' }, { status: 403 })
-    const body = await request.json()
-    const { invoiceId } = body
-
-    if (typeof invoiceId !== 'string' || !invoiceId.trim()) {
-      return NextResponse.json({ error: 'Invoice ID required' }, { status: 400 })
-    }
-
-    // Get invoice with customer details
-    const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, customer: { companyId: user.companyId } },
-      include: {
-        customer: true,
-        lineItems: true,
-      },
-    })
-
-    if (!invoice) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
-    }
-
-    if (invoice.status === 'PAID') {
-      return NextResponse.json({ error: 'Invoice already paid' }, { status: 400 })
-    }
-
-    const balanceDue = Number(invoice.balanceDue)
-    if (!Number.isFinite(balanceDue) || !Number.isSafeInteger(Math.round(balanceDue * 100)) || balanceDue <= 0) {
-      return NextResponse.json({ error: 'No balance due' }, { status: 400 })
-    }
-
-    // Get customer name
-    const customerName = invoice.customer.companyName ||
-      `${invoice.customer.firstName || ''} ${invoice.customer.lastName || ''}`.trim() ||
-      'Customer'
-
-    // Create Stripe checkout session
-    const session = await getStripe().checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      customer_email: invoice.customer.email || undefined,
-      metadata: {
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-      },
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Invoice ${invoice.invoiceNumber}`,
-              description: `Payment for ${customerName}`,
-            },
-            unit_amount: Math.round(balanceDue * 100), // Stripe uses cents
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard/invoices/${invoice.id}?checkout=complete`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/invoices/${invoice.id}`,
-    })
-
-    return NextResponse.json({ url: session.url })
-  } catch (error) {
-    console.error('Stripe checkout error:', error)
-    return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
-  }
-}
+import { NextRequest } from "next/server";
+import { handle, bodyFor, office, text } from "@/lib/workflows/core";
+import { prisma } from "@/lib/prisma";
+import { invoiceFor } from "@/lib/workflows/invoices";
+import { checkout } from "@/lib/workflows/finance";
+export const POST = (request: NextRequest) =>
+  handle(request, async (user) => {
+    office(user);
+    const body = await bodyFor(request),
+      invoice = await invoiceFor(
+        prisma,
+        user,
+        text(body.invoiceId, "invoice", 100),
+      );
+    return checkout(user, invoice.customerId, {
+      ...body,
+      requestKey: request.headers.get("Idempotency-Key"),
+    });
+  });

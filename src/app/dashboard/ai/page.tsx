@@ -1,240 +1,84 @@
-'use client'
-
 import Link from 'next/link'
-import {
-  SparklesIcon,
-  TruckIcon,
-  WrenchScrewdriverIcon,
-  ArrowRightIcon,
-  ChartBarIcon,
-  CalendarDaysIcon,
-  UsersIcon,
-  DocumentTextIcon,
-  ClipboardDocumentCheckIcon,
-  CubeIcon
-} from '@heroicons/react/24/outline'
+import { SparklesIcon, DocumentTextIcon, ClipboardDocumentCheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 
-const aiFeatures = [
-  {
-    name: 'Dispatch Optimizer',
-    description: 'Automatically assign jobs to technicians based on location, skills, and availability. Optimize routes and reduce travel time.',
-    href: '/dashboard/ai/dispatch-optimizer',
-    icon: TruckIcon,
-    color: 'bg-blue-500',
-    stats: [
-      { label: 'Avg Time Saved', value: '25%' },
-      { label: 'Fuel Savings', value: '15%' }
-    ]
-  },
-  {
-    name: 'Diagnostics Assistant',
-    description: 'Get AI-powered diagnostic suggestions based on symptoms. Identify probable causes and recommended repair actions.',
-    href: '/dashboard/ai/diagnostics',
-    icon: WrenchScrewdriverIcon,
-    color: 'bg-green-500',
-    stats: [
-      { label: 'Accuracy Rate', value: '92%' },
-      { label: 'Time to Diagnose', value: '-40%' }
-    ]
-  },
-  {
-    name: 'Smart Scheduling',
-    description: 'AI-powered appointment scheduling that considers travel time, job complexity, technician skills, and customer preferences.',
-    href: '/dashboard/ai/smart-scheduling',
-    icon: CalendarDaysIcon,
-    color: 'bg-purple-500',
-    stats: [
-      { label: 'Schedule Efficiency', value: '+30%' },
-      { label: 'Customer Satisfaction', value: '95%' }
-    ]
-  },
-  {
-    name: 'Predictive Maintenance',
-    description: 'Predict equipment failures before they happen based on age, service history, and usage patterns. Prevent costly breakdowns.',
-    href: '/dashboard/ai/predictive-maintenance',
-    icon: ChartBarIcon,
-    color: 'bg-orange-500',
-    stats: [
-      { label: 'Failure Prevention', value: '85%' },
-      { label: 'Cost Savings', value: '40%' }
-    ]
-  },
-  {
-    name: 'Customer Insights',
-    description: 'AI-powered customer analysis to identify VIPs, churn risks, and upsell opportunities. Maximize customer lifetime value.',
-    href: '/dashboard/ai/customer-insights',
-    icon: UsersIcon,
-    color: 'bg-pink-500',
-    stats: [
-      { label: 'Retention Boost', value: '+20%' },
-      { label: 'Revenue Growth', value: '+15%' }
-    ]
-  },
+const availableFeatures = [
+  {name:'AI draft workspace',description:'Prepare 17 evidence-backed drafts, including intake, job summaries, scheduling, maintenance, inventory, photo and voice intake. Inspect saved sources and record your review.',href:'/dashboard/assistant',icon:SparklesIcon,action:'Open draft workspace'},
   {
     name: 'Quote Generator',
-    description: 'Generate professional Good/Better/Best quotes instantly. AI calculates pricing based on service type, parts, and labor.',
+    description: 'Prepare Good / Better / Best quote drafts using a selected job and your company pricebook. Review scope and pricing before delivering an estimate.',
     href: '/dashboard/ai/quote-generator',
     icon: DocumentTextIcon,
-    color: 'bg-indigo-500',
-    stats: [
-      { label: 'Quote Time', value: '-80%' },
-      { label: 'Win Rate', value: '+25%' }
-    ]
+    action: 'Prepare a quote draft',
   },
   {
-    name: 'Job Summary',
-    description: 'Transform technician notes into professional job reports. Auto-generate customer communications and follow-up recommendations.',
-    href: '/dashboard/ai/job-summary',
+    name: 'Follow-up Assistant',
+    description: 'Draft customer messages, task notes, and checklists from a customer and job. Edit the draft before saving. Messages are not sent automatically.',
+    href: '/dashboard/follow-ups',
     icon: ClipboardDocumentCheckIcon,
-    color: 'bg-teal-500',
-    stats: [
-      { label: 'Report Quality', value: '+50%' },
-      { label: 'Admin Time', value: '-60%' }
-    ]
+    action: 'Open follow-ups',
   },
-  {
-    name: 'Inventory Forecast',
-    description: 'Predict inventory needs and optimize reorder timing. Prevent stockouts and reduce carrying costs with AI-powered forecasting.',
-    href: '/dashboard/ai/inventory-forecast',
-    icon: CubeIcon,
-    color: 'bg-amber-500',
-    stats: [
-      { label: 'Stockout Reduction', value: '-70%' },
-      { label: 'Inventory Savings', value: '+20%' }
-    ]
-  },
-  {
-    name: 'Photo Intake (Vision)',
-    description: 'Snap an equipment nameplate from the field; AI extracts make, model, serial, and auto-creates the Equipment record.',
-    href: '/dashboard/ai/photo-intake',
-    icon: SparklesIcon,
-    color: 'bg-fuchsia-500',
-    stats: [
-      { label: 'Field Time Saved', value: '+90%' },
-      { label: 'Data Accuracy', value: '+50%' }
-    ]
-  },
-  {
-    name: 'Subscription Health Monitor',
-    description: 'Scans active service-agreement plans + equipment age and proposes preventive visits with priority and reasoning.',
-    href: '/dashboard/ai/subscription-health',
-    icon: ChartBarIcon,
-    color: 'bg-emerald-500',
-    stats: [
-      { label: 'Plan Renewal', value: '+18%' },
-      { label: 'Preventive Bookings', value: '+30%' }
-    ]
-  },
-  {
-    name: 'Route Optimizer',
-    description: 'Reorders a technician\u2019s daily jobs into the most efficient sequence using priority, location and duration.',
-    href: '/dashboard/ai/route-optimizer',
-    icon: TruckIcon,
-    color: 'bg-cyan-500',
-    stats: [
-      { label: 'Distance Saved', value: '15-30%' },
-      { label: 'Jobs / Day', value: '+1' }
-    ]
-  }
+]
+
+const plannedFeatures = [
+  { name: 'Dispatch Optimizer', description: 'Recommend technician assignments using skills, job priority, and availability.' },
+  { name: 'Diagnostics Assistant', description: 'Prepare possible causes and questions for a qualified technician to review.' },
+  { name: 'Smart Scheduling', description: 'Suggest appointment times while checking availability and scheduling conflicts.' },
+  { name: 'Predictive Maintenance', description: 'Flag equipment that may need attention using service history and equipment records.' },
+  { name: 'Customer Insights', description: 'Summarize service history and potential follow-up opportunities.' },
+  { name: 'Job Summary', description: 'Turn technician notes into a draft work report for review.' },
+  { name: 'Inventory Forecast', description: 'Suggest reorder quantities from stock levels and recorded parts usage.' },
+  { name: 'Photo Intake', description: 'Extract equipment details from photos for confirmation before saving.' },
+  { name: 'Subscription Health Monitor', description: 'Identify service agreements that need a visit or renewal review.' },
+  { name: 'Route Optimizer', description: 'Suggest a daily job sequence using travel estimates and appointment windows.' },
 ]
 
 export default function AIPage() {
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <SparklesIcon className="w-7 h-7 text-primary-600" />
-          AI Features
+        <h1 className="page-title flex items-center gap-2">
+          <SparklesIcon className="h-7 w-7 text-primary-600" /> AI Features
         </h1>
-        <p className="text-gray-500 mt-1">
-          Leverage artificial intelligence to optimize your field service operations
-        </p>
+        <p className="mt-2 text-gray-600">Prepare drafts for review using your existing customer, job, and pricebook records.</p>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {aiFeatures.map((feature) => (
-          <Link
-            key={feature.name}
-            href={feature.href}
-            className="card hover:shadow-lg transition-shadow group"
-          >
-            <div className="flex items-start gap-4">
-              <div className={`p-3 ${feature.color} rounded-xl`}>
-                <feature.icon className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 group-hover:text-primary-600">
-                  {feature.name}
-                  <ArrowRightIcon className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="text-gray-500 text-sm mt-1">
-                  {feature.description}
-                </p>
-                <div className="flex gap-4 mt-4">
-                  {feature.stats.map((stat) => (
-                    <div key={stat.label} className="text-center">
-                      <p className="text-xl font-bold text-primary-600">{stat.value}</p>
-                      <p className="text-xs text-gray-500">{stat.label}</p>
-                    </div>
-                  ))}
+      <section aria-labelledby="available-ai-heading" className="space-y-4">
+        <h2 id="available-ai-heading" className="section-title">Available workflows</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {availableFeatures.map(feature => (
+            <Link key={feature.name} href={feature.href} className="card hover:shadow-md transition-shadow group">
+              <div className="flex items-start gap-4">
+                <div className="rounded-xl bg-primary-50 p-3 text-primary-600"><feature.icon className="h-6 w-6" /></div>
+                <div>
+                  <span className="badge badge-success">Review required</span>
+                  <h3 className="mt-2 text-lg font-semibold text-gray-900">{feature.name}</h3>
+                  <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary-700">
+                    {feature.action}<ArrowRightIcon className="h-4 w-4" />
+                  </span>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* AI Info */}
-      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
-        <div className="flex items-center gap-4">
-          <SparklesIcon className="w-12 h-12 text-primary-600" />
-          <div>
-            <h3 className="font-semibold text-gray-900">Powered by Advanced AI</h3>
-            <p className="text-gray-600 text-sm">
-              Our AI features use state-of-the-art language models to provide accurate diagnostics,
-              optimal scheduling, predictive insights, and intelligent recommendations. All data is processed securely.
-            </p>
-          </div>
+            </Link>
+          ))}
         </div>
-      </div>
+        <p className="text-sm text-gray-500">AI generation requires a configured provider. Check every draft against the actual job before using it.</p>
+      </section>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link href="/dashboard/ai/dispatch-optimizer" className="card hover:bg-blue-50 transition-colors text-center py-6">
-          <TruckIcon className="w-8 h-8 mx-auto text-blue-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Optimize Dispatch</p>
-        </Link>
-        <Link href="/dashboard/ai/diagnostics" className="card hover:bg-green-50 transition-colors text-center py-6">
-          <WrenchScrewdriverIcon className="w-8 h-8 mx-auto text-green-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Diagnose Issue</p>
-        </Link>
-        <Link href="/dashboard/ai/quote-generator" className="card hover:bg-indigo-50 transition-colors text-center py-6">
-          <DocumentTextIcon className="w-8 h-8 mx-auto text-indigo-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Generate Quote</p>
-        </Link>
-        <Link href="/dashboard/ai/customer-insights" className="card hover:bg-pink-50 transition-colors text-center py-6">
-          <UsersIcon className="w-8 h-8 mx-auto text-pink-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Customer Insights</p>
-        </Link>
-        <Link href="/dashboard/ai/smart-scheduling" className="card hover:bg-purple-50 transition-colors text-center py-6">
-          <CalendarDaysIcon className="w-8 h-8 mx-auto text-purple-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Smart Schedule</p>
-        </Link>
-        <Link href="/dashboard/ai/job-summary" className="card hover:bg-teal-50 transition-colors text-center py-6">
-          <ClipboardDocumentCheckIcon className="w-8 h-8 mx-auto text-teal-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Job Summary</p>
-        </Link>
-        <Link href="/dashboard/ai/predictive-maintenance" className="card hover:bg-orange-50 transition-colors text-center py-6">
-          <ChartBarIcon className="w-8 h-8 mx-auto text-orange-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Predict Maintenance</p>
-        </Link>
-        <Link href="/dashboard/ai/inventory-forecast" className="card hover:bg-amber-50 transition-colors text-center py-6">
-          <CubeIcon className="w-8 h-8 mx-auto text-amber-600 mb-2" />
-          <p className="font-medium text-gray-900 text-sm">Inventory Forecast</p>
-        </Link>
-      </div>
+      <section aria-labelledby="planned-ai-heading" className="space-y-4">
+        <div>
+          <h2 id="planned-ai-heading" className="section-title">Draft workflow coverage</h2>
+          <p className="text-sm text-gray-600">These workflows are available as reviewable drafts in the AI workspace. Dispatch and scheduling still require deterministic checks before an assignment is saved.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {plannedFeatures.map(feature => (
+            <article key={feature.name} className="card">
+              <Link href="/dashboard/assistant" className="badge badge-gray">Open in draft workspace</Link>
+              <h3 className="mt-2 font-semibold text-gray-900">{feature.name}</h3>
+              <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

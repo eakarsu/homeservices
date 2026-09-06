@@ -1,17 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from "@/lib/apiAuth"
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser } from "@/lib/apiAuth";
+import {
+  handle,
+  bodyFor,
+  withReceipt,
+  txFor,
+  fail,
+} from "@/lib/workflows/core";
+import { changeInvoice, invoiceFor } from "@/lib/workflows/invoices";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getAuthUser(request)
+    const user = await getAuthUser(request);
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    await invoiceFor(prisma, user, (await params).id);
     const invoice = await prisma.invoice.findFirst({
       where: {
         id: (await params).id,
@@ -42,99 +51,47 @@ export async function GET(
           },
         },
         lineItems: {
-          orderBy: { sortOrder: 'asc' },
+          orderBy: { sortOrder: "asc" },
         },
         payments: {
-          orderBy: { date: 'desc' },
+          orderBy: { date: "desc" },
         },
       },
-    })
+    });
 
     if (!invoice) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    return NextResponse.json(invoice)
+    return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Get invoice error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Get invoice error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
-export async function PUT(
+export const PUT = (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const data = await request.json()
-
-    const existing = await prisma.invoice.findFirst({
-      where: {
-        id: (await params).id,
-        customer: {
-          companyId: user.companyId,
-        },
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
-    }
-
-    const updateData: Record<string, unknown> = {}
-
-    if (data.status !== undefined) updateData.status = data.status
-    if (data.dueDate !== undefined) updateData.dueDate = new Date(data.dueDate)
-    if (data.notes !== undefined) updateData.notes = data.notes
-    if (data.terms !== undefined) updateData.terms = data.terms
-
-    const invoice = await prisma.invoice.update({
-      where: { id: (await params).id },
-      data: updateData,
-    })
-
-    return NextResponse.json(invoice)
-  } catch (error) {
-    console.error('Update invoice error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const existing = await prisma.invoice.findFirst({
-      where: {
-        id: (await params).id,
-        customer: {
-          companyId: user.companyId,
-        },
-      },
-    })
-
-    if (!existing) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
-    }
-
-    await prisma.invoice.delete({
-      where: { id: (await params).id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete invoice error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+  { params }: { params: Promise<{ id: string }> },
+) =>
+  handle(request, async (user) => {
+    const id = (await params).id,
+      body = await bodyFor(request);
+    return withReceipt(
+      user,
+      request.headers.get("Idempotency-Key"),
+      "invoice.change",
+      { id, ...body },
+      () => changeInvoice(user, id, body),
+    );
+  });
+export const DELETE = (request: NextRequest) =>
+  handle(request, () =>
+    fail(
+      "Invoice history is retained. Use the reviewed void or credit action.",
+      405,
+    ),
+  );

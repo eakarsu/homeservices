@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
@@ -80,9 +81,7 @@ export default function TechniciansPage() {
   const { data: technicians, isLoading } = useQuery<Technician[]>({
     queryKey: ['technicians'],
     queryFn: async () => {
-      const res = await fetch('/api/technicians')
-      if (!res.ok) throw new Error('Failed to fetch technicians')
-      return res.json()
+      return fetchCollection('/api/technicians')
     },
   })
 

@@ -1,4 +1,5 @@
 'use client'
+import {useWorkflowFetch} from '@/hooks/useWorkflowFetch'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -34,6 +35,7 @@ interface JobFormData {
 }
 
 function NewJobForm() {
+  const mutate=useWorkflowFetch()
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
@@ -49,7 +51,7 @@ function NewJobForm() {
     title: '',
     description: '',
     priority: 'NORMAL',
-    jobType: 'SERVICE',
+    jobType: 'SERVICE_CALL',
     tradeType: 'HVAC',
     scheduledStart: '',
     timeWindowStart: '08:00',
@@ -100,14 +102,7 @@ function NewJobForm() {
 
   const createMutation = useMutation({
     mutationFn: async (data: JobFormData) => {
-      const res = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          scheduledStart: data.scheduledStart ? new Date(data.scheduledStart).toISOString() : null,
-        }),
-      })
+      const res = await mutate('/api/jobs',{...data,scheduledStart:data.scheduledStart?new Date(data.scheduledStart).toISOString():null})
       if (!res.ok) {
         const error = await res.json()
         throw new Error(error.error || 'Failed to create job')
@@ -271,7 +266,7 @@ function NewJobForm() {
                 onChange={handleChange}
                 className="input"
               >
-                <option value="SERVICE">Service Call</option>
+                <option value="SERVICE_CALL">Service Call</option>
                 <option value="MAINTENANCE">Maintenance</option>
                 <option value="INSTALLATION">Installation</option>
                 <option value="REPAIR">Repair</option>
@@ -291,7 +286,6 @@ function NewJobForm() {
                 <option value="LOW">Low</option>
                 <option value="NORMAL">Normal</option>
                 <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
                 <option value="EMERGENCY">Emergency</option>
               </select>
             </div>

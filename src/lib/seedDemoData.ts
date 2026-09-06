@@ -1,525 +1,95 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma, TradeType } from '@prisma/client'
+import { createHash } from 'node:crypto'
+import { hash } from 'bcryptjs'
 
-type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>
+type TransactionClient = Prisma.TransactionClient
+export const DEMO_ROWS = 15
+const names = [
+  ['Avery', 'Morgan'], ['Jordan', 'Bennett'], ['Taylor', 'Brooks'], ['Casey', 'Reed'],
+  ['Riley', 'Parker'], ['Morgan', 'Hayes'], ['Alex', 'Rivera'], ['Jamie', 'Collins'],
+  ['Cameron', 'Foster'], ['Drew', 'Sullivan'], ['Reese', 'Bailey'], ['Quinn', 'Ward'],
+  ['Skyler', 'Price'], ['Rowan', 'Bell'], ['Emerson', 'Gray'],
+]
+const services: [string, TradeType][] = [
+  ['AC diagnostic visit', 'HVAC'], ['AC seasonal tune-up', 'HVAC'], ['Furnace inspection', 'HVAC'],
+  ['Heat pump maintenance', 'HVAC'], ['Thermostat installation', 'HVAC'],
+  ['Faucet repair', 'PLUMBING'], ['Drain cleaning', 'PLUMBING'], ['Water heater inspection', 'PLUMBING'],
+  ['Leak assessment', 'PLUMBING'], ['Toilet repair', 'PLUMBING'],
+  ['Outlet replacement', 'ELECTRICAL'], ['Panel inspection', 'ELECTRICAL'], ['Lighting installation', 'ELECTRICAL'],
+  ['Ceiling fan installation', 'ELECTRICAL'], ['Home maintenance visit', 'GENERAL'],
+]
+const partNames = ['Dual-run capacitor', 'Air filter 16x25x1', 'Air filter 20x25x1', 'Smart thermostat', 'HVAC contactor', 'Half-inch ball valve', 'Three-quarter-inch ball valve', 'Faucet cartridge', 'Drain trap kit', 'Water heater connector', '20A outlet', 'GFCI outlet', 'Single-pole switch', 'LED fixture', 'Weatherproof junction box']
 
-function requireDemoPassword() {
-  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
-  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
-  return password;
+/** Insert missing sample rows only. Never reassign accounts or overwrite existing work. */
+export async function seedDemoDataForCompany(tx: TransactionClient, companyId: string, adminUserId: string) {
+  const owner = await tx.user.findFirst({ where: { id: adminUserId, companyId, role: 'ADMIN' } })
+  if (!owner) throw new Error('Demo data requires an administrator of the target company')
+  // Serialize repeat/concurrent loads for this company without adding schema objects.
+  await tx.$queryRaw`SELECT id FROM "Company" WHERE id = ${companyId} FOR UPDATE`
+  const password = process.env.DEMO_PASSWORD || process.env.ADMIN_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD || ''
+  if (password.length < 12) throw new Error('Set a DEMO_PASSWORD with at least 12 characters')
+  const passwordHash = await hash(password, 12)
+  const tag = createHash('sha256').update(companyId).digest('hex').slice(0, 12)
+  const key = (kind: string, i: number) => `demo-${tag}-${kind}-${String(i + 1).padStart(3, '0')}`
+  const stamp = (days: number, hour = 9) => { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(hour, 0, 0, 0); return d }
+  const sampleNote = 'DEMO SAMPLE — fictional data for evaluating the application. No external service, delivery or charge has occurred.'
+
+  for (let i = 0; i < DEMO_ROWS; i++) {
+    const [firstName, lastName] = names[i], [serviceName, tradeType] = services[i]
+    const service = await tx.serviceType.upsert({ where: { id: key('service', i) }, update: {}, create: { id: key('service', i), companyId, name: `Demo ${serviceName}`, code: `DEMO-${String(i + 1).padStart(3, '0')}`, tradeType, defaultDuration: 90, color: ['#2563eb', '#16a34a', '#d97706'][i % 3] } })
+    const truck = await tx.truck.upsert({ where: { id: key('truck', i) }, update: {}, create: { id: key('truck', i), companyId, name: `Demo Service Van ${i + 1}`, vehicleId: `DEMO-${i + 1}`, make: 'Ford', model: 'Transit', year: 2023 } })
+    const technicianUser = await tx.user.upsert({ where: { id: key('user', i) }, update: {}, create: { id: key('user', i), companyId, email: `demo.tech.${i + 1}.${tag}@example.invalid`, password: passwordHash, firstName, lastName: `${lastName} (Demo)`, role: 'TECHNICIAN', isActive: true, emailVerified: true, phone: `202-555-${String(100 + i).padStart(4, '0')}` } })
+    const tech = await tx.technician.upsert({ where: { id: key('tech', i) }, update: {}, create: { id: key('tech', i), userId: technicianUser.id, truckId: truck.id, employeeId: `DEMO-${i + 1}`, tradeTypes: [tradeType], certifications: [], hourlyRate: 30 + i, payType: 'HOURLY', status: 'AVAILABLE', color: ['#2563eb', '#16a34a', '#d97706'][i % 3] } })
+    for (let dayOfWeek = 1; dayOfWeek <= 5; dayOfWeek++) await tx.techSchedule.upsert({ where: { technicianId_dayOfWeek: { technicianId: tech.id, dayOfWeek } }, update: {}, create: { technicianId: tech.id, dayOfWeek, startTime: '08:00', endTime: '17:00' } })
+    const customer = await tx.customer.upsert({ where: { id: key('customer', i) }, update: {}, create: { id: key('customer', i), companyId, customerNumber: `DEMO-${tag}-CUS-${i + 1}`, firstName, lastName: `${lastName} (Demo)`, companyName: i % 5 === 0 ? `Demo ${lastName} Offices` : null, type: i % 5 === 0 ? 'COMMERCIAL' : 'RESIDENTIAL', status: 'ACTIVE', email: `demo.customer.${i + 1}.${tag}@example.invalid`, phone: `202-555-${String(100 + i).padStart(4, '0')}`, billingAddress: `${100 + i * 10} Example Lane`, billingCity: 'Atlanta', billingState: 'GA', billingZip: `303${String(i + 1).padStart(2, '0')}`, notes: sampleNote, tags: ['demo'], doNotCall: true, doNotEmail: true, doNotText: true } })
+    const property = await tx.property.upsert({ where: { id: key('property', i) }, update: {}, create: { id: key('property', i), customerId: customer.id, name: 'Demo primary property', type: 'House', address: `${100 + i * 10} Example Lane`, city: 'Atlanta', state: 'GA', zip: `303${String(i + 1).padStart(2, '0')}`, sqFootage: 1400 + i * 100, yearBuilt: 1995 + i, notes: sampleNote } })
+    const equipment = await tx.equipment.upsert({ where: { id: key('equipment', i) }, update: {}, create: { id: key('equipment', i), propertyId: property.id, type: tradeType === 'PLUMBING' ? 'WATER_HEATER' : tradeType === 'ELECTRICAL' ? 'ELECTRICAL_PANEL' : 'AC_UNIT', brand: 'Demo equipment', model: `Sample-${i + 1}`, serialNumber: `DEMO-${tag}-${i + 1}`, installDate: stamp(-900), lastServiceDate: stamp(-120), nextServiceDue: stamp(30 + i), warrantyExpires: stamp(365), location: 'Utility area', notes: sampleNote, photos: [] } })
+    const part = await tx.part.upsert({ where: { id: key('part', i) }, update: {}, create: { id: key('part', i), companyId, partNumber: `DEMO-PART-${i + 1}`, name: `Demo ${partNames[i]}`, description: sampleNote, category: tradeType, manufacturer: 'Demo supplier', cost: 10 + i * 3, price: 25 + i * 5, quantityOnHand: i % 4 === 0 ? 3 : 20 + i, reorderLevel: 5, reorderQty: 10, warehouseLocation: `A-${i + 1}` } })
+    await tx.truckStock.upsert({ where: { truckId_partId: { truckId: truck.id, partId: part.id } }, update: {}, create: { truckId: truck.id, partId: part.id, quantity: 3 + i % 4, minQuantity: 2, maxQuantity: 10 } })
+    const pricebook = await tx.pricebookItem.upsert({ where: { id: key('pricebook', i) }, update: {}, create: { id: key('pricebook', i), companyId, code: `DEMO-SVC-${i + 1}`, name: `Demo ${serviceName}`, description: sampleNote, category: 'Labor', type: 'Flat Rate', unitCost: 50 + i * 5, unitPrice: 150 + i * 20, laborMinutes: 90, isTaxable: true } })
+    const plan = await tx.agreementPlan.upsert({ where: { id: key('plan', i) }, update: {}, create: { id: key('plan', i), companyId, name: `Demo ${serviceName} plan`, description: sampleNote, tradeType, monthlyPrice: 15 + i, annualPrice: (15 + i) * 10, visitsIncluded: 2, discountPct: 10, priorityService: i % 2 === 0, includedServices: [serviceName, 'Scheduled equipment check'] } })
+    await tx.serviceAgreement.upsert({ where: { id: key('agreement', i) }, update: {}, create: { id: key('agreement', i), agreementNumber: `DEMO-${tag}-AGR-${i + 1}`, customerId: customer.id, planId: plan.id, status: i % 4 === 0 ? 'PENDING' : 'ACTIVE', startDate: stamp(-30), endDate: stamp(335), billingFrequency: 'annual', autoRenew: false, paymentStatus: 'trial', visitsUsed: 0, nextVisitDue: stamp(30 + i), notes: sampleNote } })
+
+    for (let completed = 0; completed < 2; completed++) {
+      const jobId = key(completed ? 'job-completed' : 'job', i)
+      const start = stamp(completed ? -1 - i : 0, 8 + i % 7), end = new Date(start.getTime() + 90 * 60000)
+      const job = await tx.job.upsert({ where: { id: jobId }, update: {}, create: { id: jobId, companyId, customerId: customer.id, propertyId: property.id, serviceTypeId: service.id, createdById: adminUserId, jobNumber: `DEMO-${tag}-${completed ? 'DONE' : 'JOB'}-${i + 1}`, title: `Demo: ${serviceName}`, tradeType, status: completed ? 'COMPLETED' : i % 5 === 0 ? 'PENDING' : 'SCHEDULED', priority: i % 5 === 0 ? 'HIGH' : 'NORMAL', type: 'SERVICE_CALL', description: sampleNote, scheduledStart: start, scheduledEnd: end, estimatedDuration: 90, timeWindowStart: `${String(start.getHours()).padStart(2, '0')}:00`, timeWindowEnd: `${String(start.getHours() + 2).padStart(2, '0')}:00`, estimatedAmount: 150 + i * 20, actualAmount: completed ? 150 + i * 20 : null, actualStart: completed ? start : null, actualEnd: completed ? end : null, completedAt: completed ? end : null, workPerformed: completed ? `Demo completed ${serviceName}; simulated service record.` : null, tags: ['demo'], notes: sampleNote } })
+      if (completed || i % 5 !== 0) await tx.jobAssignment.upsert({ where: { id: key(completed ? 'assignment-completed' : 'assignment', i) }, update: {}, create: { id: key(completed ? 'assignment-completed' : 'assignment', i), jobId: job.id, technicianId: tech.id, isPrimary: true } })
+      if (completed) {
+        await tx.timeEntry.upsert({ where: { id: key('time', i) }, update: {}, create: { id: key('time', i), jobId: job.id, technicianId: tech.id, type: 'WORK', startTime: start, endTime: end, duration: 90, notes: sampleNote } })
+        await tx.serviceHistory.upsert({ where: { id: key('history', i) }, update: {}, create: { id: key('history', i), jobId: job.id, propertyId: property.id, equipmentId: equipment.id, type: 'Maintenance', date: start, description: `Demo ${serviceName}`, technicianName: `${firstName} ${lastName} (Demo)`, notes: sampleNote } })
+        await tx.jobPart.upsert({ where: { id: key('job-part', i) }, update: {}, create: { id: key('job-part', i), jobId: job.id, partId: part.id, quantity: 1, unitPrice: 25 + i * 5, totalPrice: 25 + i * 5 } })
+      }
+    }
+    await tx.followUpTask.upsert({ where: { id: key('followup', i) }, update: {}, create: {
+      id: key('followup', i), companyId, customerId: customer.id, jobId: key('job', i), assigneeId: adminUserId,
+      title: `Demo follow-up: ${serviceName}`, notes: sampleNote, dueAt: stamp(i - 4), status: 'OPEN',
+      messageDraft: '', checklist: [{ text: 'Review the linked job details', done: false }, { text: 'Verify contact preferences before planning outreach', done: false }],
+    } })
+    const base = 150 + i * 20, tax = Math.round(base * .08 * 100) / 100, total = base + tax
+    const estimate = await tx.estimate.upsert({ where: { id: key('estimate', i) }, update: {}, create: { id: key('estimate', i), customerId: customer.id, jobId: key('job', i), estimateNumber: `DEMO-${tag}-EST-${i + 1}`, status: 'DRAFT', createdDate: stamp(-i), expirationDate: stamp(30), retentionUntil: stamp(365 * 7), subtotal: base, taxAmount: tax, totalAmount: total, notes: sampleNote, terms: 'Demo only. Requires actual review and customer approval before use.' } })
+    for (let option = 0; option < 3; option++) {
+      const amount = base + option * 75, optionTax = Math.round(amount * .08 * 100) / 100
+      const optionId = `${key('option', i)}-${option}`
+      await tx.estimateOption.upsert({ where: { id: optionId }, update: {}, create: { id: optionId, estimateId: estimate.id, name: ['Good', 'Better', 'Best'][option], description: `${['Basic service', 'Service and preventive check', 'Service and extended maintenance'][option]} (Demo)`, sortOrder: option, isRecommended: option === 1, subtotal: amount, taxAmount: optionTax, totalAmount: amount + optionTax } })
+      await tx.estimateLineItem.upsert({ where: { id: `${optionId}-line` }, update: {}, create: { id: `${optionId}-line`, optionId, pricebookItemId: pricebook.id, description: `Demo ${serviceName}`, category: 'Labor', quantity: 1, unitPrice: amount, totalPrice: amount } })
+    }
+    for (let paid = 0; paid < 2; paid++) {
+      const invoiceId = key(paid ? 'invoice-paid' : 'invoice', i)
+      await tx.invoice.upsert({ where: { id: invoiceId }, update: {}, create: { id: invoiceId, customerId: customer.id, jobId: key('job-completed', i), invoiceNumber: `DEMO-${tag}-${paid ? 'PAID' : 'INV'}-${i + 1}`, status: paid ? 'PAID' : i % 2 === 0 ? 'OVERDUE' : 'DRAFT', issueDate: stamp(-45 - i), dueDate: stamp(paid ? -15 : i % 2 === 0 ? -5 : 15), paidDate: paid ? stamp(-10 - i) : null, subtotal: base, taxRate: .08, taxAmount: tax, totalAmount: total, paidAmount: paid ? total : 0, balanceDue: paid ? 0 : total, notes: sampleNote } })
+      await tx.invoiceLineItem.upsert({ where: { id: `${invoiceId}-line` }, update: {}, create: { id: `${invoiceId}-line`, invoiceId, description: `Demo ${serviceName}`, quantity: 1, unitPrice: base, totalPrice: base, category: 'Labor' } })
+      if (paid) await tx.payment.upsert({ where: { id: key('payment', i) }, update: {}, create: { id: key('payment', i), invoiceId, amount: total, method: 'OTHER', reference: `DEMO-SIMULATED-${i + 1}`, date: stamp(-10 - i), notes: sampleNote } })
+    }
+    await tx.communication.upsert({ where: { id: key('note', i) }, update: {}, create: { id: key('note', i), customerId: customer.id, type: 'NOTE', direction: 'internal', subject: 'Demo customer service note', message: sampleNote, status: 'recorded' } })
+    const purchaseOrderId = key('po', i), cost = 10 + i * 3
+    await tx.purchaseOrder.upsert({ where: { id: purchaseOrderId }, update: {}, create: { id: purchaseOrderId, poNumber: `DEMO-${tag}-PO-${i + 1}`, status: 'DRAFT', vendorName: 'Demo Supply Company', subtotal: cost * 10, taxAmount: 0, totalAmount: cost * 10, notes: sampleNote } })
+    await tx.purchaseOrderItem.upsert({ where: { id: `${purchaseOrderId}-item` }, update: {}, create: { id: `${purchaseOrderId}-item`, purchaseOrderId, partId: part.id, quantity: 10, unitCost: cost, totalCost: cost * 10, receivedQty: 0 } })
+  }
+  return { followUps: DEMO_ROWS, customers: DEMO_ROWS, properties: DEMO_ROWS, equipment: DEMO_ROWS, technicians: DEMO_ROWS, trucks: DEMO_ROWS, serviceTypes: DEMO_ROWS, agreementPlans: DEMO_ROWS, jobs: DEMO_ROWS * 2, invoices: DEMO_ROWS * 2, payments: DEMO_ROWS, estimates: DEMO_ROWS, parts: DEMO_ROWS, pricebook: DEMO_ROWS, agreements: DEMO_ROWS, purchaseOrders: DEMO_ROWS, timeEntries: DEMO_ROWS, notes: DEMO_ROWS }
 }
 
-export async function seedDemoDataForCompany(
-  tx: TransactionClient,
-  companyId: string,
-  adminUserId: string
-) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  // Use company ID prefix for unique identifiers
-  const prefix = companyId.slice(0, 8)
-
-  // Create Service Types first (required for jobs)
-  const serviceTypes = await Promise.all([
-    tx.serviceType.create({
-      data: { name: 'HVAC Repair', code: 'HVAC-REP', tradeType: 'HVAC', defaultDuration: 120, color: '#3B82F6', companyId },
-    }),
-    tx.serviceType.create({
-      data: { name: 'HVAC Maintenance', code: 'HVAC-MAINT', tradeType: 'HVAC', defaultDuration: 90, color: '#60A5FA', companyId },
-    }),
-    tx.serviceType.create({
-      data: { name: 'Plumbing Repair', code: 'PLMB-REP', tradeType: 'PLUMBING', defaultDuration: 90, color: '#22C55E', companyId },
-    }),
-    tx.serviceType.create({
-      data: { name: 'Drain Cleaning', code: 'DRAIN', tradeType: 'PLUMBING', defaultDuration: 60, color: '#15803D', companyId },
-    }),
-    tx.serviceType.create({
-      data: { name: 'Electrical Repair', code: 'ELEC-REP', tradeType: 'ELECTRICAL', defaultDuration: 90, color: '#F59E0B', companyId },
-    }),
-    tx.serviceType.create({
-      data: { name: 'Emergency Service', code: 'EMER', tradeType: 'GENERAL', defaultDuration: 120, color: '#EF4444', companyId },
-    }),
-  ])
-
-  // Create Agreement Plans
-  const agreementPlans = await Promise.all([
-    tx.agreementPlan.create({
-      data: {
-        name: 'Bronze',
-        description: 'Basic maintenance plan with 1 annual visit',
-        tradeType: 'HVAC',
-        monthlyPrice: 15,
-        annualPrice: 149,
-        visitsIncluded: 1,
-        discountPct: 10,
-        priorityService: false,
-        noDiagnosticFee: false,
-        includedServices: ['Annual tune-up', 'Filter replacement'],
-        companyId,
-      },
-    }),
-    tx.agreementPlan.create({
-      data: {
-        name: 'Silver',
-        description: 'Standard maintenance plan with 2 annual visits',
-        tradeType: 'HVAC',
-        monthlyPrice: 25,
-        annualPrice: 249,
-        visitsIncluded: 2,
-        discountPct: 15,
-        priorityService: true,
-        noDiagnosticFee: false,
-        includedServices: ['Spring tune-up', 'Fall tune-up', 'Filter replacements'],
-        companyId,
-      },
-    }),
-    tx.agreementPlan.create({
-      data: {
-        name: 'Gold',
-        description: 'Premium maintenance plan with all benefits',
-        tradeType: 'HVAC',
-        monthlyPrice: 35,
-        annualPrice: 349,
-        visitsIncluded: 2,
-        discountPct: 20,
-        priorityService: true,
-        noDiagnosticFee: true,
-        includedServices: ['Spring tune-up', 'Fall tune-up', 'Filter replacements', 'No diagnostic fee'],
-        companyId,
-      },
-    }),
-  ])
-
-  // Create Trucks
-  await Promise.all([
-    tx.truck.create({
-      data: { name: 'Truck 1', vehicleId: 'DEMO-T1', make: 'Ford', model: 'E-350 Van', year: 2022, companyId },
-    }),
-    tx.truck.create({
-      data: { name: 'Truck 2', vehicleId: 'DEMO-T2', make: 'Chevrolet', model: 'Express', year: 2021, companyId },
-    }),
-  ])
-
-  // Create demo technician users
-  const techUsers = await Promise.all([
-    tx.user.create({
-      data: {
-        email: `demo.tech1.${companyId.slice(0, 8)}@example.com`,
-        password: requireDemoPassword(),
-        firstName: 'Tom',
-        lastName: 'Wilson',
-        phone: '(555) 100-0001',
-        role: 'TECHNICIAN',
-        companyId,
-        isActive: true,
-      },
-    }),
-    tx.user.create({
-      data: {
-        email: `demo.tech2.${companyId.slice(0, 8)}@example.com`,
-        password: requireDemoPassword(),
-        firstName: 'Sarah',
-        lastName: 'Martinez',
-        phone: '(555) 100-0002',
-        role: 'TECHNICIAN',
-        companyId,
-        isActive: true,
-      },
-    }),
-    tx.user.create({
-      data: {
-        email: `demo.tech3.${companyId.slice(0, 8)}@example.com`,
-        password: requireDemoPassword(),
-        firstName: 'Mike',
-        lastName: 'Johnson',
-        phone: '(555) 100-0003',
-        role: 'TECHNICIAN',
-        companyId,
-        isActive: true,
-      },
-    }),
-  ])
-
-  // Create technician profiles
-  const technicians = await Promise.all([
-    tx.technician.create({
-      data: {
-        userId: techUsers[0].id,
-        employeeId: 'DEMO-001',
-        color: '#3B82F6',
-        tradeTypes: ['HVAC'],
-        certifications: ['EPA 608 Universal', 'NATE Certified'],
-        payType: 'HOURLY',
-        hourlyRate: 35,
-        status: 'AVAILABLE',
-      },
-    }),
-    tx.technician.create({
-      data: {
-        userId: techUsers[1].id,
-        employeeId: 'DEMO-002',
-        color: '#22C55E',
-        tradeTypes: ['PLUMBING'],
-        certifications: ['Master Plumber'],
-        payType: 'HOURLY',
-        hourlyRate: 38,
-        status: 'AVAILABLE',
-      },
-    }),
-    tx.technician.create({
-      data: {
-        userId: techUsers[2].id,
-        employeeId: 'DEMO-003',
-        color: '#F59E0B',
-        tradeTypes: ['ELECTRICAL'],
-        certifications: ['Master Electrician'],
-        payType: 'HOURLY',
-        hourlyRate: 40,
-        status: 'AVAILABLE',
-      },
-    }),
-  ])
-
-  // Create demo customers
-  const customersData = [
-    { firstName: 'John', lastName: 'Smith', phone: '(555) 200-0001', email: 'john.smith@example.com', address: '100 Oak Street', city: 'Atlanta', state: 'GA', zip: '30301' },
-    { firstName: 'Emily', lastName: 'Johnson', phone: '(555) 200-0002', email: 'emily.j@example.com', address: '200 Maple Ave', city: 'Atlanta', state: 'GA', zip: '30302' },
-    { firstName: 'Michael', lastName: 'Williams', phone: '(555) 200-0003', email: 'mwilliams@example.com', address: '300 Pine Road', city: 'Atlanta', state: 'GA', zip: '30303' },
-    { firstName: 'Sarah', lastName: 'Brown', phone: '(555) 200-0004', email: 'sbrown@example.com', address: '400 Elm Street', city: 'Atlanta', state: 'GA', zip: '30304' },
-    { firstName: 'David', lastName: 'Jones', phone: '(555) 200-0005', email: 'djones@example.com', address: '500 Cedar Lane', city: 'Atlanta', state: 'GA', zip: '30305' },
-  ]
-
-  const customers: { customer: Awaited<ReturnType<typeof tx.customer.create>>; property: Awaited<ReturnType<typeof tx.property.create>> }[] = []
-
-  for (let i = 0; i < customersData.length; i++) {
-    const c = customersData[i]
-    const customer = await tx.customer.create({
-      data: {
-        customerNumber: `${prefix}-${(i + 1).toString().padStart(5, '0')}`,
-        type: 'RESIDENTIAL',
-        status: 'ACTIVE',
-        firstName: c.firstName,
-        lastName: c.lastName,
-        email: c.email,
-        phone: c.phone,
-        billingAddress: c.address,
-        billingCity: c.city,
-        billingState: c.state,
-        billingZip: c.zip,
-        companyId,
-      },
-    })
-
-    const property = await tx.property.create({
-      data: {
-        name: 'Primary Residence',
-        type: 'House',
-        address: c.address,
-        city: c.city,
-        state: c.state,
-        zip: c.zip,
-        customerId: customer.id,
-      },
-    })
-
-    // Add equipment to first 3 customers
-    if (i < 3) {
-      await tx.equipment.create({
-        data: {
-          type: 'AC_UNIT',
-          brand: 'Carrier',
-          model: '24ACC636A003',
-          serialNumber: `DEMO-AC-${i + 1}`,
-          installDate: new Date(2022, 5, 15),
-          warrantyExpires: new Date(2032, 5, 15),
-          location: 'Backyard',
-          propertyId: property.id,
-        },
-      })
-    }
-
-    customers.push({ customer, property })
-  }
-
-  // Create jobs for today (visible on dispatch board)
-  const todayJobs = [
-    { title: 'AC not cooling - urgent', tradeType: 'HVAC', priority: 'HIGH', status: 'SCHEDULED', hour: 9, techIdx: 0 },
-    { title: 'Leaky bathroom faucet', tradeType: 'PLUMBING', priority: 'NORMAL', status: 'SCHEDULED', hour: 10, techIdx: 1 },
-    { title: 'Thermostat replacement', tradeType: 'HVAC', priority: 'NORMAL', status: 'IN_PROGRESS', hour: 11, techIdx: 0 },
-    { title: 'Outlet not working', tradeType: 'ELECTRICAL', priority: 'NORMAL', status: 'SCHEDULED', hour: 14, techIdx: 2 },
-  ]
-
-  for (let i = 0; i < todayJobs.length; i++) {
-    const jobData = todayJobs[i]
-    const customerData = customers[i % customers.length]
-    const scheduledDate = new Date(today)
-    scheduledDate.setHours(jobData.hour, 0, 0, 0)
-
-    const job = await tx.job.create({
-      data: {
-        jobNumber: `${prefix}-${today.getFullYear()}-${(i + 1).toString().padStart(4, '0')}`,
-        status: jobData.status as 'SCHEDULED' | 'IN_PROGRESS',
-        priority: jobData.priority as 'NORMAL' | 'HIGH',
-        type: 'SERVICE_CALL',
-        tradeType: jobData.tradeType as 'HVAC' | 'PLUMBING' | 'ELECTRICAL',
-        title: jobData.title,
-        description: `Demo job: ${jobData.title}`,
-        scheduledStart: scheduledDate,
-        estimatedDuration: 90,
-        timeWindowStart: `${jobData.hour}:00`,
-        timeWindowEnd: `${jobData.hour + 2}:00`,
-        companyId,
-        customerId: customerData.customer.id,
-        propertyId: customerData.property.id,
-        createdById: adminUserId,
-        serviceTypeId: serviceTypes.length > 0 ? serviceTypes[0].id : undefined,
-        estimatedAmount: 150 + (i * 50),
-      },
-    })
-
-    await tx.jobAssignment.create({
-      data: {
-        jobId: job.id,
-        technicianId: technicians[jobData.techIdx].id,
-        isPrimary: true,
-      },
-    })
-  }
-
-  // Create unassigned jobs (for dispatch queue)
-  const unassignedJobs = [
-    { title: 'Emergency: No hot water!', tradeType: 'PLUMBING', priority: 'EMERGENCY', hour: 10 },
-    { title: 'AC blowing warm air', tradeType: 'HVAC', priority: 'HIGH', hour: 13 },
-  ]
-
-  for (let i = 0; i < unassignedJobs.length; i++) {
-    const jobData = unassignedJobs[i]
-    const customerData = customers[(i + 3) % customers.length]
-    const scheduledDate = new Date(today)
-    scheduledDate.setHours(jobData.hour, 0, 0, 0)
-
-    await tx.job.create({
-      data: {
-        jobNumber: `${prefix}-${today.getFullYear()}-${(100 + i).toString().padStart(4, '0')}`,
-        status: 'PENDING',
-        priority: jobData.priority as 'HIGH' | 'EMERGENCY',
-        type: 'SERVICE_CALL',
-        tradeType: jobData.tradeType as 'HVAC' | 'PLUMBING',
-        title: jobData.title,
-        description: `Demo unassigned job: ${jobData.title}`,
-        scheduledStart: scheduledDate,
-        estimatedDuration: 60,
-        timeWindowStart: `${jobData.hour}:00`,
-        timeWindowEnd: `${jobData.hour + 2}:00`,
-        companyId,
-        customerId: customerData.customer.id,
-        propertyId: customerData.property.id,
-        createdById: adminUserId,
-      },
-    })
-  }
-
-  // Create completed jobs (for reports)
-  for (let i = 0; i < 10; i++) {
-    const customerData = customers[i % customers.length]
-    const completedDate = new Date(today)
-    completedDate.setDate(today.getDate() - (i * 3) - 1)
-    completedDate.setHours(10, 0, 0, 0)
-
-    const job = await tx.job.create({
-      data: {
-        jobNumber: `${prefix}-${today.getFullYear()}-${(200 + i).toString().padStart(4, '0')}`,
-        status: 'COMPLETED',
-        priority: 'NORMAL',
-        type: 'SERVICE_CALL',
-        tradeType: ['HVAC', 'PLUMBING', 'ELECTRICAL'][i % 3] as 'HVAC' | 'PLUMBING' | 'ELECTRICAL',
-        title: ['AC Repair', 'Plumbing Fix', 'Electrical Repair'][i % 3],
-        description: 'Demo completed job',
-        scheduledStart: completedDate,
-        estimatedDuration: 90,
-        companyId,
-        customerId: customerData.customer.id,
-        propertyId: customerData.property.id,
-        createdById: adminUserId,
-        completedAt: new Date(completedDate.getTime() + 2 * 60 * 60 * 1000),
-        actualAmount: 200 + (i * 75),
-        estimatedAmount: 175 + (i * 50),
-      },
-    })
-
-    await tx.jobAssignment.create({
-      data: {
-        jobId: job.id,
-        technicianId: technicians[i % technicians.length].id,
-        isPrimary: true,
-      },
-    })
-  }
-
-  // Create invoices
-  for (let i = 0; i < 8; i++) {
-    const customerData = customers[i % customers.length]
-    const status = i < 5 ? 'PAID' : 'SENT'
-    const issueDate = new Date(today)
-    issueDate.setDate(today.getDate() - (i * 5))
-    const dueDate = new Date(issueDate)
-    dueDate.setDate(issueDate.getDate() + 30)
-
-    const subtotal = 250 + (i * 100)
-    const taxAmount = subtotal * 0.08
-    const totalAmount = subtotal + taxAmount
-    const paidAmount = status === 'PAID' ? totalAmount : 0
-
-    await tx.invoice.create({
-      data: {
-        invoiceNumber: `${prefix}-INV-${(i + 1).toString().padStart(4, '0')}`,
-        status: status as 'PAID' | 'SENT',
-        issueDate,
-        dueDate,
-        paidDate: status === 'PAID' ? new Date(issueDate.getTime() + 3 * 24 * 60 * 60 * 1000) : null,
-        subtotal,
-        taxRate: 0.08,
-        taxAmount,
-        totalAmount,
-        paidAmount,
-        balanceDue: totalAmount - paidAmount,
-        customerId: customerData.customer.id,
-      },
-    })
-  }
-
-  // Create parts/inventory
-  const parts = [
-    { partNumber: 'CAP-35-5', name: '35/5 MFD Capacitor', category: 'HVAC', cost: 8, price: 25, quantityOnHand: 15 },
-    { partNumber: 'FILT-16-25-1', name: 'Filter 16x25x1', category: 'HVAC', cost: 3, price: 12, quantityOnHand: 30 },
-    { partNumber: 'THERM-NEST', name: 'Nest Thermostat', category: 'HVAC', cost: 120, price: 299, quantityOnHand: 5 },
-    { partNumber: 'VALVE-1/2', name: '1/2" Ball Valve', category: 'Plumbing', cost: 8, price: 25, quantityOnHand: 20 },
-    { partNumber: 'OUTLET-20A', name: '20A Outlet', category: 'Electrical', cost: 5, price: 15, quantityOnHand: 25 },
-  ]
-
-  for (const part of parts) {
-    await tx.part.create({
-      data: {
-        ...part,
-        manufacturer: 'Demo Brand',
-        reorderLevel: 5,
-        companyId,
-      },
-    })
-  }
-
-  // Create estimates
-  for (let i = 0; i < 5; i++) {
-    const customerData = customers[i]
-    const createdDate = new Date(today)
-    createdDate.setDate(today.getDate() - (i * 2))
-    const expirationDate = new Date(createdDate)
-    expirationDate.setDate(createdDate.getDate() + 30)
-
-    const statuses = ['SENT', 'VIEWED', 'APPROVED', 'DRAFT', 'SENT']
-    const goodPrice = 1500 + (i * 500)
-
-    const estimate = await tx.estimate.create({
-      data: {
-        estimateNumber: `${prefix}-EST-${(i + 1).toString().padStart(4, '0')}`,
-        status: statuses[i] as 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED',
-        createdDate,
-        expirationDate,
-        retentionUntil: new Date(createdDate.getTime() + 7 * 365 * 24 * 60 * 60 * 1000),
-        approvedAt: statuses[i] === 'APPROVED' ? new Date() : null,
-        selectedOption: statuses[i] === 'APPROVED' ? 'better' : null,
-        subtotal: goodPrice * 1.3,
-        taxAmount: goodPrice * 1.3 * 0.08,
-        totalAmount: goodPrice * 1.3 * 1.08,
-        notes: `Demo estimate for ${customerData.customer.firstName}`,
-        customerId: customerData.customer.id,
-      },
-    })
-
-    // Create options
-    await tx.estimateOption.create({
-      data: {
-        name: 'Good',
-        description: 'Basic option',
-        sortOrder: 0,
-        subtotal: goodPrice,
-        taxAmount: goodPrice * 0.08,
-        totalAmount: goodPrice * 1.08,
-        isRecommended: false,
-        estimateId: estimate.id,
-      },
-    })
-
-    await tx.estimateOption.create({
-      data: {
-        name: 'Better',
-        description: 'Recommended option',
-        sortOrder: 1,
-        subtotal: goodPrice * 1.3,
-        taxAmount: goodPrice * 1.3 * 0.08,
-        totalAmount: goodPrice * 1.3 * 1.08,
-        isRecommended: true,
-        estimateId: estimate.id,
-      },
-    })
-
-    await tx.estimateOption.create({
-      data: {
-        name: 'Best',
-        description: 'Premium option',
-        sortOrder: 2,
-        subtotal: goodPrice * 1.6,
-        taxAmount: goodPrice * 1.6 * 0.08,
-        totalAmount: goodPrice * 1.6 * 1.08,
-        isRecommended: false,
-        estimateId: estimate.id,
-      },
-    })
-  }
-
-  // Create service agreements
-  const agreementStatuses = ['ACTIVE', 'ACTIVE', 'ACTIVE', 'PENDING', 'EXPIRED'] as const
-  const billingFrequencies = ['monthly', 'annual'] as const
-
-  for (let i = 0; i < Math.min(15, customers.length * 3); i++) {
-    const customerData = customers[i % customers.length]
-    const plan = agreementPlans[i % agreementPlans.length]
-    const status = agreementStatuses[i % agreementStatuses.length]
-    const billingFreq = billingFrequencies[i % billingFrequencies.length]
-
-    const startDate = new Date(today)
-    startDate.setMonth(today.getMonth() - (i * 2))
-
-    const endDate = new Date(startDate)
-    endDate.setFullYear(endDate.getFullYear() + 1)
-
-    if (status === 'EXPIRED') {
-      endDate.setMonth(today.getMonth() - 1)
-    }
-
-    await tx.serviceAgreement.create({
-      data: {
-        agreementNumber: `${prefix}-AGR-${(i + 1).toString().padStart(4, '0')}`,
-        customerId: customerData.customer.id,
-        planId: plan.id,
-        status,
-        billingFrequency: billingFreq,
-        startDate,
-        endDate,
-        autoRenew: i % 2 === 0,
-        visitsUsed: Math.floor(Math.random() * (plan.visitsIncluded + 1)),
-        notes: `Demo service agreement ${i + 1}`,
-      },
-    })
-  }
-
-  return {
-    technicians: technicians.length,
-    customers: customers.length,
-    jobs: todayJobs.length + unassignedJobs.length + 10,
-    invoices: 8,
-    estimates: 5,
-    parts: parts.length,
-    agreements: Math.min(15, customers.length * 3),
-  }
+export async function loadDemoData(prisma: PrismaClient, adminEmail: string) {
+  const admin = await prisma.user.findUnique({ where: { email: adminEmail.trim().toLowerCase() } })
+  if (!admin || admin.role !== 'ADMIN') throw new Error('Create the configured administrator before loading demo data')
+  return prisma.$transaction(tx => seedDemoDataForCompany(tx, admin.companyId, admin.id), { timeout: 60000, maxWait: 10000 })
 }

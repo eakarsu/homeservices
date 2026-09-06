@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchCollection } from '@/lib/fetchCollection'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
@@ -40,18 +41,14 @@ export default function InventoryDashboardPage() {
   const { data: parts } = useQuery<Part[]>({
     queryKey: ['parts'],
     queryFn: async () => {
-      const res = await fetch('/api/parts')
-      if (!res.ok) throw new Error('Failed to fetch parts')
-      return res.json()
+      return fetchCollection('/api/parts')
     },
   })
 
   const { data: trucks } = useQuery<Truck[]>({
     queryKey: ['trucks-with-stock'],
     queryFn: async () => {
-      const res = await fetch('/api/trucks?includeStock=true')
-      if (!res.ok) throw new Error('Failed to fetch trucks')
-      return res.json()
+      return fetchCollection('/api/trucks?includeStock=true')
     },
   })
 

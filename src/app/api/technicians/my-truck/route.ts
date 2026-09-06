@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No truck assigned' }, { status: 404 })
     }
 
-    const truck = await prisma.truck.findUnique({
-      where: { id: technician.truckId },
+    const truck = await prisma.truck.findFirst({
+      where: { id: technician.truckId,companyId:user.companyId },
       include: {
         stock: includeStock ? {
           include: {
