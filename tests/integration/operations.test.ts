@@ -1320,3 +1320,45 @@ test("AI form drafting limits fields, scopes evidence and retains budgeted provi
   const malformed: typeof fetch = async () => Response.json({id:"bad-form-receipt",choices:[{message:{content:JSON.stringify({summary:"Invalid",draft:"",recommendations:[],uncertainties:[],fields:{phone:"202-555-0198",role:"ADMIN"}})}}],usage:{cost:0.001}});
   await assert.rejects(runAssistant(f.a,"form-autofill",{...input,requestKey:crypto.randomUUID()},malformed),/invalid form fields/);
 });
+
+
+test("empty forms can generate optional draft text without removing evidence requirements for other workflows", async () => {
+  const { runAssistant } = await import("../../src/lib/workflows/ai");
+  const f = await fixture();
+  process.env.OPENROUTER_API_KEY = "fixture-ai-key";
+  let calls = 0;
+  const provider: typeof fetch = async (_url, init) => {
+    calls++;
+    assert.ok(String(init?.body).includes("Never populate factual fields with placeholders"));
+    return Response.json({id:"empty-form-receipt",choices:[{message:{content:JSON.stringify({summary:"Starter draft for review.",draft:"Draft template",recommendations:[],uncertainties:["Customer details needed"],fields:{mode:"intake",jobId:null,customerId:null,extraInstructions:"Describe the requested service.",notes:"DRAFT: [Describe the service needed]"}})}}],usage:{cost:0.001}});
+  };
+  const body = {form:"workspace",fieldAction:"professional",values:{},notes:"",consent:true,requestKey:crypto.randomUUID()};
+  const result = await runAssistant(f.a,"form-autofill",body,provider);
+  assert.deepEqual((result.report as any).fields,{mode:"intake",extraInstructions:"Describe the requested service.",notes:"DRAFT: [Describe the service needed]"});
+  await assert.rejects(runAssistant(f.a,"intake",{notes:"",consent:true,requestKey:crypto.randomUUID()},provider),/Provide source records/);
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...body,consent:false,requestKey:crypto.randomUUID()},provider),/Confirm authorization/);
+  assert.equal(calls,1);
+});
+
+
+test("workspace auto-selects only matching company records and rejects invented selections", async () => {
+  const { runAssistant } = await import("../../src/lib/workflows/ai");
+  const f = await fixture(), other = await fixture(), job = await f.job(), foreign = await other.job();
+  process.env.OPENROUTER_API_KEY = "fixture-ai-key";
+  let calls = 0;
+  const provider: typeof fetch = async (_url, init) => {
+    calls++;
+    const raw = String(init?.body);
+    assert.ok(raw.includes(job.id));
+    assert.ok(!raw.includes(foreign.id));
+    return Response.json({id:"workspace-receipt-"+calls,choices:[{message:{content:JSON.stringify({summary:"Draft based on matched job.",draft:"Review job details.",recommendations:[],uncertainties:[],fields:{mode:"job-summary",jobId:null,customerId:null,extraInstructions:"Summarize the recorded job facts.",notes:"Review work and follow-up needs."}})}}],usage:{cost:0.001}});
+  };
+  const input = {form:"workspace",fieldAction:"all",values:{mode:"job-summary",notes:job.jobNumber},consent:true,requestKey:crypto.randomUUID()};
+  const result = await runAssistant(f.a,"form-autofill",input,provider);
+  assert.equal((result.report as any).fields.jobId,job.id);
+  assert.equal((result.report as any).fields.customerId,f.customer.id);
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,jobId:foreign.id,requestKey:crypto.randomUUID()},provider));
+  const malicious: typeof fetch = async () => Response.json({id:"invalid-selection",choices:[{message:{content:JSON.stringify({summary:"Bad selection",draft:"",recommendations:[],uncertainties:[],fields:{mode:"job-summary",jobId:foreign.id,customerId:other.customer.id,extraInstructions:"",notes:""}})}}],usage:{cost:0.001}});
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,requestKey:crypto.randomUUID()},malicious),/invalid form fields/);
+  assert.equal(calls,1);
+});

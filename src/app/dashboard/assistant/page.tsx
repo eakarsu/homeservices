@@ -11,6 +11,7 @@ export default function Page() {
     [jobId, setJobId] = useState(""),
     [customerId, setCustomerId] = useState(""),
     [notes, setNotes] = useState(""),
+    [extraInstructions, setExtraInstructions] = useState(""),
     [media, setMedia] = useState(""),
     [consent, setConsent] = useState(false),
     [error, setError] = useState(""),
@@ -122,7 +123,13 @@ export default function Page() {
             <select
               className="select w-full"
               value={jobId}
-              onChange={(e) => setJobId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value;
+                setJobId(id);
+                const job = lookups.jobs?.find((j: Row) => j.id === id);
+                if (job) setCustomerId(job.customerId);
+                setError("");
+              }}
             >
               <option value="">No job selected</option>
               {lookups.jobs?.map((j: Row) => (
@@ -138,7 +145,12 @@ export default function Page() {
               <select
                 className="select w-full"
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={(e) => {
+                  setCustomerId(e.target.value);
+                  const job = lookups.jobs?.find((j: Row) => j.id === jobId);
+                  if (job && job.customerId !== e.target.value) setJobId("");
+                  setError("");
+                }}
               >
                 <option value="">No customer selected</option>
                 {lookups.customers?.map((c: Row) => (
@@ -151,7 +163,14 @@ export default function Page() {
             </label>
           )}
         </div>
-        {lookups.role && lookups.role !== "TECHNICIAN" && <AIFormAssistant key={`${mode}:${jobId}:${customerId}`} form="workspace" values={{ notes }} jobId={jobId} customerId={customerId} disabled={busy} onApply={patch => { if (typeof patch.notes === "string") setNotes(patch.notes) }} />}
+        {lookups.role && lookups.role !== "TECHNICIAN" && <AIFormAssistant form="workspace" values={{ mode, jobId, customerId, extraInstructions, notes }} jobId={jobId} customerId={customerId} disabled={busy} onApply={patch => {
+          if (typeof patch.notes === "string") setNotes(patch.notes);
+          if (typeof patch.extraInstructions === "string") setExtraInstructions(patch.extraInstructions);
+          if (typeof patch.jobId === "string") setJobId(patch.jobId);
+          if (typeof patch.customerId === "string") setCustomerId(patch.customerId);
+          if (typeof patch.mode === "string") { setMode(patch.mode); setMedia(""); }
+          setError("");
+        }} />}
         <label className="block">
           Question or additional intake notes
           <textarea

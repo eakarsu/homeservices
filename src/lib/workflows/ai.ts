@@ -18,7 +18,8 @@ import {
   txFor,
 } from "./core";
 import { aiModes } from "./ai-definitions";
-import { selectedAIFields, pickFormValues, validateAIFields } from "@/lib/form-ai";
+import { formAIActions, selectedAIFields, pickFormValues, validateAIFields } from "@/lib/form-ai";
+import { matchWorkspaceRecords } from "@/lib/workspace-selection";
 export { aiModes };
 type Evidence = { id: string; type: string; label: string; facts: unknown };
 export function validateReport(value: unknown, ids: Set<string>) {
@@ -372,8 +373,21 @@ export async function runAssistant(
     try { fields = selectedAIFields(form, action); } catch { fail("Unknown form or AI action"); }
   }
   const values = formMode ? pickFormValues(form, body.values) : null;
+  const workspace = formMode && form === "workspace";
+  if (workspace) {
+    const [jobs, customers] = await Promise.all([
+      prisma.job.findMany({ where: {companyId:user.companyId}, select:{id:true,jobNumber:true,title:true,customerId:true}, orderBy:{createdAt:"desc"}, take:500 }),
+      prisma.customer.findMany({ where:{companyId:user.companyId}, select:{id:true,firstName:true,lastName:true,companyName:true}, orderBy:{createdAt:"desc"}, take:1000 }),
+    ]);
+    const selection = matchWorkspaceRecords([body.notes, values?.notes, values?.extraInstructions].filter(v => typeof v === "string").join("\n"), jobs, customers, {
+      jobId:text(body.jobId,"job",100,false), customerId:text(body.customerId,"customer",100,false),
+    });
+    body = {...body,...selection};
+    // Models can use only the selected or uniquely matched identities, never invent IDs.
+    fields = fields.map(f => f.key === "jobId" ? {...f,options:selection.jobId ? [selection.jobId] : []} : f.key === "customerId" ? {...f,options:selection.customerId ? [selection.customerId] : []} : f.key === "mode" ? {...f,options:f.options?.filter(m => !["photo-intake","voice-intake"].includes(m) && (selection.jobId || !["job-summary","diagnostics","dispatch-optimizer","margin-analysis"].includes(m)))} : f);
+  }
   const definition = formMode
-    ? { name: "form autofill", instruction: `Populate the requested fields from intake notes, current field values and supplied records. Evaluate EVERY requested field, including optional fields. Return null for facts not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Preserve confirmed facts. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm; never infer a date or timezone. Action: ${action}.` }
+    ? { name: "form autofill", instruction: `You are filling the ${form} form. Populate the requested fields from intake notes, current field values and supplied records. If the form is empty, create a useful starter template only in prose fields, clearly marking it as a draft to customize. Use questions or bracketed placeholders in prose for unknown details. Never populate factual fields with placeholders or invented data. Evaluate EVERY requested field, including optional fields. Return null for facts not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Preserve confirmed facts. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm; never infer a date or timezone. Action: ${action}. ${formAIActions.find(a => a.key === action)?.instruction || ""} Apply the requested writing style only to prose. ${workspace ? "Populate extraInstructions with helpful guidance for this workflow. Choose an appropriate workflow from its allowed options, preserving the current workflow when valid. For jobId and customerId use their single allowed option when present, otherwise null, and explain that a specific job number or customer name is needed. Never select a different record or invent one." : ""} For every action, also populate all supported optional and required fields when source facts are available.` }
     : aiModes.find((m) => m.slug === mode);
   if (!definition) fail("AI workflow not found", 404);
   if (
@@ -389,7 +403,7 @@ export async function runAssistant(
     );
   const evidence = await aiEvidence(user, mode, body),
     notes = text(body.notes, "notes", 12000, false);
-  if (!evidence.length && !notes && !body.media && !Object.values(values || {}).some(v => typeof v === "string" && v.trim().length > 10))
+  if (!formMode && !evidence.length && !notes && !body.media)
     fail("Provide source records or intake notes");
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) fail("AI provider is not configured", 503);
@@ -497,10 +511,14 @@ export async function runAssistant(
       actualMicros = Math.ceil(provider.usage.cost * 1000000);
     const parsed = parseAIJson(provider.choices?.[0]?.message?.content || "");
     const validated = validateReport(parsed, new Set(evidence.map((e) => e.id)));
-    let formFields = {};
+    let formFields: Record<string, string | number> = {};
     if (formMode) {
       try { formFields = validateAIFields(object(parsed).fields, fields); }
       catch { fail("AI returned incomplete or invalid form fields. Try again with clearer source notes.", 502); }
+    }
+    if (workspace) {
+      if (fields.some(f => f.key === "jobId") && body.jobId) formFields.jobId = String(body.jobId);
+      if (fields.some(f => f.key === "customerId") && body.customerId) formFields.customerId = String(body.customerId);
     }
     const report = { ...validated, ...(formMode ? { fields: formFields, form, action } : {}) };
     if (!provider.id) fail("AI provider receipt is missing", 502);

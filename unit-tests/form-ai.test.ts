@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getFormFields, selectedAIFields, pickFormValues, validateAIFields, unchangedPatch } from '../src/lib/form-ai'
+import { formAIActions, getFormFields, selectedAIFields, pickFormValues, validateAIFields, unchangedPatch } from '../src/lib/form-ai'
 
 test('only supported fields are sent; credentials and authority fields are excluded', () => {
   assert.deepEqual(pickFormValues('technicians', {firstName:'Erol', password:'secret', role:'ADMIN', companyId:'other', hourlyRate:'200'}), {firstName:'Erol'})
@@ -35,4 +35,16 @@ test('late responses and undo preserve concurrent user changes', () => {
   const original = {title:'Old',description:''}, ai = {title:'AI title',description:'AI description'}
   assert.deepEqual(unchangedPatch({...original,title:'User title'},original,ai), {description:'AI description'})
   assert.deepEqual(unchangedPatch({...ai,description:'User description'},ai,original), {title:'Old'})
+})
+
+
+test('all five drafting actions cover required and optional fields', () => {
+  assert.equal(formAIActions.length, 5)
+  for (const form of ['customers', 'jobs', 'estimates', 'workspace']) {
+    for (const action of formAIActions) {
+      const fields = selectedAIFields(form, action.key)
+      assert.deepEqual(fields, getFormFields(form))
+      assert.ok(fields.some(f => f.optional))
+    }
+  }
 })

@@ -1,6 +1,14 @@
 import { recordModules } from './workflows/definitions'
+import { aiModes } from './workflows/ai-definitions'
 export type AIField = { key: string; label: string; optional?: boolean; type?: 'number' | 'decimal' | 'integer' | 'date' | 'datetime' | 'time'; options?: string[]; prose?: boolean }
 export type FormValues = Record<string, string | number>
+export const formAIActions = [
+  { key: 'all', label: 'Complete form', pending: 'Completing form…', instruction: 'Produce a complete, clear draft across all supported fields.' },
+  { key: 'expand', label: 'Add detail', pending: 'Adding detail…', instruction: 'Expand descriptive text into useful structured detail using supplied facts. Include proposed follow-up questions where information is missing; do not invent facts.' },
+  { key: 'concise', label: 'Make concise', pending: 'Making concise…', instruction: 'Make descriptive text brief and easy to scan while preserving all important facts and qualifications.' },
+  { key: 'professional', label: 'Make professional', pending: 'Refining wording…', instruction: 'Use polished professional wording, clear structure, and precise language without changing factual meaning.' },
+  { key: 'friendly', label: 'Make customer-friendly', pending: 'Simplifying wording…', instruction: 'Use warm, plain language a customer can understand. Preserve facts and avoid promises, guarantees, or commitments not in the source.' },
+] as const
 const field = (key: string, label: string, optional = true, extra: Partial<AIField> = {}): AIField => ({ key, label, optional, ...extra })
 const prose = (key: string, label: string, optional = true) => field(key, label, optional, { prose: true })
 const notes = prose('notes', 'Notes')
@@ -12,7 +20,7 @@ const forms: Record<string, AIField[]> = {
   agreements: [notes],
   estimates: [notes, prose('terms', 'Terms'), prose('goodDescription', 'Good option description'), prose('betterDescription', 'Better option description'), prose('bestDescription', 'Best option description')],
   invoices: [notes, prose('terms', 'Terms')],
-  workspace: [prose('notes', 'Question or additional intake notes')],
+  workspace: [field('mode', 'Workflow', false, { options: aiModes.map(m => m.slug) }), field('jobId', 'Authorized job'), field('customerId', 'Customer'), prose('extraInstructions', 'Extra instructions'), prose('notes', 'Question or additional intake notes')],
   'operations:bookings': [prose('title', 'Booking title', false), notes],
   'operations:communications': [prose('subject', 'Subject'), prose('body', 'Message', false)],
 }
@@ -26,7 +34,7 @@ export function getFormFields(form: string): AIField[] {
 export function selectedAIFields(form: string, action: string): AIField[] {
   const fields = getFormFields(form)
   if (!fields.length) throw new Error('This form does not support AI drafting')
-  const selected = action === 'all' ? fields : action === 'optional' ? fields.filter(f => f.optional) : action === 'polish' ? fields.filter(f => f.prose) : fields.filter(f => f.key === action)
+  const selected = formAIActions.some(a => a.key === action) ? fields : action === 'optional' ? fields.filter(f => f.optional) : action === 'polish' ? fields.filter(f => f.prose) : fields.filter(f => f.key === action)
   if (!selected.length) throw new Error('Choose an available AI action')
   return selected
 }
