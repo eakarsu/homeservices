@@ -3,6 +3,7 @@
  */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { localAuthRedirect } from '@/lib/local-auth-origin'
 
 function getAllowedOrigins(): string[] {
   return (process.env.CORS_ALLOWED_ORIGINS || '')
@@ -58,6 +59,12 @@ function applySecurity(response: NextResponse): NextResponse {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isApi = pathname.startsWith('/api')
+  if (request.method === 'GET' && !isApi) {
+    const incoming = new URL(request.url)
+    incoming.host = request.headers.get('host') || incoming.host
+    const canonical = localAuthRedirect(incoming.toString(), process.env.NEXTAUTH_URL, process.env.NODE_ENV)
+    if (canonical) return applySecurity(NextResponse.redirect(canonical, 307))
+  }
   const isGeneratedGap = pathname.startsWith('/api/gap-no-') || pathname.startsWith('/dashboard/batch10')
   const isUngovernedAI = (pathname.startsWith('/api/ai/') && pathname !== '/api/ai/quote-generator')
     || (pathname.startsWith('/dashboard/ai/') && pathname !== '/dashboard/ai/quote-generator')

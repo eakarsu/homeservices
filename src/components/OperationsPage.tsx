@@ -1,4 +1,5 @@
 "use client";
+import AIFormAssistant from "@/components/AIFormAssistant";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -378,6 +379,7 @@ export default function OperationsPage({ module }: { module: string }) {
       ) : (
         module !== "reviews" && (
           <form onSubmit={submit} className="card p-5 space-y-4">
+            {office && <AIFormAssistant key={`${module}:${selected?.id || "new"}`} form={`operations:${module}`} values={form} customerId={form.customerId} jobId={form.jobId} disabled={busy} onApply={patch => setForm(prev => ({ ...prev, ...patch }))} />}
             <h2 className="font-semibold">
               {selected ? "Edit selected record" : "New record"}
             </h2>

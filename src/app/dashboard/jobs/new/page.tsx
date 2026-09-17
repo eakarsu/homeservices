@@ -1,4 +1,5 @@
 'use client'
+import AIFormAssistant from '@/components/AIFormAssistant'
 import {useWorkflowFetch} from '@/hooks/useWorkflowFetch'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -154,6 +155,8 @@ function NewJobForm() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">New Job</h1>
       </div>
+
+      <AIFormAssistant form="jobs" values={formData} disabled={createMutation.isPending} customerId={formData.customerId} onApply={patch => setFormData(prev => ({ ...prev, ...patch }))} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Customer & Property */}

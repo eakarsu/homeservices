@@ -1,4 +1,5 @@
 'use client'
+import AIFormAssistant from '@/components/AIFormAssistant'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -66,6 +67,8 @@ export default function NewPartPage() {
       </div>
 
       {/* Form */}
+      <AIFormAssistant form="parts" values={formData} disabled={isSubmitting} onApply={patch => setFormData(prev => ({ ...prev, ...patch }))} />
+
       <form onSubmit={handleSubmit} className="card max-w-2xl">
         <div className="space-y-6">
           {/* Basic Info */}

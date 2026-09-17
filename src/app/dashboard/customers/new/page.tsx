@@ -1,4 +1,5 @@
 'use client'
+import AIFormAssistant from '@/components/AIFormAssistant'
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -109,6 +110,8 @@ export default function NewCustomerPage() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">New Customer</h1>
       </div>
+
+      <AIFormAssistant form="customers" values={formData} disabled={createMutation.isPending} onApply={patch => setFormData(prev => ({ ...prev, ...patch }))} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Contact Information */}

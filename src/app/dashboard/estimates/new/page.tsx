@@ -1,4 +1,5 @@
 'use client'
+import AIFormAssistant from '@/components/AIFormAssistant'
 
 import { useState, Suspense } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -186,6 +187,15 @@ function NewEstimateForm() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">New Estimate</h1>
       </div>
+
+      <AIFormAssistant form="estimates" values={{ notes, terms, goodDescription: options[0]?.description, betterDescription: options[1]?.description, bestDescription: options[2]?.description }} customerId={customerId} jobId={jobId} disabled={createMutation.isPending} onApply={patch => {
+        if (typeof patch.notes === 'string') setNotes(patch.notes)
+        if (typeof patch.terms === 'string') setTerms(patch.terms)
+        setOptions(prev => prev.map((option, index) => {
+          const description = patch[['goodDescription', 'betterDescription', 'bestDescription'][index]]
+          return typeof description === 'string' ? { ...option, description } : option
+        }))
+      }} />
 
       {/* Customer Selection */}
       <div className="card">

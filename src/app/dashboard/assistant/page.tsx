@@ -1,4 +1,5 @@
 "use client";
+import AIFormAssistant from "@/components/AIFormAssistant";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useWorkflowFetch } from "@/hooks/useWorkflowFetch";
@@ -150,6 +151,7 @@ export default function Page() {
             </label>
           )}
         </div>
+        {lookups.role && lookups.role !== "TECHNICIAN" && <AIFormAssistant key={`${mode}:${jobId}:${customerId}`} form="workspace" values={{ notes }} jobId={jobId} customerId={customerId} disabled={busy} onApply={patch => { if (typeof patch.notes === "string") setNotes(patch.notes) }} />}
         <label className="block">
           Question or additional intake notes
           <textarea

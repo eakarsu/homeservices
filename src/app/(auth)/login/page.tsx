@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { signIn } from 'next-auth/react'
+import { getProviders, signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
@@ -12,6 +12,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get('registered')
+  const signInError = searchParams.get('error')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -19,6 +20,25 @@ function LoginForm() {
   const [isDemoLoading, setIsDemoLoading] = useState(false)
   const [demoEnabled, setDemoEnabled] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
+  const [oauthProviders, setOAuthProviders] = useState<string[]>([])
+  const [providersLoaded, setProvidersLoaded] = useState(false)
+  const [providersFailed, setProvidersFailed] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    getProviders().then(providers => {
+      if (!active) return
+      setOAuthProviders(Object.values(providers ?? {}).filter(p => p.type === 'oauth').map(p => p.id))
+      setProvidersFailed(providers === null)
+      setProvidersLoaded(true)
+    }).catch(() => {
+      if (active) {
+        setProvidersFailed(true)
+        setProvidersLoaded(true)
+      }
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -77,13 +97,28 @@ function LoginForm() {
     }
   }
 
-  const handleOAuthSignIn = (provider: string) => {
+  const handleOAuthSignIn = async (provider: string) => {
+    if (!oauthProviders.includes(provider) || isOAuthLoading) return
+    setError('')
     setIsOAuthLoading(provider)
-    signIn(provider, { callbackUrl: '/dashboard' })
+    try {
+      await signIn(provider, { callbackUrl: '/dashboard' })
+    } catch {
+      setError('Unable to start sign-in. Please try again or sign in with email.')
+    } finally {
+      setIsOAuthLoading(null)
+    }
   }
 
   return (
     <div className="mt-8 space-y-6">
+      {signInError && !error && (
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {signInError === 'AccessDenied'
+            ? 'This account cannot sign in. Contact your administrator to confirm your account is active and verified.'
+            : 'Sign-in could not be completed. Please try again or sign in with email.'}
+        </div>
+      )}
       {registered && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
           Registration successful! Please sign in.
@@ -118,7 +153,8 @@ function LoginForm() {
         <button
           type="button"
           onClick={() => handleOAuthSignIn('google')}
-          disabled={!ready || isLoading || isOAuthLoading !== null}
+          disabled={!ready || !oauthProviders.includes('google') || isLoading || isOAuthLoading !== null}
+          aria-describedby="oauth-availability"
           className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -147,7 +183,8 @@ function LoginForm() {
         <button
           type="button"
           onClick={() => handleOAuthSignIn('azure-ad')}
-          disabled={!ready || isLoading || isOAuthLoading !== null}
+          disabled={!ready || !oauthProviders.includes('azure-ad') || isLoading || isOAuthLoading !== null}
+          aria-describedby="oauth-availability"
           className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 23 23">
@@ -161,6 +198,16 @@ function LoginForm() {
           </span>
         </button>
       </div>
+
+      <p id="oauth-availability" role="status" className="text-center text-sm text-gray-600">
+        {!providersLoaded ? 'Checking sign-in options…'
+          : providersFailed ? 'Unable to check sign-in options. Refresh the page or sign in with email.'
+          : !oauthProviders.includes('google') && !oauthProviders.includes('azure-ad')
+            ? 'Google and Microsoft sign-in are unavailable. Please sign in with email.'
+          : !oauthProviders.includes('google') ? 'Google sign-in is unavailable. Use Microsoft or email.'
+          : !oauthProviders.includes('azure-ad') ? 'Microsoft sign-in is unavailable. Use Google or email.'
+          : ''}
+      </p>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

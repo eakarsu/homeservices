@@ -22,6 +22,22 @@ Startup does not install packages or kill unrelated processes. Demo seeding is o
 
 ## Verification
 
+### Google sign-in
+
+Google sign-in requires a **Web application OAuth client** from [Google Cloud credentials](https://console.cloud.google.com/apis/credentials). A Google Maps API key cannot replace it.
+
+1. Configure the OAuth consent screen and create/select the web OAuth client for this application.
+2. Set `GOOGLE_CLIENT_ID` and the matching `GOOGLE_CLIENT_SECRET` privately in the ignored `.env` file (or your deployment's secret configuration). Both must be nonempty; incomplete providers are disabled.
+3. Set `NEXTAUTH_URL` to the exact origin used to open the application. For the local URL `http://localhost:30871`, add `http://localhost:30871/api/auth/callback/google` to the client's authorized redirect URIs. Hostname, port and path must match. Register a separate URI for production. See [NextAuth Google configuration](https://next-auth.js.org/providers/google).
+4. If the consent screen is in testing mode, add your Google account as a test user where required by Google.
+5. Restart the app, refresh `/login`, and confirm Google is enabled. `/api/auth/providers` lists configured provider IDs without credentials.
+
+OAuth sign-in also requires an existing active, email-verified application user with the same email and an assigned company. This preserves administrative tenant/role provisioning. It does not create accounts automatically.
+
+The same conditional configuration applies to Microsoft (`AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, optional `AZURE_AD_TENANT_ID`). The login page keeps email/password available when an optional provider is absent and displays returned sign-in errors.
+
+### Commands
+
 ```bash
 npx prisma validate
 npm run test:unit
@@ -34,6 +50,17 @@ npm audit --omit=dev --audit-level=low
 CI applies both migrations to PostgreSQL 16, rejects schema drift, seeds test data, runs governance tests, type-checks, builds, exercises authentication plus one-time estimate approval in Chromium, verifies database immutability/retention failure paths, rejects every production dependency advisory, and scans full Git history for secrets. CI generates its authentication secret for every run.
 
 See `SECURITY.md` for role boundaries, audit-chain verification, retention/hold operations, and incident response. Production launch still requires representative dispatcher, technician, office, and customer validation of pricing overrides, signature failure/retry, access revocation, export, downtime, retention, and hold procedures.
+
+### Microsoft sign-in
+
+Set `AZURE_AD_CLIENT_ID` and `AZURE_AD_CLIENT_SECRET` from the same Microsoft Entra app registration. The secret **Value** is required; the Secret ID is not a credential. `AZURE_AD_TENANT_ID` defaults to `common`; the registration must support the intended account types.
+
+For local development use `NEXTAUTH_URL=http://localhost:30871` and register **Web** callback `http://localhost:30871/api/auth/callback/azure-ad`. Register `http://localhost:30871/api/auth/callback/google` with the Google client too. Local page requests to the same port on `127.0.0.1` redirect to the configured localhost origin before authentication, keeping OAuth state cookies and callbacks on one host. API requests and production requests are not redirected by this development-only rule.
+
+Keep production callbacks registered separately. A working production callback does not automatically authorize local callbacks. See [Microsoft redirect URI restrictions](https://learn.microsoft.com/en-us/entra/identity-platform/reply-url). Restart the local server after changing credentials or the canonical URL. Store credentials only in the ignored local environment configuration.
+
+Local Microsoft sign-in was verified on September 17, 2026 through the consent screen to the authenticated dashboard. The configured local secret expires March 16, 2027 and needs replacement before then.
+
 
 ## Local sample data
 
@@ -108,3 +135,11 @@ Use HTTPS deployment URLs. Local localhost/127.0.0.1 checkout-return URLs are su
 Local restart behavior: `./start.sh` clears this project’s configured ports before migrations or builds. It stops the prior project server tree, waits for release and verifies the ports are free. If another application owns a configured port, startup stops with an explanation instead of terminating that application. Run `npm run test:startup` to verify both cases.
 
 Local autofill is enabled by `ENABLE_DEMO_CREDENTIAL_AUTOFILL=true` in the ignored `.env`, with the existing administrator credentials configured there. The login button checks availability without retrieving passwords, then fills the configured account when clicked. Availability and credential responses are never cached.
+
+### AI-assisted form drafting
+
+Jobs, customers, inventory parts, technicians, estimates, agreements, invoice drafts, supported operations records and the AI workspace include reusable AI drafting controls. Use **Complete form with AI**, **Fill optional fields**, **Polish text**, or an individual-field action. Supply source notes or select a permitted customer/job. These actions call the configured OpenRouter provider through the existing authenticated assistant API, retaining cost reservations, request deduplication, company scoping and audit records.
+
+Suggestions populate supported fields immediately without saving the record. Review and edit them before saving; **Undo AI changes** preserves fields you subsequently edited. Every requested optional field is evaluated, but unsupported facts remain unchanged and are listed for confirmation. Passwords, roles and internal relationship IDs are not generated or included as form context. Entity selection and commercial approval remain explicit actions.
+
+Validation on September 17, 2026: type checking and 38 isolated unit/integration tests passed. A live browser test filled all nine supported job fields, a second filled only the five optional fields, and undo preserved a manual title edit. No job was created by these checks.

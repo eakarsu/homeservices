@@ -1295,3 +1295,28 @@ test("Stripe fixtures reconcile exact receipts once, retain unknown outcomes, an
     "UNKNOWN",
   );
 });
+
+test("AI form drafting limits fields, scopes evidence and retains budgeted provider receipts", async () => {
+  const { runAssistant } = await import("../../src/lib/workflows/ai");
+  const f = await fixture(), other = await fixture(), otherJob = await other.job();
+  process.env.OPENROUTER_API_KEY = "fixture-ai-key";
+  process.env.AI_WORKSPACE_DAILY_BUDGET_CENTS = "500";
+  let calls = 0;
+  const input = { form: "technicians", fieldAction: "phone", values: {firstName:"Test",password:"DO_NOT_SEND",role:"ADMIN"}, notes: "Supplied contact phone is 202-555-0198.", consent: true, requestKey: crypto.randomUUID() };
+  const provider: typeof fetch = async (_url, init) => {
+    calls++;
+    const request = String(init?.body);
+    assert.ok(!request.includes("DO_NOT_SEND"));
+    return Response.json({id:"form-receipt",choices:[{message:{content:JSON.stringify({summary:"Extracted supplied phone.",draft:"Review contact details.",recommendations:[],uncertainties:[],fields:{phone:"202-555-0198"}})}}],usage:{prompt_tokens:100,completion_tokens:30,cost:0.001}});
+  };
+  const result = await runAssistant(f.a,"form-autofill",input,provider);
+  assert.deepEqual((result.report as any).fields,{phone:"202-555-0198"});
+  assert.equal((await runAssistant(f.a,"form-autofill",input,provider)).id,result.id);
+  assert.equal(calls,1);
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,jobId:otherJob.id,requestKey:crypto.randomUUID()},provider));
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,fieldAction:"password",requestKey:crypto.randomUUID()},provider));
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,consent:false,requestKey:crypto.randomUUID()},provider));
+  assert.equal(calls,1);
+  const malformed: typeof fetch = async () => Response.json({id:"bad-form-receipt",choices:[{message:{content:JSON.stringify({summary:"Invalid",draft:"",recommendations:[],uncertainties:[],fields:{phone:"202-555-0198",role:"ADMIN"}})}}],usage:{cost:0.001}});
+  await assert.rejects(runAssistant(f.a,"form-autofill",{...input,requestKey:crypto.randomUUID()},malformed),/invalid form fields/);
+});

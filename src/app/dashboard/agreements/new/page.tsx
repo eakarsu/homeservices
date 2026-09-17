@@ -1,4 +1,5 @@
 'use client'
+import AIFormAssistant from '@/components/AIFormAssistant'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -113,6 +114,8 @@ function NewAgreementForm() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">New Service Agreement</h1>
       </div>
+
+      <AIFormAssistant form="agreements" values={{ notes }} customerId={customerId} disabled={createMutation.isPending} onApply={patch => { if (typeof patch.notes === "string") setNotes(patch.notes) }} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}
