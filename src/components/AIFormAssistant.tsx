@@ -11,10 +11,16 @@ export default function AIFormAssistant({ form, values, onApply, jobId, customer
   const [result, setResult] = useState<{ summary: string; missing: string[]; count: number; model: string } | null>(null)
   const [undo, setUndo] = useState<{ before: FormValues; after: FormValues } | null>(null)
   const lock = useRef(false), alive = useRef(true), current = useRef({ values, onApply, jobId, customerId })
-  current.current = { values, onApply, jobId, customerId }
+  const suppliedValues = form === 'workspace' ? values : {...values, extraInstructions:source}
+  current.current = { values:suppliedValues, onApply:patch => {
+    if (form === 'workspace') { onApply(patch); return }
+    const {extraInstructions,...rest} = patch
+    if (typeof extraInstructions === 'string') setSource(extraInstructions)
+    onApply(rest)
+  }, jobId, customerId }
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   if (!fields.length) return null
-  const currentValues = pickFormValues(form, values)
+  const currentValues = pickFormValues(form, suppliedValues)
   const sourceValue = form === 'workspace' ? String(currentValues.extraInstructions || '') : source
   const completed = fields.filter(f => String(currentValues[f.key] ?? '').trim()).length
   async function generate(action: string) {

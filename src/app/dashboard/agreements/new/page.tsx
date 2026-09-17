@@ -115,7 +115,13 @@ function NewAgreementForm() {
         <h1 className="text-2xl font-bold text-gray-900">New Service Agreement</h1>
       </div>
 
-      <AIFormAssistant form="agreements" values={{ notes }} customerId={customerId} disabled={createMutation.isPending} onApply={patch => { if (typeof patch.notes === "string") setNotes(patch.notes) }} />
+      <AIFormAssistant form="agreements" values={{ notes, customerId, planId, billingFrequency, startDate, autoRenew:String(autoRenew) }} customerId={customerId} disabled={createMutation.isPending} onApply={patch => { if (typeof patch.notes === "string") setNotes(patch.notes)
+        if (typeof patch.customerId === "string") setCustomerId(patch.customerId)
+        if (typeof patch.planId === "string") setPlanId(patch.planId)
+        if (patch.billingFrequency === "monthly" || patch.billingFrequency === "annual") setBillingFrequency(patch.billingFrequency)
+        if (typeof patch.startDate === "string") setStartDate(patch.startDate)
+        if (patch.autoRenew === "true" || patch.autoRenew === "false") setAutoRenew(patch.autoRenew === "true")
+      }} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}

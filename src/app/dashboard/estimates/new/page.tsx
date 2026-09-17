@@ -48,6 +48,7 @@ function NewEstimateForm() {
   const [customerId, setCustomerId] = useState(preSelectedCustomerId)
   const [jobId, setJobId] = useState(preSelectedJobId)
   const [notes, setNotes] = useState('')
+  const [title, setTitle] = useState('')
   const [terms, setTerms] = useState('Estimate valid for 30 days. Payment due upon completion.')
   const [taxRate, setTaxRate] = useState(0.1)
 
@@ -65,6 +66,11 @@ function NewEstimateForm() {
       const data = await res.json()
       return data.data || []
     },
+  })
+
+  const { data: jobLookups } = useQuery({
+    queryKey: ['estimate-job-lookups'],
+    queryFn: async () => { const r = await fetch('/api/operations/lookups'); if (!r.ok) throw Error('Unable to load jobs'); return r.json() },
   })
 
   const { data: pricebookItems } = useQuery({
@@ -95,7 +101,7 @@ function NewEstimateForm() {
         body: JSON.stringify({
           customerId,
           jobId: jobId || undefined,
-          notes,
+          notes: [title ? `Estimate: ${title}` : '', notes].filter(Boolean).join('\n\n'),
           terms,
           options: optionsWithTotals,
         }),
@@ -188,7 +194,10 @@ function NewEstimateForm() {
         <h1 className="text-2xl font-bold text-gray-900">New Estimate</h1>
       </div>
 
-      <AIFormAssistant form="estimates" values={{ notes, terms, goodDescription: options[0]?.description, betterDescription: options[1]?.description, bestDescription: options[2]?.description }} customerId={customerId} jobId={jobId} disabled={createMutation.isPending} onApply={patch => {
+      <AIFormAssistant form="estimates" values={{ title, notes, terms, customerId, jobId, goodDescription: options[0]?.description, betterDescription: options[1]?.description, bestDescription: options[2]?.description }} customerId={customerId} jobId={jobId} disabled={createMutation.isPending} onApply={patch => {
+        if (typeof patch.title === 'string') setTitle(patch.title)
+        if (typeof patch.customerId === 'string') setCustomerId(patch.customerId)
+        if (typeof patch.jobId === 'string') setJobId(patch.jobId)
         if (typeof patch.notes === 'string') setNotes(patch.notes)
         if (typeof patch.terms === 'string') setTerms(patch.terms)
         setOptions(prev => prev.map((option, index) => {
@@ -204,7 +213,7 @@ function NewEstimateForm() {
           id="customerId"
           name="customerId"
           value={customerId}
-          onChange={(e) => { setCustomerId(e.target.value); if (touched.customerId) validateOne('customerId', e.target.value) }}
+          onChange={(e) => { setCustomerId(e.target.value); setJobId(''); if (touched.customerId) validateOne('customerId', e.target.value) }}
           onBlur={() => { markTouched('customerId'); validateOne('customerId', customerId) }}
           className={`input ${touched.customerId && errors.customerId ? 'border-red-500' : ''}`}
         >
@@ -218,6 +227,18 @@ function NewEstimateForm() {
         {touched.customerId && errors.customerId && <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>}
       </div>
 
+      <div className="card">
+        <label htmlFor="jobId" className="label">Related job (optional)</label>
+        <select id="jobId" className="input" value={jobId} onChange={e => {
+          setJobId(e.target.value)
+          const job = jobLookups?.jobs?.find((j: {id:string;customerId:string}) => j.id === e.target.value)
+          if (job) setCustomerId(job.customerId)
+        }}>
+          <option value="">No related job</option>
+          {jobLookups?.jobs?.filter((j: {customerId:string}) => !customerId || j.customerId === customerId).map((j: {id:string;jobNumber:string;title:string}) => <option key={j.id} value={j.id}>{j.jobNumber} · {j.title}</option>)}
+        </select>
+      </div>
+
       {/* Estimate Title */}
       <div className="card">
         <label htmlFor="title" className="text-lg font-semibold mb-4 block">Title</label>
@@ -225,6 +246,8 @@ function NewEstimateForm() {
           type="text"
           id="title"
           name="title"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
           placeholder="Estimate title..."
           className="input"
         />

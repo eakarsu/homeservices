@@ -100,7 +100,7 @@ export default function NewTechnicianPage() {
         <h1 className="text-2xl font-bold text-gray-900">Add Technician</h1>
       </div>
 
-      <AIFormAssistant form="technicians" values={formData} disabled={createMutation.isPending} onApply={patch => setFormData(prev => ({ ...prev, ...patch }))} />
+      <AIFormAssistant form="technicians" values={{...formData,tradeTypes:formData.tradeTypes.join(',')}} disabled={createMutation.isPending} onApply={patch => setFormData(prev => { const {tradeTypes,...rest} = patch; return {...prev,...rest,...(typeof tradeTypes === 'string' ? {tradeTypes:tradeTypes.split(',').map(t => t.trim())} : {})} })} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}

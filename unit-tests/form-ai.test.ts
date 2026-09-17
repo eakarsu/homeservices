@@ -48,3 +48,13 @@ test('all five drafting actions cover required and optional fields', () => {
     }
   }
 })
+
+test('other forms expose record selectors, optional instructions and validated dates/trades', () => {
+  for (const [form, keys] of Object.entries({jobs:['customerId','propertyId','serviceTypeId'],estimates:['customerId','jobId','title'],agreements:['customerId','planId','startDate','billingFrequency'],technicians:['truckId','tradeTypes'],customers:['preferredContact'],parts:['category']})) {
+    for (const key of [...keys,'extraInstructions']) assert.ok(getFormFields(form).some(f=>f.key===key),`${form}: ${key}`)
+  }
+  assert.deepEqual(validateAIFields({tradeTypes:'HVAC, PLUMBING'},selectedAIFields('technicians','tradeTypes')),{tradeTypes:'HVAC, PLUMBING'})
+  assert.throws(()=>validateAIFields({tradeTypes:'ADMIN'},selectedAIFields('technicians','tradeTypes')))
+  assert.throws(()=>validateAIFields({startDate:'2026-02-30'},selectedAIFields('agreements','startDate')))
+  assert.deepEqual(validateAIFields({startDate:'2026-09-21'},selectedAIFields('agreements','startDate')),{startDate:'2026-09-21'})
+})

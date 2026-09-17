@@ -1362,3 +1362,24 @@ test("workspace auto-selects only matching company records and rejects invented 
   await assert.rejects(runAssistant(f.a,"form-autofill",{...input,requestKey:crypto.randomUUID()},malicious),/invalid form fields/);
   assert.equal(calls,1);
 });
+
+test("form dropdowns match owned customers, properties, services, plans and trucks", async () => {
+  const { resolveFormReferences } = await import('../../src/lib/workflows/form-references');
+  const { getFormFields } = await import('../../src/lib/form-ai');
+  const f = await fixture(), other = await fixture();
+  const plan = await prisma.agreementPlan.create({data:{companyId:f.company.id,name:'Fixture annual plan',tradeType:'HVAC',monthlyPrice:10,annualPrice:100,includedServices:[]}});
+  const none = {jobId:'',customerId:''};
+  const jobRefs = await resolveFormReferences(f.a,getFormFields('jobs'),{},'Fictional Customer requests Test HVAC at 1 Test Lane',none);
+  assert.equal(jobRefs.resolved.customerId,f.customer.id);
+  assert.equal(jobRefs.resolved.propertyId,f.property.id);
+  assert.equal(jobRefs.resolved.serviceTypeId,f.service.id);
+  const agreement = await resolveFormReferences(f.a,getFormFields('agreements'),{},'Fictional Customer requests Fixture annual plan',none);
+  assert.equal(agreement.resolved.planId,plan.id);
+  const truck = await resolveFormReferences(f.a,getFormFields('technicians'),{},'Assign Test truck',none);
+  assert.equal(truck.resolved.truckId,f.truck.id);
+  await assert.rejects(resolveFormReferences(f.a,getFormFields('jobs'),{propertyId:other.property.id},'',{jobId:'',customerId:f.customer.id}),/not available/);
+  await assert.rejects(resolveFormReferences(f.a,getFormFields('jobs'),{},'',{jobId:'',customerId:other.customer.id}),/not available/);
+  await prisma.property.create({data:{customerId:f.customer.id,address:'2 Test Lane',city:'Test',state:'NY',zip:'10001'}});
+  const ambiguous = await resolveFormReferences(f.a,getFormFields('jobs'),{},'',{jobId:'',customerId:f.customer.id});
+  assert.equal(ambiguous.resolved.propertyId,undefined);
+});

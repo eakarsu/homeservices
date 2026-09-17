@@ -20,3 +20,9 @@ export function matchWorkspaceRecords(source: string, jobs: JobChoice[], custome
   if (job && !customerId) customerId = job.customerId
   return { jobId, customerId }
 }
+
+export function matchNamedRecord(source: string, rows: {id:string;name:string}[]) {
+  const content = ` ${normalize(source)} `
+  const matches = rows.filter(r => normalize(r.name) && content.includes(` ${normalize(r.name)} `))
+  return matches.length === 1 ? matches[0].id : ''
+}

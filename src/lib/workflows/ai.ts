@@ -19,6 +19,7 @@ import {
 } from "./core";
 import { aiModes } from "./ai-definitions";
 import { formAIActions, selectedAIFields, pickFormValues, validateAIFields } from "@/lib/form-ai";
+import { resolveFormReferences } from "./form-references";
 import { matchWorkspaceRecords } from "@/lib/workspace-selection";
 export { aiModes };
 type Evidence = { id: string; type: string; label: string; facts: unknown };
@@ -373,6 +374,7 @@ export async function runAssistant(
     try { fields = selectedAIFields(form, action); } catch { fail("Unknown form or AI action"); }
   }
   const values = formMode ? pickFormValues(form, body.values) : null;
+  let resolvedReferences: Record<string,string|number> = {};
   const workspace = formMode && form === "workspace";
   if (workspace) {
     const [jobs, customers] = await Promise.all([
@@ -386,8 +388,17 @@ export async function runAssistant(
     // Models can use only the selected or uniquely matched identities, never invent IDs.
     fields = fields.map(f => f.key === "jobId" ? {...f,options:selection.jobId ? [selection.jobId] : []} : f.key === "customerId" ? {...f,options:selection.customerId ? [selection.customerId] : []} : f.key === "mode" ? {...f,options:f.options?.filter(m => !["photo-intake","voice-intake"].includes(m) && (selection.jobId || !["job-summary","diagnostics","dispatch-optimizer","margin-analysis"].includes(m)))} : f);
   }
+  if (formMode && !workspace && fields.some(f => ["customerId","jobId","propertyId","serviceTypeId","planId","truckId"].includes(f.key))) {
+    const refs = await resolveFormReferences(user, fields, values || {}, [body.notes,...Object.entries(values || {}).filter(([key]) => !key.endsWith("Id")).map(([,value]) => value)].join("\n"), {
+      jobId:text(body.jobId,"job",100,false),customerId:text(body.customerId,"customer",100,false),
+    });
+    fields = refs.fields;
+    resolvedReferences = refs.resolved;
+    Object.assign(values || {}, resolvedReferences);
+    body = {...body,...refs.selection};
+  }
   const definition = formMode
-    ? { name: "form autofill", instruction: `You are filling the ${form} form. Populate the requested fields from intake notes, current field values and supplied records. If the form is empty, create a useful starter template only in prose fields, clearly marking it as a draft to customize. Use questions or bracketed placeholders in prose for unknown details. Never populate factual fields with placeholders or invented data. Evaluate EVERY requested field, including optional fields. Return null for facts not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Preserve confirmed facts. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm; never infer a date or timezone. Action: ${action}. ${formAIActions.find(a => a.key === action)?.instruction || ""} Apply the requested writing style only to prose. ${workspace ? "Populate extraInstructions with helpful guidance for this workflow. Choose an appropriate workflow from its allowed options, preserving the current workflow when valid. For jobId and customerId use their single allowed option when present, otherwise null, and explain that a specific job number or customer name is needed. Never select a different record or invent one." : ""} For every action, also populate all supported optional and required fields when source facts are available.` }
+    ? { name: "form autofill", instruction: `You are filling the ${form} form. Populate the requested fields from intake notes, current field values and supplied records. If the form is empty, create a useful starter template only in prose fields, clearly marking it as a draft to customize. Use questions or bracketed placeholders in prose for unknown details. Never populate factual fields with placeholders or invented data. Evaluate EVERY requested field, including optional fields. Return null for facts not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Extract facts from ALL supplied fields, including description and notes. A blank target field is not missing evidence when its value is explicitly stated elsewhere in the input. Preserve confirmed facts, including requested dates and times; keep them in the prose as well if you cannot populate their dedicated field. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields of type list require comma-separated values from their allowed options. Reference fields ending in Id must use their single allowed option or null when none is available. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm. An explicit calendar date and local clock time are sufficient: format them directly without timezone conversion. Do not invent missing dates or times. Action: ${action}. ${formAIActions.find(a => a.key === action)?.instruction || ""} Apply the requested writing style only to prose. ${workspace ? "Populate extraInstructions with helpful guidance for this workflow. Choose an appropriate workflow from its allowed options, preserving the current workflow when valid. For jobId and customerId use their single allowed option when present, otherwise null, and explain that a specific job number or customer name is needed. Never select a different record or invent one." : ""} For every action, also populate all supported optional and required fields when source facts are available.` }
     : aiModes.find((m) => m.slug === mode);
   if (!definition) fail("AI workflow not found", 404);
   if (
@@ -516,6 +527,7 @@ export async function runAssistant(
       try { formFields = validateAIFields(object(parsed).fields, fields); }
       catch { fail("AI returned incomplete or invalid form fields. Try again with clearer source notes.", 502); }
     }
+    Object.assign(formFields, resolvedReferences);
     if (workspace) {
       if (fields.some(f => f.key === "jobId") && body.jobId) formFields.jobId = String(body.jobId);
       if (fields.some(f => f.key === "customerId") && body.customerId) formFields.customerId = String(body.customerId);
