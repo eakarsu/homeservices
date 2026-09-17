@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { localAuthRedirect } from '@/lib/local-auth-origin'
+import { aiWorkflowPages } from '@/lib/ai-page-fields'
 
 function getAllowedOrigins(): string[] {
   return (process.env.CORS_ALLOWED_ORIGINS || '')
@@ -67,7 +68,7 @@ export function middleware(request: NextRequest) {
   }
   const isGeneratedGap = pathname.startsWith('/api/gap-no-') || pathname.startsWith('/dashboard/batch10')
   const isUngovernedAI = (pathname.startsWith('/api/ai/') && pathname !== '/api/ai/quote-generator')
-    || (pathname.startsWith('/dashboard/ai/') && pathname !== '/dashboard/ai/quote-generator')
+    || (pathname.startsWith('/dashboard/ai/') && pathname !== '/dashboard/ai/quote-generator' && !aiWorkflowPages.some(slug=>pathname===`/dashboard/ai/${slug}`))
   const isUnsafeLegacyPublicInvoice = /^\/api\/invoices\/[^/]+\/public(?:\/|$)/.test(pathname) || pathname.startsWith('/pay/')
   if (isGeneratedGap || isUngovernedAI || isUnsafeLegacyPublicInvoice) {
     const disabled = NextResponse.json({ error: 'This workflow is not enabled for production use.' }, { status: 404 })

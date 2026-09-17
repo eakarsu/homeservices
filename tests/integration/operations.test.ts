@@ -1383,3 +1383,118 @@ test("form dropdowns match owned customers, properties, services, plans and truc
   const ambiguous = await resolveFormReferences(f.a,getFormFields('jobs'),{},'',{jobId:'',customerId:f.customer.id});
   assert.equal(ambiguous.resolved.propertyId,undefined);
 });
+
+test("Complete form fills a blank workspace even when the provider evaluates every field as null", async () => {
+  const { runAssistant } = await import('../../src/lib/workflows/ai');
+  const { getFormFields } = await import('../../src/lib/form-ai');
+  const f = await fixture(), other = await fixture();
+  const older = await f.job(), newest = await f.job(), foreign = await other.job();
+  await prisma.job.update({where:{id:older.id},data:{createdAt:new Date('2020-01-01')}});
+  process.env.OPENROUTER_API_KEY = 'fixture-ai-key';
+  let calls = 0;
+  const provider: typeof fetch = async (_url, init) => {
+    calls++;
+    const raw = String(init?.body);
+    assert.ok(raw.includes(newest.id));
+    assert.ok(!raw.includes(foreign.id));
+    return Response.json({id:'blank-workspace-receipt',choices:[{message:{content:JSON.stringify({summary:'Draft for review.',draft:'',recommendations:[],uncertainties:[],fields:Object.fromEntries(getFormFields('workspace').map(f=>[f.key,null]))})}}],usage:{cost:0.001}});
+  };
+  const input = {form:'workspace',fieldAction:'all',values:{mode:'job-summary',jobId:'',customerId:'',notes:'',extraInstructions:''},consent:true,requestKey:crypto.randomUUID()};
+  const result = await runAssistant(f.a,'form-autofill',input,provider);
+  const report = result.report as any;
+  assert.equal(report.fields.jobId,newest.id);
+  assert.equal(report.fields.customerId,f.customer.id);
+  assert.equal(report.fields.mode,'job-summary');
+  assert.ok(report.fields.extraInstructions.length > 0);
+  assert.ok(report.fields.notes.length > 0);
+  assert.match(report.summary,/most recent available job/);
+  assert.equal((await runAssistant(f.a,'form-autofill',input,provider)).id,result.id);
+  assert.equal(calls,1);
+});
+
+test("all shared AI actions fill draftable text while leaving unknown customer facts unset", async () => {
+  const { runAssistant } = await import('../../src/lib/workflows/ai');
+  const { getFormFields, formAIActions } = await import('../../src/lib/form-ai');
+  const f = await fixture();
+  process.env.OPENROUTER_API_KEY = 'fixture-ai-key';
+  for (const action of formAIActions) {
+    const provider: typeof fetch = async () => Response.json({id:'customer-'+action.key,choices:[{message:{content:JSON.stringify({summary:'Draft for review.',draft:'',recommendations:[],uncertainties:[],fields:Object.fromEntries(getFormFields('customers').map(f=>[f.key,null]))})}}],usage:{cost:0.001}});
+    const result = await runAssistant(f.a,'form-autofill',{form:'customers',fieldAction:action.key,values:{},consent:true,requestKey:crypto.randomUUID()},provider);
+    const fields = (result.report as any).fields;
+    assert.ok(fields.notes);
+    assert.ok(fields.extraInstructions);
+    assert.equal(fields.phone,undefined);
+    assert.equal(fields.firstName,undefined);
+    assert.equal(fields.propertyAddress,undefined);
+  }
+});
+
+test("workspace final drafting includes extra instructions in provider input and saved evidence", async () => {
+  const { runAssistant } = await import('../../src/lib/workflows/ai');
+  const f = await fixture();
+  process.env.OPENROUTER_API_KEY = 'fixture-ai-key';
+  const provider: typeof fetch = async (_url,init) => {
+    assert.ok(String(init?.body).includes('Use a short checklist'));
+    return Response.json({id:'instructions-receipt',choices:[{message:{content:JSON.stringify({summary:'Intake checklist.',draft:'Review the request.',recommendations:[],uncertainties:[]})}}],usage:{cost:0.001}});
+  };
+  const result = await runAssistant(f.a,'intake',{notes:'Review the service request',extraInstructions:'Use a short checklist',consent:true,requestKey:crypto.randomUUID()},provider);
+  const saved = await prisma.aIResult.findUniqueOrThrow({where:{id:result.id}});
+  assert.match((saved.input as any).notes,/Extra instructions:\nUse a short checklist/);
+});
+
+test("equipment and vendor dropdowns resolve only company-owned matching records", async () => {
+  const { resolveFormReferences } = await import('../../src/lib/workflows/form-references');
+  const { getFormFields } = await import('../../src/lib/form-ai');
+  const f = await fixture(), other = await fixture();
+  const equipment = await prisma.equipment.create({data:{propertyId:f.property.id,type:'FURNACE',brand:'Fixture',model:'Model A',serialNumber:'ABC123'}});
+  const foreign = await prisma.equipment.create({data:{propertyId:other.property.id,type:'FURNACE',brand:'Foreign'}});
+  const vendor = await prisma.workflowRecord.create({data:{companyId:f.company.id,createdById:f.a.id,module:'vendors',title:'Fixture Supply',status:'ACTIVE',data:{}}});
+  const fields = getFormFields('operations:warranties');
+  const selected = {jobId:'',customerId:f.customer.id};
+  const result = await resolveFormReferences(f.a,fields,{},'Furnace Fixture Model A ABC123 from Fixture Supply',selected);
+  assert.equal(result.resolved.equipmentId,equipment.id);
+  assert.equal(result.resolved.vendorId,vendor.id);
+  await assert.rejects(resolveFormReferences(f.a,fields,{equipmentId:foreign.id},'',selected),/not available/);
+});
+
+test('quote autofill includes company pricebook evidence and fills the job, customer, services and notes', async () => {
+  const {runAssistant}=await import('../../src/lib/workflows/ai');
+  const {getFormFields}=await import('../../src/lib/form-ai');
+  const f=await fixture(), other=await fixture(), job=await f.job();
+  const item=await prisma.pricebookItem.create({data:{companyId:f.company.id,code:'TEST',name:'Fixture service',category:'Labor',type:'Flat Rate',unitPrice:100}});
+  const foreign=await prisma.pricebookItem.create({data:{companyId:other.company.id,code:'PRIVATE',name:'Other company item',category:'Labor',type:'Flat Rate',unitPrice:999}});
+  process.env.OPENROUTER_API_KEY='fixture-ai-key';
+  const provider:typeof fetch=async (_url,init)=>{
+    const body=JSON.parse(String(init?.body));
+    assert.ok(body.messages[0].content.includes(item.id));
+    assert.ok(!String(init?.body).includes(foreign.id));
+    const fields=Object.fromEntries(getFormFields('ai:quote-generator').map(f=>[f.key,null]));
+    fields.pricebookItemIds=item.id as any;
+    return Response.json({id:'quote-fill',choices:[{message:{content:JSON.stringify({summary:'Selected the matching service.',draft:{unused:'Autofill returns fields'},recommendations:[],uncertainties:[],fields})}}],usage:{cost:0.001}});
+  };
+  const input={form:'ai:quote-generator',fieldAction:'all',values:{jobId:'',customerId:'',pricebookItemIds:'',additionalNotes:'',extraInstructions:''},consent:true,requestKey:crypto.randomUUID()};
+  const result=await runAssistant(f.a,'form-autofill',input,provider),fields=(result.report as any).fields;
+  assert.equal(fields.jobId,job.id); assert.equal(fields.customerId,f.customer.id);
+  assert.equal(fields.pricebookItemIds,item.id);assert.ok(fields.additionalNotes);assert.ok(fields.extraInstructions);
+  await assert.rejects(runAssistant(f.a,'form-autofill',{...input,values:{pricebookItemIds:foreign.id},requestKey:crypto.randomUUID()},provider),/not available/);
+});
+
+test('every dedicated AI workflow preserves its mode during autofill and generates a saved draft', async () => {
+  const {runAssistant}=await import('../../src/lib/workflows/ai');
+  const {getFormFields}=await import('../../src/lib/form-ai');
+  const modes=['diagnostics','job-summary','dispatch-optimizer','smart-scheduling','predictive-maintenance','customer-insights','inventory-forecast','photo-intake','subscription-health','route-optimizer'];
+  process.env.OPENROUTER_API_KEY='fixture-ai-key';
+  for(const mode of modes) {
+    const f=await fixture(), job=await f.job();
+    const provider:typeof fetch=async()=>Response.json({id:'page-'+mode,choices:[{message:{content:JSON.stringify({summary:'Evidence summary.',draft:'# Draft\n\nReview recorded details.',recommendations:[],uncertainties:[],fields:Object.fromEntries(getFormFields(`workspace:${mode}`).map(f=>[f.key,null]))})}}],usage:{cost:0.001}});
+    const completed=await runAssistant(f.a,'form-autofill',{form:`workspace:${mode}`,fieldAction:'all',values:{mode},jobId:job.id,customerId:f.customer.id,consent:true,requestKey:crypto.randomUUID()},provider);
+    const filled=(completed.report as any).fields;
+    assert.equal(filled.mode,mode);assert.equal(filled.jobId,job.id);assert.equal(filled.customerId,f.customer.id);assert.ok(filled.notes);assert.ok(filled.extraInstructions);
+    for(const field of getFormFields(`workspace:${mode}`).filter(f=>f.prose))assert.ok(filled[field.key],`${mode}: ${field.key} should be filled`);
+    const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJ1sAAAAASUVORK5CYII=';
+    const generated=await runAssistant(f.a,mode,{jobId:job.id,customerId:f.customer.id,notes:filled.notes,extraInstructions:filled.extraInstructions,...(mode==='photo-intake'?{media:png}:{}),consent:true,requestKey:crypto.randomUUID()},provider);
+    assert.match((generated.report as any).draft,/# Draft/);
+    const saved=await prisma.aIResult.findUniqueOrThrow({where:{id:generated.id}});
+    assert.equal(saved.feature,mode);assert.equal(saved.success,true);
+  }
+});

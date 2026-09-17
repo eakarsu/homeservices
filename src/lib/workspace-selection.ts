@@ -26,3 +26,13 @@ export function matchNamedRecord(source: string, rows: {id:string;name:string}[]
   const matches = rows.filter(r => normalize(r.name) && content.includes(` ${normalize(r.name)} `))
   return matches.length === 1 ? matches[0].id : ''
 }
+
+// Callers supply authorized records in newest-first order. Defaults are draft
+// suggestions only, and never replace explicit context or an existing choice.
+export function completeWorkspaceRecords(source: string, jobs: JobChoice[], customers: CustomerChoice[], selected: {jobId:string;customerId:string}) {
+  const choice = matchWorkspaceRecords(source, jobs, customers, selected)
+  if (source.trim() || choice.jobId) return choice
+  const job = jobs.find(j => !choice.customerId || j.customerId === choice.customerId)
+  if (job) return {jobId:job.id,customerId:job.customerId}
+  return {...choice,customerId:choice.customerId || customers[0]?.id || ''}
+}

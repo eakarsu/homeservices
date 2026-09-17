@@ -1,3 +1,4 @@
+import {workflowDetailsText} from '@/lib/ai-page-fields'
 import {
   reserveAssistant,
   boundedProviderJson,
@@ -18,9 +19,9 @@ import {
   txFor,
 } from "./core";
 import { aiModes } from "./ai-definitions";
-import { formAIActions, selectedAIFields, pickFormValues, validateAIFields } from "@/lib/form-ai";
+import { formAIActions, selectedAIFields, pickFormValues, validateAIFields, completeDraftFields, combineDraftInstructions } from "@/lib/form-ai";
 import { resolveFormReferences } from "./form-references";
-import { matchWorkspaceRecords } from "@/lib/workspace-selection";
+import { matchWorkspaceRecords, completeWorkspaceRecords } from "@/lib/workspace-selection";
 export { aiModes };
 type Evidence = { id: string; type: string; label: string; facts: unknown };
 export function validateReport(value: unknown, ids: Set<string>) {
@@ -200,6 +201,7 @@ export async function aiEvidence(
     if (
       [
         "predictive-maintenance",
+        "diagnostics",
         "subscription-health",
         "renewals",
         "photo-intake",
@@ -375,20 +377,28 @@ export async function runAssistant(
   }
   const values = formMode ? pickFormValues(form, body.values) : null;
   let resolvedReferences: Record<string,string|number> = {};
-  const workspace = formMode && form === "workspace";
+  let selectionNotice = "";
+  const quoteForm = formMode && form === "ai:quote-generator";
+  const workspace = formMode && (form === "workspace" || form.startsWith("workspace:") || quoteForm);
   if (workspace) {
     const [jobs, customers] = await Promise.all([
       prisma.job.findMany({ where: {companyId:user.companyId}, select:{id:true,jobNumber:true,title:true,customerId:true}, orderBy:{createdAt:"desc"}, take:500 }),
       prisma.customer.findMany({ where:{companyId:user.companyId}, select:{id:true,firstName:true,lastName:true,companyName:true}, orderBy:{createdAt:"desc"}, take:1000 }),
     ]);
-    const selection = matchWorkspaceRecords([body.notes, values?.notes, values?.extraInstructions].filter(v => typeof v === "string").join("\n"), jobs, customers, {
-      jobId:text(body.jobId,"job",100,false), customerId:text(body.customerId,"customer",100,false),
-    });
+    const source = [body.notes, values?.notes, values?.additionalNotes, values?.extraInstructions, ...(form.startsWith("workspace:") ? Object.entries(values || {}).filter(([key])=>!["mode","jobId","customerId","notes","extraInstructions"].includes(key)).map(([,value])=>value) : [])].filter(v => typeof v === "string").join("\n");
+    const selected = {jobId:text(body.jobId || values?.jobId,"job",100,false), customerId:text(body.customerId || values?.customerId,"customer",100,false)};
+    const selection = (action === "all" ? completeWorkspaceRecords : matchWorkspaceRecords)(source, jobs, customers, selected);
+    if (!source.trim() && !selected.jobId && selection.jobId) {
+      const job = jobs.find(j => j.id === selection.jobId)!;
+      selectionNotice = `Started with the most recent available job (${job.jobNumber}) and its customer. Review or change these draft selections.`;
+    } else if (!source.trim() && !selection.jobId && !selected.customerId && selection.customerId) {
+      selectionNotice = "Started with the most recent available customer. Review or change this draft selection.";
+    }
     body = {...body,...selection};
-    // Models can use only the selected or uniquely matched identities, never invent IDs.
-    fields = fields.map(f => f.key === "jobId" ? {...f,options:selection.jobId ? [selection.jobId] : []} : f.key === "customerId" ? {...f,options:selection.customerId ? [selection.customerId] : []} : f.key === "mode" ? {...f,options:f.options?.filter(m => !["photo-intake","voice-intake"].includes(m) && (selection.jobId || !["job-summary","diagnostics","dispatch-optimizer","margin-analysis"].includes(m)))} : f);
+    // Models can use only the resolved, authorized identities, never invent IDs.
+    fields = fields.map(f => f.key === "jobId" ? {...f,options:selection.jobId ? [selection.jobId] : []} : f.key === "customerId" ? {...f,options:selection.customerId ? [selection.customerId] : []} : f.key === "mode" ? {...f,options:f.options?.filter(m => (selection.jobId || !["job-summary","diagnostics","dispatch-optimizer","margin-analysis"].includes(m)))} : f);
   }
-  if (formMode && !workspace && fields.some(f => ["customerId","jobId","propertyId","serviceTypeId","planId","truckId"].includes(f.key))) {
+  if (formMode && !workspace && fields.some(f => ["customerId","jobId","propertyId","serviceTypeId","planId","truckId","equipmentId","vendorId"].includes(f.key))) {
     const refs = await resolveFormReferences(user, fields, values || {}, [body.notes,...Object.entries(values || {}).filter(([key]) => !key.endsWith("Id")).map(([,value]) => value)].join("\n"), {
       jobId:text(body.jobId,"job",100,false),customerId:text(body.customerId,"customer",100,false),
     });
@@ -397,8 +407,17 @@ export async function runAssistant(
     Object.assign(values || {}, resolvedReferences);
     body = {...body,...refs.selection};
   }
+  const quoteEvidence: Evidence[] = [];
+  if (quoteForm) {
+    const items = await prisma.pricebookItem.findMany({where:{companyId:user.companyId,isActive:true},select:{id:true,name:true,code:true,description:true,unitPrice:true,category:true},take:500,orderBy:{name:'asc'}});
+    const allowed = items.map(item=>item.id);
+    const selectedIds = String(values?.pricebookItemIds || '').split(',').filter(Boolean);
+    if (selectedIds.some(id=>!allowed.includes(id))) fail('Selected pricebook item is not available for this company',403);
+    fields = fields.map(f=>f.key==='pricebookItemIds'?{...f,options:allowed}:f);
+    quoteEvidence.push(...items.map(item=>({id:item.id,type:'pricebook',label:item.name,facts:{...item,unitPrice:String(item.unitPrice)}})));
+  }
   const definition = formMode
-    ? { name: "form autofill", instruction: `You are filling the ${form} form. Populate the requested fields from intake notes, current field values and supplied records. If the form is empty, create a useful starter template only in prose fields, clearly marking it as a draft to customize. Use questions or bracketed placeholders in prose for unknown details. Never populate factual fields with placeholders or invented data. Evaluate EVERY requested field, including optional fields. Return null for facts not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Extract facts from ALL supplied fields, including description and notes. A blank target field is not missing evidence when its value is explicitly stated elsewhere in the input. Preserve confirmed facts, including requested dates and times; keep them in the prose as well if you cannot populate their dedicated field. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields of type list require comma-separated values from their allowed options. Reference fields ending in Id must use their single allowed option or null when none is available. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm. An explicit calendar date and local clock time are sufficient: format them directly without timezone conversion. Do not invent missing dates or times. Action: ${action}. ${formAIActions.find(a => a.key === action)?.instruction || ""} Apply the requested writing style only to prose. ${workspace ? "Populate extraInstructions with helpful guidance for this workflow. Choose an appropriate workflow from its allowed options, preserving the current workflow when valid. For jobId and customerId use their single allowed option when present, otherwise null, and explain that a specific job number or customer name is needed. Never select a different record or invent one." : ""} For every action, also populate all supported optional and required fields when source facts are available.` }
+    ? { name: "form autofill", instruction: `You are filling the ${form} form. Populate the requested fields from intake notes, current field values and supplied records. If the form is empty, create a useful starter template only in prose fields, clearly marking it as a draft to customize. Use questions or bracketed placeholders in prose for unknown details. Never populate factual fields with placeholders or invented data. Evaluate EVERY requested field, including optional fields. Always provide useful editable text for requested prose fields, including extraInstructions; use a clearly marked draft template or follow-up questions when facts are missing. Preserve existing prose when no rewrite is needed. Return null only for factual fields not supported by input, and explain missing information in uncertainties. Never invent identities, phone numbers, addresses, dates, prices, stock levels, credentials, certifications, completed work, approval or commercial terms. You may draft descriptive text and proposed questions, clearly as proposals. Extract facts from ALL supplied fields, including description and notes. A blank target field is not missing evidence when its value is explicitly stated elsewhere in the input. Preserve confirmed facts, including requested dates and times; keep them in the prose as well if you cannot populate their dedicated field. For polish, improve prose without changing meaning. Return a fields object with exactly these keys and the specified types: ${JSON.stringify(fields)}. Fields of type list require comma-separated values from their allowed options. Reference fields ending in Id must use their single allowed option or null when none is available. Fields with type number require JSON integers; all other values are strings or null. Datetimes must be local YYYY-MM-DDTHH:mm. An explicit calendar date and local clock time are sufficient: format them directly without timezone conversion. Do not invent missing dates or times. Action: ${action}. ${formAIActions.find(a => a.key === action)?.instruction || ""} Apply the requested writing style only to prose. ${workspace ? "Populate extraInstructions with helpful guidance for this workflow. Choose an appropriate workflow from its allowed options, preserving the current workflow when valid. For jobId and customerId use their single allowed option when present, otherwise null, and explain that a specific job number or customer name is needed. Never select a different record or invent one." : ""} For every action, also populate all supported optional and required fields when source facts are available. ${quoteForm ? "For pricebookItemIds, suggest up to 20 matching services from the supplied pricebook evidence as a comma-separated string of IDs. Preserve existing selections if they still match the job. Never select unrelated services just to fill the field." : ""}` }
     : aiModes.find((m) => m.slug === mode);
   if (!definition) fail("AI workflow not found", 404);
   if (
@@ -412,8 +431,11 @@ export async function runAssistant(
     fail(
       "Confirm authorization to send the selected evidence to the AI provider",
     );
-  const evidence = await aiEvidence(user, mode, body),
-    notes = text(body.notes, "notes", 12000, false);
+  const evidenceMode = workspace && !quoteForm && typeof values?.mode === "string" && values.mode !== "document-search" && (body.jobId || !["job-summary","diagnostics","dispatch-optimizer","margin-analysis"].includes(values.mode)) ? values.mode : mode;
+  const evidence = await aiEvidence(user, evidenceMode, body),
+    notes = combineDraftInstructions([text(body.notes, "notes", 12000, false), !formMode ? workflowDetailsText(mode,object(body.details || {})) : ""].filter(Boolean).join("\n\n"),
+      formMode ? "" : text(body.extraInstructions, "extra instructions", 12000, false));
+  evidence.push(...quoteEvidence);
   if (!formMode && !evidence.length && !notes && !body.media)
     fail("Provide source records or intake notes");
   const key = process.env.OPENROUTER_API_KEY;
@@ -521,17 +543,21 @@ export async function runAssistant(
     )
       actualMicros = Math.ceil(provider.usage.cost * 1000000);
     const parsed = parseAIJson(provider.choices?.[0]?.message?.content || "");
-    const validated = validateReport(parsed, new Set(evidence.map((e) => e.id)));
+    // Autofill applies validated fields; a separate narrative draft is not used.
+    const validated = validateReport(formMode ? {...object(parsed),draft:""} : parsed, new Set(evidence.map((e) => e.id)));
     let formFields: Record<string, string | number> = {};
     if (formMode) {
       try { formFields = validateAIFields(object(parsed).fields, fields); }
       catch { fail("AI returned incomplete or invalid form fields. Try again with clearer source notes.", 502); }
     }
+    if (quoteForm && String(formFields.pricebookItemIds || '').split(',').filter(Boolean).length > 20) fail('Select no more than 20 pricebook items',502);
     Object.assign(formFields, resolvedReferences);
     if (workspace) {
       if (fields.some(f => f.key === "jobId") && body.jobId) formFields.jobId = String(body.jobId);
       if (fields.some(f => f.key === "customerId") && body.customerId) formFields.customerId = String(body.customerId);
     }
+    if (formMode) formFields = completeDraftFields(form, fields, values || {}, formFields);
+    if (selectionNotice) validated.summary = `${validated.summary} ${selectionNotice}`;
     const report = { ...validated, ...(formMode ? { fields: formFields, form, action } : {}) };
     if (!provider.id) fail("AI provider receipt is missing", 502);
     const saved = await txFor(user, async (tx) => {

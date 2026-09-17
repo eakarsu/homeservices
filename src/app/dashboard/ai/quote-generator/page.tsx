@@ -1,495 +1,84 @@
 'use client'
+import {useEffect, useRef, useState} from 'react'
+import Link from 'next/link'
+import {useQuery} from '@tanstack/react-query'
+import AIFormAssistant from '@/components/AIFormAssistant'
+import AIDraftMarkdown from '@/components/AIDraftMarkdown'
+import {combineDraftInstructions} from '@/lib/form-ai'
+import {useWorkflowFetch} from '@/hooks/useWorkflowFetch'
+import {SparklesIcon, CheckCircleIcon} from '@heroicons/react/24/outline'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useMutation } from '@tanstack/react-query'
-import {
-  SparklesIcon,
-  DocumentTextIcon,
-  CurrencyDollarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  WrenchScrewdriverIcon,
-  BeakerIcon,
-  StarIcon,
-  ArrowLeftIcon
-} from '@heroicons/react/24/outline'
-import { cn } from '@/lib/utils'
-
-interface QuoteOption {
-  tier: 'good' | 'better' | 'best'
-  name: string
-  description: string
-  laborCost: number
-  partsCost: number
-  totalCost: number
-  warranty: string
-  estimatedDuration: string
-  features: string[]
-  savings?: string
-  recommended?: boolean
-}
-
-interface QuoteResult {
-  customerName: string
-  jobDescription: string
-  options: QuoteOption[]
-  validUntil: string
-  notes: string[]
-  termsAndConditions: string[]
-}
-
-const tradeTypes = ['HVAC', 'PLUMBING', 'ELECTRICAL', 'GENERAL']
-
-const commonServices: Record<string, { name: string; basePrice: number }[]> = {
-  HVAC: [
-    { name: 'AC Unit Replacement', basePrice: 4500 },
-    { name: 'Furnace Installation', basePrice: 3500 },
-    { name: 'Duct Cleaning', basePrice: 350 },
-    { name: 'AC Tune-Up', basePrice: 150 },
-    { name: 'Heat Pump Installation', basePrice: 5500 },
-    { name: 'Thermostat Installation', basePrice: 250 }
-  ],
-  PLUMBING: [
-    { name: 'Water Heater Replacement', basePrice: 1500 },
-    { name: 'Drain Cleaning', basePrice: 200 },
-    { name: 'Pipe Repair', basePrice: 350 },
-    { name: 'Faucet Installation', basePrice: 175 },
-    { name: 'Toilet Replacement', basePrice: 400 },
-    { name: 'Sump Pump Installation', basePrice: 800 }
-  ],
-  ELECTRICAL: [
-    { name: 'Panel Upgrade', basePrice: 2500 },
-    { name: 'Outlet Installation', basePrice: 150 },
-    { name: 'Ceiling Fan Installation', basePrice: 200 },
-    { name: 'Whole House Surge Protector', basePrice: 350 },
-    { name: 'EV Charger Installation', basePrice: 1200 },
-    { name: 'Recessed Lighting', basePrice: 800 }
-  ],
-  GENERAL: [
-    { name: 'Home Inspection', basePrice: 400 },
-    { name: 'Maintenance Agreement', basePrice: 300 },
-    { name: 'Emergency Service Call', basePrice: 150 }
-  ]
-}
-
-const SAMPLE_QUOTE_RESULT: QuoteResult = {
-  customerName: 'Robert Thompson',
-  jobDescription: 'AC Unit Replacement - 3-ton split system for 2,000 sq ft home',
-  options: [
-    {
-      tier: 'good',
-      name: 'Standard Efficiency',
-      description: '14 SEER AC unit with basic installation',
-      laborCost: 1200,
-      partsCost: 2800,
-      totalCost: 4000,
-      warranty: '5 years parts, 1 year labor',
-      estimatedDuration: '4-6 hours',
-      features: [
-        '14 SEER efficiency rating',
-        'Standard thermostat included',
-        'Basic installation',
-        'System startup and testing'
-      ]
-    },
-    {
-      tier: 'better',
-      name: 'High Efficiency',
-      description: '16 SEER AC unit with enhanced installation',
-      laborCost: 1400,
-      partsCost: 3600,
-      totalCost: 5000,
-      warranty: '10 years parts, 2 years labor',
-      estimatedDuration: '5-7 hours',
-      features: [
-        '16 SEER efficiency rating',
-        'Programmable thermostat included',
-        'UV air purifier add-on available',
-        'Ductwork inspection included',
-        'Annual maintenance reminder'
-      ],
-      savings: 'Save up to $200/year on energy bills',
-      recommended: true
-    },
-    {
-      tier: 'best',
-      name: 'Premium Efficiency',
-      description: '20 SEER variable-speed AC with smart features',
-      laborCost: 1800,
-      partsCost: 5700,
-      totalCost: 7500,
-      warranty: 'Lifetime compressor, 10 years parts, 5 years labor',
-      estimatedDuration: '6-8 hours',
-      features: [
-        '20 SEER efficiency rating',
-        'Variable-speed compressor',
-        'Smart WiFi thermostat included',
-        'Whole-home air purification',
-        'Humidity control',
-        'Quiet operation (50 dB)',
-        '2-year maintenance plan included'
-      ],
-      savings: 'Save up to $500/year on energy bills'
-    }
-  ],
-  validUntil: '30 days from quote date',
-  notes: [
-    'Prices include removal and disposal of old equipment',
-    'Permit fees may apply based on local requirements',
-    'Financing options available with approved credit'
-  ],
-  termsAndConditions: [
-    'Quote valid for 30 days',
-    '50% deposit required to schedule installation',
-    'Final inspection by city inspector may be required'
-  ]
-}
-
+type Job = {id:string;jobNumber:string;title:string;tradeType:string;customerId:string;customer:{firstName:string|null;lastName:string|null;companyName:string|null};property:{sqFootage:number|null}|null}
+type Price = {id:string;code:string;name:string;description:string|null;unitPrice:string|number;category:string}
+type Option = {tier:'good'|'better'|'best';name:string;description:string;laborCost:number;partsCost:number;totalCost:number;warranty:string;estimatedDuration:string;features:string[];recommended?:boolean}
+type Quote = {jobDescription:string;options:Option[];notes:string[]}
+type Result = {id:string;customerName:string;quote:Quote;provenance:{model:string;generatedAt:string}}
+const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
+async function read<T>(url:string):Promise<T> {const response=await fetch(url),data=await response.json();if(!response.ok)throw Error(data.error || 'Unable to load records');return data}
 export default function QuoteGeneratorPage() {
-  const router = useRouter()
-  const [tradeType, setTradeType] = useState('HVAC')
-  const [selectedService, setSelectedService] = useState('')
-  const [customerName, setCustomerName] = useState('')
-  const [propertySize, setPropertySize] = useState('')
-  const [additionalNotes, setAdditionalNotes] = useState('')
-  const [sampleMode, setSampleMode] = useState(false)
-  const [sampleResult, setSampleResult] = useState<QuoteResult | null>(null)
-
-  const loadSampleData = () => {
-    setSampleMode(true)
-    setTradeType('HVAC')
-    setSelectedService('AC Unit Replacement')
-    setCustomerName('Robert Thompson')
-    setPropertySize('2000')
-    setAdditionalNotes('Customer interested in energy-efficient options. Existing unit is 15 years old, 3-ton Carrier system. Home has good ductwork in attic.')
-    setSampleResult(null)
+  const [jobId,setJobId]=useState(''),[priceIds,setPriceIds]=useState(''),[additionalNotes,setAdditionalNotes]=useState(''),[extraInstructions,setExtraInstructions]=useState('')
+  const [consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Result|null>(null),[copied,setCopied]=useState('')
+  const send=useWorkflowFetch(), resultRef=useRef<HTMLElement>(null), lock=useRef(false)
+  const records=useQuery({queryKey:['quote-job-records'],queryFn:()=>read<{jobs:Job[];drafts:Result[]}>('/api/ai/quote-generator')})
+  const prices=useQuery({queryKey:['quote-pricebook'],queryFn:()=>read<Price[]>('/api/pricebook')})
+  const job=records.data?.jobs.find(j=>j.id===jobId)
+  const selectedIds=priceIds.split(',').map(id=>id.trim()).filter(Boolean), selectedPrices=(prices.data||[]).filter(p=>selectedIds.includes(p.id))
+  const customerName=job ? [job.customer.firstName,job.customer.lastName].filter(Boolean).join(' ') || job.customer.companyName || '' : ''
+  const subtotal=selectedPrices.reduce((sum,p)=>sum+Number(p.unitPrice),0)
+  const ready=!!job && selectedPrices.length>0 && selectedPrices.length<=20 && subtotal>0
+  useEffect(()=>{if(result)resultRef.current?.scrollIntoView({behavior:'smooth',block:'start'})},[result])
+  async function generate() {
+    if(lock.current || !ready || !consent)return
+    lock.current=true;setBusy(true);setError('');setCopied('')
+    try {
+      const response=await send('/api/ai/quote-generator',{jobId,pricebookItemIds:selectedIds,additionalNotes:combineDraftInstructions(additionalNotes,extraInstructions)})
+      const data=await response.json()
+      if(!response.ok)throw Error([data.error,...(Array.isArray(data.blockers)?data.blockers:[])].filter(Boolean).join('. '))
+      if(!data.quote || !Array.isArray(data.quote.options))throw Error('The quote response is incomplete. Try again.')
+      setResult(data)
+      void records.refetch()
+    } catch(e) {setError(e instanceof Error?e.message:'Unable to generate quote')} finally {setBusy(false);lock.current=false}
   }
-
-  const quoteMutation = useMutation({
-    mutationFn: async () => {
-      setSampleResult(null)
-      const res = await fetch('/api/ai/quote-generator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tradeType,
-          service: selectedService,
-          customerName,
-          propertySize: propertySize ? parseInt(propertySize) : undefined,
-          additionalNotes,
-          useSampleData: sampleMode
-        })
-      })
-      if (!res.ok) throw new Error('Failed to generate quote')
-      return res.json() as Promise<QuoteResult>
-    }
-  })
-
-  const result = sampleResult || quoteMutation.data
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'good': return 'border-gray-300 bg-gray-50'
-      case 'better': return 'border-primary-400 bg-primary-50'
-      case 'best': return 'border-yellow-400 bg-yellow-50'
-      default: return 'border-gray-300'
-    }
-  }
-
-  const getTierBadgeColor = (tier: string) => {
-    switch (tier) {
-      case 'good': return 'bg-gray-500'
-      case 'better': return 'bg-primary-600'
-      case 'best': return 'bg-yellow-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <button
-            onClick={() => router.push('/dashboard/ai')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Back to AI Features"
-          >
-            <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <DocumentTextIcon className="w-7 h-7 text-primary-600" />
-              AI Quote Generator
-            </h1>
-            <p className="text-gray-500">
-              Generate professional Good/Better/Best quotes with AI
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={loadSampleData}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <BeakerIcon className="w-5 h-5" />
-          Load Sample Data
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Input Form */}
-        <div className="space-y-6">
-          {/* Trade Type */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Service Type</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {tradeTypes.map((trade) => (
-                <button
-                  key={trade}
-                  onClick={() => {
-                    setTradeType(trade)
-                    setSelectedService('')
-                  }}
-                  className={cn(
-                    'px-4 py-3 rounded-lg border-2 font-medium transition-colors',
-                    tradeType === trade
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  )}
-                >
-                  {trade}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Service Selection */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Service</h2>
-            <select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
-              className="input w-full"
-            >
-              <option value="">Select a service...</option>
-              {commonServices[tradeType]?.map((service) => (
-                <option key={service.name} value={service.name}>
-                  {service.name} (Base: ${service.basePrice.toLocaleString()})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Customer Info */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Details</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Customer Name</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Enter customer name"
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="label">Property Size (sq ft)</label>
-                <input
-                  type="number"
-                  value={propertySize}
-                  onChange={(e) => setPropertySize(e.target.value)}
-                  placeholder="e.g., 2000"
-                  className="input"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Notes */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h2>
-            <textarea
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Any special requirements, existing equipment details, customer preferences..."
-              rows={4}
-              className="input"
-            />
-          </div>
-
-          {/* Generate Button */}
-          <button
-            onClick={() => quoteMutation.mutate()}
-            disabled={quoteMutation.isPending || !selectedService || !customerName}
-            className="w-full btn-primary py-3 text-lg flex items-center justify-center gap-2"
-          >
-            {quoteMutation.isPending ? (
-              <>
-                <SparklesIcon className="w-5 h-5 animate-pulse" />
-                Generating Quote...
-              </>
-            ) : (
-              <>
-                <SparklesIcon className="w-5 h-5" />
-                Generate Quote
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Results */}
-        <div className="lg:col-span-2 space-y-6">
-          {!result && !quoteMutation.isPending && (
-            <div className="card text-center py-12">
-              <CurrencyDollarIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Ready to Generate a Quote
-              </h3>
-              <p className="text-gray-500">
-                Select a service and enter customer details to generate a professional quote with Good/Better/Best options
-              </p>
-            </div>
-          )}
-
-          {quoteMutation.isPending && (
-            <div className="card text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Generating professional quote...</p>
-            </div>
-          )}
-
-          {result && (
-            <>
-              {/* Quote Header */}
-              <div className="card bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold mb-1">Quote for {result.customerName}</h2>
-                    <p className="text-primary-100">{result.jobDescription}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-primary-200">Valid Until</p>
-                    <p className="font-semibold">{result.validUntil}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote Options */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {result.options.map((option) => (
-                  <div
-                    key={option.tier}
-                    className={cn(
-                      'card border-2 relative',
-                      getTierColor(option.tier),
-                      option.recommended && 'ring-2 ring-primary-500'
-                    )}
-                  >
-                    {option.recommended && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                          <StarIcon className="w-3 h-3" />
-                          RECOMMENDED
-                        </span>
-                      </div>
-                    )}
-
-                    <div className={cn(
-                      'text-center text-white text-sm font-bold py-1 rounded-t-lg -mx-4 -mt-4 mb-4',
-                      getTierBadgeColor(option.tier)
-                    )}>
-                      {option.tier.toUpperCase()}
-                    </div>
-
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{option.name}</h3>
-                    <p className="text-sm text-gray-600 mb-4">{option.description}</p>
-
-                    <div className="text-center mb-4">
-                      <p className="text-3xl font-bold text-gray-900">
-                        ${option.totalCost.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Labor: ${option.laborCost.toLocaleString()} | Parts: ${option.partsCost.toLocaleString()}
-                      </p>
-                    </div>
-
-                    {option.savings && (
-                      <div className="bg-green-100 text-green-700 text-sm text-center py-1 px-2 rounded mb-4">
-                        {option.savings}
-                      </div>
-                    )}
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <ClockIcon className="w-4 h-4" />
-                        {option.estimatedDuration}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <WrenchScrewdriverIcon className="w-4 h-4" />
-                        {option.warranty}
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">INCLUDES:</p>
-                      <ul className="space-y-1">
-                        {option.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                            <CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Notes */}
-              {result.notes.length > 0 && (
-                <div className="card">
-                  <h3 className="font-semibold text-gray-900 mb-3">Important Notes</h3>
-                  <ul className="space-y-2">
-                    {result.notes.map((note, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                        <span className="text-primary-500">•</span>
-                        {note}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Terms */}
-              {result.termsAndConditions.length > 0 && (
-                <div className="card bg-gray-50">
-                  <h3 className="font-semibold text-gray-700 mb-2 text-sm">Terms & Conditions</h3>
-                  <ul className="space-y-1">
-                    {result.termsAndConditions.map((term, i) => (
-                      <li key={i} className="text-xs text-gray-500">
-                        {i + 1}. {term}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <button className="btn-primary flex-1 py-3">
-                  Send Quote to Customer
-                </button>
-                <button className="btn-secondary flex-1 py-3">
-                  Download PDF
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+  function changeJob(id:string){setJobId(id);setPriceIds('');setError('')}
+  const quoteText=result ? [`Quote for ${result.customerName}`,result.quote.jobDescription,...result.quote.options.map(o=>`${o.tier.toUpperCase()}: ${o.name}\n${o.description}\n${money(o.totalCost)} (Labor ${money(o.laborCost)}; parts ${money(o.partsCost)})\n${o.features.join('\n')}\n${o.warranty}\n${o.estimatedDuration}`),...result.quote.notes].join('\n\n') : ''
+  return <main className="max-w-7xl space-y-6">
+    <header className="print:hidden"><Link href="/dashboard/ai" className="text-sm text-primary-700">← AI features</Link><h1 className="mt-3 text-2xl font-bold">AI Quote Generator</h1><p className="mt-2 text-slate-600">Generate professional Good/Better/Best quote drafts from your job records and company pricebook.</p></header>
+    {(records.error || prices.error || error) && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error || records.error?.message || prices.error?.message}</p>}
+    <div className="print:hidden">
+      <AIFormAssistant form="ai:quote-generator" values={{jobId,customerId:job?.customerId || '',pricebookItemIds:priceIds,additionalNotes,extraInstructions}} jobId={jobId} customerId={job?.customerId} disabled={busy || records.isPending || prices.isPending || !!records.error || !!prices.error} onApply={patch=>{
+        if(typeof patch.jobId==='string')setJobId(patch.jobId)
+        if(typeof patch.pricebookItemIds==='string')setPriceIds(patch.pricebookItemIds)
+        if(typeof patch.additionalNotes==='string')setAdditionalNotes(patch.additionalNotes)
+        if(typeof patch.extraInstructions==='string')setExtraInstructions(patch.extraInstructions)
+        setError('')
+      }}/>
     </div>
-  )
+    <form className="grid gap-6 lg:grid-cols-2 print:hidden" onSubmit={e=>{e.preventDefault();void generate()}}>
+      <section className="card space-y-4"><h2 className="text-lg font-semibold">Job and customer details</h2>
+        <label className="block">Authorized job<select className="input mt-1" value={jobId} disabled={busy || records.isPending} onChange={e=>changeJob(e.target.value)}><option value="">Select a job...</option>{records.data?.jobs.map(j=><option key={j.id} value={j.id}>{j.jobNumber} · {j.title}</option>)}</select></label>
+        {records.data && !records.data.jobs.length && <p role="status" className="text-sm text-amber-800">Create a job before preparing a quote. <Link className="underline" href="/dashboard/jobs/new">Create job</Link></p>}
+        <label className="block">Service Type<input className="input mt-1 bg-slate-50" value={job?.tradeType || ''} placeholder="Filled from the selected job" readOnly/></label>
+        <label className="block">Customer Name<input className="input mt-1 bg-slate-50" value={customerName} placeholder="Filled from the selected job" readOnly/></label>
+        <label className="block">Property Size (sq ft)<input className="input mt-1 bg-slate-50" value={job?.property?.sqFootage ?? ''} placeholder={job?'Not recorded for this property':'Filled from the selected job'} readOnly/></label>
+        <p className="text-xs text-slate-500">Customer, trade and property details come from the job record. Complete form starts with your most recent available job when no job or instructions are supplied.</p>
+        {job && !job.property?.sqFootage && <p className="text-sm text-amber-800">Property size is not recorded. Add it to the customer’s property record if it is needed for this quote.</p>}
+      </section>
+      <section className="card space-y-4"><h2 className="text-lg font-semibold">Service and pricing</h2>
+        <fieldset disabled={busy}><legend className="mb-2 text-sm font-medium">Service — select up to 20 pricebook items</legend><div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-3">{prices.data?.map(p=><label key={p.id} className="flex items-start gap-3 rounded p-2 hover:bg-slate-50"><input type="checkbox" className="mt-1" checked={selectedIds.includes(p.id)} disabled={!selectedIds.includes(p.id) && selectedIds.length>=20} onChange={e=>setPriceIds((e.target.checked?[...selectedIds,p.id]:selectedIds.filter(id=>id!==p.id)).join(','))}/><span className="min-w-0 flex-1 text-sm">{p.name}<span className="block text-xs text-slate-500">{p.code} · {p.category}</span></span><span className="text-sm font-medium">{money(Number(p.unitPrice))}</span></label>)}{prices.data?.length===0 && <p role="status" className="text-sm text-amber-800">Add an active pricebook item before generating a quote. <Link href="/dashboard/settings/pricebook" className="underline">Open pricebook</Link></p>}</div></fieldset>
+        <p className="text-sm font-medium">Selected pricebook subtotal: {money(subtotal)}</p>
+        <label className="block">Additional Notes<textarea className="input mt-1" rows={5} maxLength={12000} disabled={busy} value={additionalNotes} onChange={e=>setAdditionalNotes(e.target.value)} placeholder="Requirements, existing equipment and customer preferences..."/></label>
+        <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={consent} disabled={busy} onChange={e=>setConsent(e.target.checked)}/>I am authorized to send the selected job, pricebook and notes to the configured AI provider.</label>
+        <button type="submit" disabled={busy || !ready || !consent} className="btn-primary flex w-full items-center justify-center gap-2 disabled:opacity-50"><SparklesIcon className="h-5 w-5"/>{busy?'Generating quote…':'Generate Quote'}</button>
+        {!ready && <p className="text-xs text-slate-500">Choose a job and at least one priced service, or use Complete form to suggest them.</p>}
+      </section>
+    </form>
+    {!!records.data?.drafts.length && <details className="card print:hidden"><summary className="cursor-pointer font-semibold">Saved quote drafts ({records.data.drafts.length})</summary><div className="mt-3 space-y-2">{records.data.drafts.map(draft=><button key={draft.id} type="button" className="block text-left text-sm text-indigo-700 hover:underline" onClick={()=>{setResult(draft);setCopied('')}}>View quote for {draft.customerName} · {new Date(draft.provenance.generatedAt).toLocaleString()}</button>)}</div></details>}
+    {result && <section ref={resultRef} aria-label="Generated quote" className="scroll-mt-24 space-y-6">
+      <header className="rounded-2xl bg-slate-900 p-6 text-white"><span className="text-xs uppercase tracking-widest text-indigo-200">AI quote · Review required</span><h2 className="mt-2 text-2xl font-bold">Quote for {result.customerName}</h2><p className="mt-2 text-slate-200">{result.quote.jobDescription}</p></header>
+      <div className="grid gap-5 xl:grid-cols-3">{result.quote.options.map(option=><article key={option.tier} className={`rounded-2xl border bg-white p-5 ${option.recommended?'border-indigo-400 ring-1 ring-indigo-200':'border-slate-200'}`}><div className="flex justify-between gap-2"><span className="text-xs font-bold uppercase tracking-widest text-indigo-700">{option.tier}</span>{option.recommended && <span className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">Recommended</span>}</div><h3 className="mt-4 text-xl font-bold">{option.name}</h3><div className="mt-3"><AIDraftMarkdown text={option.description}/></div><p className="mt-5 text-3xl font-bold">{money(option.totalCost)}</p><p className="mt-2 text-xs text-slate-500">Labor {money(option.laborCost)} · Parts {money(option.partsCost)}</p><ul className="my-5 space-y-3">{option.features.map((feature,i)=><li key={i} className="flex gap-2 text-sm"><CheckCircleIcon className="h-5 w-5 shrink-0 text-indigo-600"/>{feature}</li>)}</ul><dl className="space-y-2 border-t pt-4 text-sm"><div><dt className="font-semibold">Estimated duration</dt><dd>{option.estimatedDuration || 'Confirm before scheduling'}</dd></div><div><dt className="font-semibold">Warranty</dt><dd>{option.warranty || 'Confirm applicable terms'}</dd></div></dl></article>)}</div>
+      {!!result.quote.notes?.length && <section className="card"><h3 className="mb-3 font-semibold">Details to review</h3><ul className="list-disc space-y-2 pl-5">{result.quote.notes.map((note,i)=><li key={i}><AIDraftMarkdown text={note}/></li>)}</ul></section>}
+      <div className="flex flex-wrap gap-3 print:hidden"><button type="button" className="btn-secondary" onClick={async()=>{try{await navigator.clipboard.writeText(quoteText);setCopied('Quote copied')}catch{setCopied('Unable to copy. Select the quote text to copy it.')}}}>Copy quote</button><button type="button" className="btn-secondary" onClick={()=>window.print()}>Print / Save PDF</button></div>{copied && <p role="status">{copied}</p>}
+      <p className="text-xs text-slate-500">Draft generated {new Date(result.provenance.generatedAt).toLocaleString()} · Review scope, pricing and terms before creating or sending an estimate.</p>
+    </section>}
+  </main>
 }

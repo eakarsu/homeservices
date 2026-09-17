@@ -1,5 +1,6 @@
 import { recordModules } from './workflows/definitions'
 import { aiModes } from './workflows/ai-definitions'
+import { aiPageFields } from './ai-page-fields'
 export type AIField = { key: string; label: string; optional?: boolean; type?: 'number' | 'decimal' | 'integer' | 'date' | 'datetime' | 'time' | 'list'; options?: string[]; prose?: boolean }
 export type FormValues = Record<string, string | number>
 export const formAIActions = [
@@ -13,6 +14,7 @@ const field = (key: string, label: string, optional = true, extra: Partial<AIFie
 const prose = (key: string, label: string, optional = true) => field(key, label, optional, { prose: true })
 const notes = prose('notes', 'Notes')
 const forms: Record<string, AIField[]> = {
+  'ai:quote-generator': [field('jobId','Authorized job',false),field('customerId','Customer',false),field('pricebookItemIds','Pricebook items',false,{type:'list',options:[]}),prose('additionalNotes','Additional notes')],
   jobs: [field('customerId', 'Customer', false), field('propertyId', 'Property', false), field('serviceTypeId', 'Service type'), prose('title', 'Job title', false), prose('description', 'Job description'), field('tradeType', 'Trade', false, { options: ['HVAC', 'PLUMBING', 'ELECTRICAL'] }), field('priority', 'Priority', false, { options: ['LOW', 'NORMAL', 'HIGH', 'EMERGENCY'] }), field('jobType', 'Job type', false, { options: ['SERVICE_CALL', 'MAINTENANCE', 'INSTALLATION', 'REPAIR', 'INSPECTION', 'WARRANTY', 'CALLBACK'] }), field('estimatedDuration', 'Estimated minutes', true, { type: 'number' }), field('scheduledStart', 'Requested start', true, { type: 'datetime' }), field('timeWindowStart', 'Window start', true, { type: 'time' }), field('timeWindowEnd', 'Window end', true, { type: 'time' })],
   customers: [field('firstName', 'First name', false), field('lastName', 'Last name', false), field('companyName', 'Company'), field('email', 'Email'), field('phone', 'Phone', false), field('alternatePhone', 'Alternate phone'), field('preferredContact', 'Contact preference', true, { options: ['PHONE', 'EMAIL', 'TEXT'] }), field('source', 'Lead source', true, { options: ['Website', 'Referral', 'Google', 'Yelp', 'Facebook', 'Walk-in', 'Other'] }), notes, field('propertyAddress', 'Street address', false), field('propertyCity', 'City', false), field('propertyState', 'State', false), field('propertyZip', 'ZIP', false), field('propertyType', 'Property type', true, { options: ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL'] })],
   parts: [prose('name', 'Part name', false), field('partNumber', 'Part number'), prose('description', 'Description'), field('category', 'Category', true, { options: ['HVAC', 'Plumbing', 'Electrical', 'General'] }), ...['cost', 'price', 'quantity', 'minQuantity'].map(key => field(key, ({cost:'Cost',price:'Price',quantity:'Quantity',minQuantity:'Minimum quantity'})[key]!, true, { type: ['quantity', 'minQuantity'].includes(key) ? 'integer' : 'decimal' })), field('location', 'Storage location'), field('vendor', 'Vendor')],
@@ -25,15 +27,16 @@ const forms: Record<string, AIField[]> = {
   'operations:communications': [field('customerId', 'Customer', false), field('jobId', 'Related job'), prose('subject', 'Subject'), prose('body', 'Message', false)],
 }
 function getBaseFormFields(form: string): AIField[] {
+  if (form.startsWith('workspace:') && Object.hasOwn(aiPageFields,form.slice(10))) return [...forms.workspace.map(f=>f.key==='mode'?{...f,options:[form.slice(10)]}:f),...aiPageFields[form.slice(10)]]
   if (Object.hasOwn(forms, form)) return forms[form]
   const module = form.startsWith('operations:') ? form.slice(11) : ''
   const definition = Object.hasOwn(recordModules, module) ? recordModules[module] : null
   if (!definition) return []
-  return [prose('title', 'Title', false), field('customerId', 'Customer'), field('jobId', 'Related job'), ...definition.fields.filter(f => ['text', 'textarea', 'email', 'number', 'money', 'datetime-local', 'select'].includes(f.type)).map(f => field(f.key, f.label, !f.required, { prose: f.type === 'textarea', options: f.options, type: f.type === 'number' ? 'integer' : f.type === 'money' ? 'decimal' : f.type === 'datetime-local' ? 'datetime' : undefined }))]
+  return [prose('title', 'Title', false), field('customerId', 'Customer'), field('jobId', 'Related job'), ...definition.fields.filter(f => ['text', 'textarea', 'email', 'number', 'money', 'datetime-local', 'select', 'properties', 'equipment', 'serviceTypes', 'vendors'].includes(f.type)).map(f => field(f.key, f.label, !f.required, { prose: f.type === 'textarea', options: f.options, type: f.type === 'number' ? 'integer' : f.type === 'money' ? 'decimal' : f.type === 'datetime-local' ? 'datetime' : undefined }))]
 }
 export function getFormFields(form: string): AIField[] {
   const fields = getBaseFormFields(form)
-  if (!fields.length || form === 'workspace') return fields
+  if (!fields.length || fields.some(f=>f.key==='extraInstructions')) return fields
   return [...fields, prose('extraInstructions', 'Extra instructions')]
 }
 export function selectedAIFields(form: string, action: string): AIField[] {
@@ -57,11 +60,11 @@ export function validateAIFields(value: unknown, fields: AIField[]): FormValues 
   for (const f of fields) {
     if (!Object.hasOwn(row, f.key)) throw new Error(`AI did not evaluate ${f.label}`)
     const v = row[f.key]
-    if (v === null) continue
+    if (v === null || (typeof v === 'string' && !v.trim())) continue
     if (f.type === 'number') {
       if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 1 || v > 1440) throw new Error(`Invalid ${f.label}`)
     } else {
-      if (typeof v !== 'string' || !v.trim() || v.length > (f.prose ? 12000 : 500)) throw new Error(`Invalid ${f.label}`)
+      if (typeof v !== 'string' || !v.trim() || v.length > (f.prose ? 12000 : f.type === 'list' ? 2000 : 500)) throw new Error(`Invalid ${f.label}`)
       if (f.type === 'list' && (!v.split(',').every(item => f.options?.includes(item.trim())) || new Set(v.split(',').map(item => item.trim())).size !== v.split(',').length)) throw new Error(`Invalid ${f.label}`)
       if (f.options && f.type !== 'list' && !f.options.includes(v)) throw new Error(`Invalid ${f.label}`)
       if (f.type === 'decimal' && (!/^\d+(\.\d{1,2})?$/.test(v) || Number(v) > 999999999)) throw new Error(`Invalid ${f.label}`)
@@ -70,11 +73,43 @@ export function validateAIFields(value: unknown, fields: AIField[]): FormValues 
       if (f.type === 'time' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) throw new Error(`Invalid ${f.label}`)
       if (f.type === 'datetime' && (!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(v) || !Number.isFinite(Date.parse(v)))) throw new Error(`Invalid ${f.label}`)
     }
-    out[f.key] = typeof v === 'string' ? v.trim() : v as number
+    out[f.key] = typeof v === 'string' ? (f.type === 'list' ? v.split(',').map(item => item.trim()).join(',') : v.trim()) : v as number
   }
   return out
 }
 // Apply only where the user has not edited since this request started.
 export function unchangedPatch(current: FormValues, snapshot: FormValues, proposed: FormValues): FormValues {
   return Object.fromEntries(Object.entries(proposed).filter(([key]) => current[key] === snapshot[key]))
+}
+
+// The model may explicitly return null, even for draftable text. Supply visible,
+// editable starter text for those fields without manufacturing factual values.
+export function completeDraftFields(form: string, fields: AIField[], current: FormValues, proposed: FormValues): FormValues {
+  const out = {...proposed}
+  const workflow = fields.find(f => f.key === 'mode')
+  if (workflow && !out.mode) {
+    const mode = String(current.mode || '')
+    out.mode = workflow.options?.includes(mode) ? mode : workflow.options?.includes('intake') ? 'intake' : workflow.options?.[0] || ''
+  }
+  const instruction = form === 'workspace' || form.startsWith('workspace:')
+    ? aiModes.find(m => m.slug === (out.mode || current.mode))?.instruction
+    : undefined
+  for (const f of fields) {
+    if (out[f.key] !== undefined || !f.prose || String(current[f.key] ?? '').trim()) continue
+    out[f.key] = f.key === 'extraInstructions'
+      ? `${instruction || 'Use the supplied form details and selected records.'} Identify missing information as questions and keep all suggestions editable for review.`
+      : f.key === 'notes' && instruction
+        ? `Draft for review: ${instruction}\nConfirm any missing details before taking action.`
+        : `Draft for review: [Add ${f.label.toLowerCase()} based on the supplied details]. Confirm any missing information before saving.`
+  }
+  return out
+}
+
+export function missingFormFields(fields: AIField[], values: FormValues): string[] {
+  return fields.filter(f => !String(values[f.key] ?? '').trim()).map(f => f.label)
+}
+
+export function combineDraftInstructions(notes: string, extraInstructions: string): string {
+  if (!extraInstructions || extraInstructions === notes) return notes
+  return [notes, `Extra instructions:\n${extraInstructions}`].filter(Boolean).join('\n\n')
 }

@@ -20,16 +20,16 @@ const availableFeatures = [
 ]
 
 const plannedFeatures = [
-  { name: 'Dispatch Optimizer', description: 'Recommend technician assignments using skills, job priority, and availability.' },
-  { name: 'Diagnostics Assistant', description: 'Prepare possible causes and questions for a qualified technician to review.' },
-  { name: 'Smart Scheduling', description: 'Suggest appointment times while checking availability and scheduling conflicts.' },
-  { name: 'Predictive Maintenance', description: 'Flag equipment that may need attention using service history and equipment records.' },
-  { name: 'Customer Insights', description: 'Summarize service history and potential follow-up opportunities.' },
-  { name: 'Job Summary', description: 'Turn technician notes into a draft work report for review.' },
-  { name: 'Inventory Forecast', description: 'Suggest reorder quantities from stock levels and recorded parts usage.' },
-  { name: 'Photo Intake', description: 'Extract equipment details from photos for confirmation before saving.' },
-  { name: 'Subscription Health Monitor', description: 'Identify service agreements that need a visit or renewal review.' },
-  { name: 'Route Optimizer', description: 'Suggest a daily job sequence using travel estimates and appointment windows.' },
+  { slug: 'dispatch-optimizer', name: 'Dispatch Optimizer', description: 'Recommend technician assignments using skills, job priority, and availability.' },
+  { slug: 'diagnostics', name: 'Diagnostics Assistant', description: 'Prepare possible causes and questions for a qualified technician to review.' },
+  { slug: 'smart-scheduling', name: 'Smart Scheduling', description: 'Suggest appointment times while checking availability and scheduling conflicts.' },
+  { slug: 'predictive-maintenance', name: 'Predictive Maintenance', description: 'Flag equipment that may need attention using service history and equipment records.' },
+  { slug: 'customer-insights', name: 'Customer Insights', description: 'Summarize service history and potential follow-up opportunities.' },
+  { slug: 'job-summary', name: 'Job Summary', description: 'Turn technician notes into a draft work report for review.' },
+  { slug: 'inventory-forecast', name: 'Inventory Forecast', description: 'Suggest reorder quantities from stock levels and recorded parts usage.' },
+  { slug: 'photo-intake', name: 'Photo Intake', description: 'Extract equipment details from photos for confirmation before saving.' },
+  { slug: 'subscription-health', name: 'Subscription Health Monitor', description: 'Identify service agreements that need a visit or renewal review.' },
+  { slug: 'route-optimizer', name: 'Route Optimizer', description: 'Suggest a daily job sequence using travel estimates and appointment windows.' },
 ]
 
 export default function AIPage() {
@@ -72,7 +72,7 @@ export default function AIPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {plannedFeatures.map(feature => (
             <article key={feature.name} className="card">
-              <Link href="/dashboard/assistant" className="badge badge-gray">Open in draft workspace</Link>
+              <Link href={`/dashboard/ai/${feature.slug}`} className="badge badge-gray">Open workflow</Link>
               <h3 className="mt-2 font-semibold text-gray-900">{feature.name}</h3>
               <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
             </article>

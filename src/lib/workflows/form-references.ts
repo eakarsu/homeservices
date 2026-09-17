@@ -21,6 +21,8 @@ export async function resolveFormReferences(user: AuthContext, fields: AIField[]
   if (keys.has('serviceTypeId')) named.serviceTypeId = await prisma.serviceType.findMany({where:{companyId:user.companyId,isActive:true},select:{id:true,name:true}})
   if (keys.has('planId')) named.planId = await prisma.agreementPlan.findMany({where:{companyId:user.companyId,isActive:true},select:{id:true,name:true}})
   if (keys.has('truckId')) named.truckId = await prisma.truck.findMany({where:{companyId:user.companyId,isActive:true},select:{id:true,name:true}})
+  if (keys.has('equipmentId')) named.equipmentId = (await prisma.equipment.findMany({where:{property:{customer:{companyId:user.companyId},...(choice.customerId ? {customerId:choice.customerId} : {})}},select:{id:true,type:true,brand:true,model:true,serialNumber:true}})).map(e => ({id:e.id,name:[e.type,e.brand,e.model,e.serialNumber].filter(Boolean).join(' ')}))
+  if (keys.has('vendorId')) named.vendorId = (await prisma.workflowRecord.findMany({where:{companyId:user.companyId,module:'vendors',status:'ACTIVE'},select:{id:true,title:true}})).map(v => ({id:v.id,name:v.title}))
   for (const [key,rows] of Object.entries(named)) {
     const current = typeof values[key] === 'string' ? String(values[key]) : ''
     if (current && !rows.some(r => r.id === current)) fail(`Selected ${key.replace('Id','')} is not available for this customer or company`,403)
