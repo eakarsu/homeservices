@@ -254,6 +254,7 @@ export default function AIWorkspace({initialMode="job-summary", title="AI draft 
         >
           {busy ? "Preparing draft…" : "Generate draft"}
         </button>
+        {!consent && <p className="text-xs text-slate-500">Review the form, then check the authorization box to enable Generate draft.</p>}
       </form>
       {selected && <div ref={reportRef} className="scroll-mt-24"><AIDraftReport key={selected.id} draft={selected} title={featureName(selected.feature)} review={review} onReviewChange={setReview} busy={busy} onClose={() => setSelected(null)} onRecordReview={() => void send({action:"review",id:selected.id,expectedHash:selected.expectedHash,reviewedText:review})}/></div>}
       <section className="space-y-3">

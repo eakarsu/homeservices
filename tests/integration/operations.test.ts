@@ -1479,6 +1479,30 @@ test('quote autofill includes company pricebook evidence and fills the job, cust
   await assert.rejects(runAssistant(f.a,'form-autofill',{...input,values:{pricebookItemIds:foreign.id},requestKey:crypto.randomUUID()},provider),/not available/);
 });
 
+test('AI workflow evidence supplies service, technician and category fields without crossing companies', async () => {
+  const {aiEvidence}=await import('../../src/lib/workflows/ai');
+  const f=await fixture(), other=await fixture();
+  const start=new Date(Date.now()+86400000), end=new Date(start.getTime()+3600000);
+  const job=await f.job(start.toISOString(),end.toISOString());
+  await prisma.jobAssignment.create({data:{jobId:job.id,technicianId:f.tech.id}});
+  await prisma.part.update({where:{id:f.part.id},data:{category:'HVAC'}});
+  for(const mode of ['smart-scheduling','dispatch-optimizer','route-optimizer']) {
+    const evidence=await aiEvidence(f.a,mode,{jobId:job.id,customerId:f.customer.id});
+    const jobFacts=evidence.find(e=>e.id===job.id)?.facts as any;
+    assert.equal(evidence.filter(e=>e.id===job.id).length,1);
+    assert.equal(jobFacts.customerId,f.customer.id);
+    assert.equal(jobFacts.serviceType.name,f.service.name);
+    assert.equal(jobFacts.priority,job.priority);
+    assert.equal(jobFacts.assignments[0].technicianId,f.tech.id);
+    const techFacts=evidence.find(e=>e.id===f.tech.id)?.facts as any;
+    assert.deepEqual(techFacts.user,{firstName:'TECHNICIAN',lastName:'Fixture'});
+    assert.ok(!evidence.some(e=>e.id===other.tech.id));
+  }
+  const inventory=await aiEvidence(f.a,'inventory-forecast',{});
+  assert.equal((inventory.find(e=>e.id===f.part.id)?.facts as any).category,'HVAC');
+  assert.ok(!inventory.some(e=>e.id===other.part.id));
+});
+
 test('every dedicated AI workflow preserves its mode during autofill and generates a saved draft', async () => {
   const {runAssistant}=await import('../../src/lib/workflows/ai');
   const {getFormFields}=await import('../../src/lib/form-ai');

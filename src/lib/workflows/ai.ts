@@ -128,6 +128,10 @@ export async function aiEvidence(
         description: true,
         workPerformed: true,
         tradeType: true,
+        priority: true,
+        serviceType: { select: { name: true } },
+        assignments: { select: { technicianId: true } },
+        property: { select: { lat: true, lng: true } },
         status: true,
         scheduledStart: true,
         scheduledEnd: true,
@@ -180,6 +184,7 @@ export async function aiEvidence(
           select: {
             id: true,
             name: true,
+            category: true,
             quantityOnHand: true,
             reorderLevel: true,
             reorderQty: true,
@@ -285,6 +290,7 @@ export async function aiEvidence(
           select: {
             id: true,
             tradeTypes: true,
+            user: { select: { firstName: true, lastName: true } },
             status: true,
             schedules: {
               select: {
@@ -359,7 +365,13 @@ export async function aiEvidence(
         422,
       );
   }
-  return [...new Map(evidence.map((e) => [e.id, e])).values()];
+  // Keep the detailed selected job when it also appears in the calendar list.
+  const seen = new Set<string>();
+  return evidence.filter(item => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 export async function runAssistant(
   user: AuthContext,
