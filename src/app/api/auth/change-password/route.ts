@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/apiAuth'
 import bcrypt from 'bcryptjs'
+import { isPublicDemoUser } from '@/lib/public-demo'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
     if (!dbUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+    if (isPublicDemoUser(dbUser)) {
+      return NextResponse.json({ error: 'The shared demo account password cannot be changed.' }, { status: 403 })
     }
 
     const isValid = await bcrypt.compare(currentPassword, dbUser.password)
