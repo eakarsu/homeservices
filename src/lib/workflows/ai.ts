@@ -113,6 +113,7 @@ export async function aiEvidence(
       "photo-intake",
       "dispatch-optimizer",
       "margin-analysis",
+      "voice-job-report",
     ].includes(mode) &&
     !jobId
   )
@@ -176,7 +177,7 @@ export async function aiEvidence(
     add("customer", [customer!]);
   }
   if (user.role !== "TECHNICIAN") {
-    if (["inventory-forecast", "predictive-maintenance"].includes(mode)) {
+    if (["inventory-forecast", "predictive-maintenance", "parts-order"].includes(mode)) {
       add(
         "part",
         await prisma.part.findMany({
@@ -210,6 +211,7 @@ export async function aiEvidence(
         "subscription-health",
         "renewals",
         "photo-intake",
+        "warranty-packet",
       ].includes(mode)
     ) {
       add(
@@ -322,13 +324,17 @@ export async function aiEvidence(
             balanceDue: true,
             dueDate: true,
             lineItems: {
-              select: { quantity: true, unitPrice: true, totalPrice: true },
+              select: { description: true, quantity: true, unitPrice: true, totalPrice: true },
             },
           },
           take: 100,
           orderBy: { createdAt: "desc" },
         }),
       );
+  }
+  if (mode === "warranty-packet") {
+    office(user);
+    add("warranty", await prisma.workflowRecord.findMany({where:{companyId:user.companyId,module:"warranties",...(customerId?{customerId}:{}),...(jobId?{jobId}:{})},take:50,orderBy:{updatedAt:"desc"}}));
   }
   if (mode === "document-search") {
     const q = text(body.notes, "search question", 2000);
@@ -434,7 +440,7 @@ export async function runAssistant(
   if (!definition) fail("AI workflow not found", 404);
   if (
     user.role === "TECHNICIAN" &&
-    !["job-summary", "diagnostics", "photo-intake", "document-search"].includes(
+    !["job-summary", "diagnostics", "photo-intake", "document-search", "voice-job-report"].includes(
       mode,
     )
   )
@@ -455,15 +461,15 @@ export async function runAssistant(
   const model =
     mode === "photo-intake"
       ? process.env.OPENROUTER_VISION_MODEL || AI_MODEL
-      : mode === "voice-intake"
+      : ["voice-intake", "voice-job-report"].includes(mode)
         ? process.env.OPENROUTER_AUDIO_MODEL || AI_MODEL
         : AI_MODEL;
   const media = body.media
-    ? mediaInput(body.media, mode === "voice-intake" ? "audio" : "image")
+    ? mediaInput(body.media, ["voice-intake", "voice-job-report"].includes(mode) ? "audio" : "image")
     : null;
-  if (["photo-intake", "voice-intake"].includes(mode) && !media)
+  if (["photo-intake", "voice-intake", "voice-job-report"].includes(mode) && !media)
     fail("Choose a media file");
-  if (media && !["photo-intake", "voice-intake"].includes(mode))
+  if (media && !["photo-intake", "voice-intake", "voice-job-report"].includes(mode))
     fail("Media is only accepted in photo or voice intake");
   const input = { mode, notes, evidence, ...(formMode ? { form, action, values } : {}) },
     started = Date.now();
@@ -503,7 +509,7 @@ export async function runAssistant(
     const content: unknown[] = [{ type: "text", text: JSON.stringify(input) }];
     if (media)
       content.push(
-        mode === "voice-intake"
+        ["voice-intake", "voice-job-report"].includes(mode)
           ? {
               type: "input_audio",
               input_audio: {

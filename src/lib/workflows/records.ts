@@ -1,3 +1,5 @@
+import { createInvoice } from "./invoices";
+import { object, money, integer, json } from "./core";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { AuthContext } from "@/lib/operations-governance";
@@ -66,6 +68,19 @@ export async function records(
         customerId: customer.id,
       });
       return saved;
+    }
+    if (action === "bill" && module === "maintenance" && current) {
+      if (current.status !== "ACTIVE" || !current.customerId) fail("Active maintenance plan with a customer required");
+      const d = object(current.data), amount = money(d.billingAmount), days = integer(Number(d.billingCadenceDays),"billing interval",1,3660), tax = money(d.billingTaxPercent || 0);
+      const period = new Date(String(d.nextBillingAt));
+      if (!amount || !Number.isFinite(period.getTime()) || period > new Date() || tax > 10000) fail("Configure a due billing date, positive amount, interval and valid tax percent");
+      const receiptId = 'maintenance-bill:' + crypto.createHash('sha256').update(current.id+period.toISOString()).digest('hex');
+      if (await tx.workflowRecord.findUnique({where:{id:receiptId}})) fail("This billing period already has an invoice",409);
+      const invoice = await createInvoice(user,{customerId:current.customerId,lineItems:[{description:`${current.title} — service period beginning ${period.toISOString().slice(0,10)}`,quantity:1,unitPrice:amount/100,category:"Maintenance"}],taxRate:tax/10000,notes:"Recurring maintenance billing draft; review before issue."});
+      await tx.workflowRecord.create({data:{id:receiptId,companyId:user.companyId,module:"maintenance-bill",title:current.title,status:"DRAFT",customerId:current.customerId,data:json({planId:current.id,period:period.toISOString(),invoiceId:invoice.id}),createdById:user.id}});
+      const next = new Date(period.getTime()+days*86400000);
+      const saved = await tx.workflowRecord.update({where:{id:current.id},data:{data:json({...d,nextBillingAt:next.toISOString(),lastInvoiceId:invoice.id}),version:{increment:1}}});
+      await audit(tx,user,"MAINTENANCE_INVOICE_DRAFTED","WorkflowRecord",current.id,{invoiceId:invoice.id,period:period.toISOString()});return saved;
     }
     if (action === "visit" && module === "maintenance" && current) {
       if (current.status !== "ACTIVE" || !current.customerId)

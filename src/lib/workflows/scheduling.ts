@@ -138,6 +138,23 @@ export async function bookings(
       fail("Booking changed. Reload before saving.", 409);
     if (current && ["CANCELLED", "COMPLETED"].includes(current.status))
       fail("This booking is closed", 409);
+    if (["confirmation-draft","reminder-draft"].includes(action || "") && current) {
+      if (portalCustomerId) fail("Office access required",403);
+      if (current.status !== "CONFIRMED" || !current.jobId) fail("Confirm the booking before preparing a message",409);
+      const company = await tx.company.findUniqueOrThrow({where:{id:user.companyId}});
+      const when = current.startAt.toLocaleString("en-US",{timeZone:company.timezone,timeZoneName:"short"});
+      const reminder = action === "reminder-draft";
+      const scheduled = reminder ? new Date(current.startAt.getTime()-86400000) : new Date();
+      if (scheduled < new Date() && reminder) fail("A one-day reminder must be prepared more than 24 hours before the visit");
+      const delivery = await tx.delivery.create({data:{companyId:user.companyId,customerId:current.customerId,jobId:current.jobId,channel:"SMS",subject:reminder?"Appointment reminder":"Appointment confirmation",body:`${company.name}: ${reminder ? "Reminder for" : "Confirmed"} ${current.title} on ${when}. Contact the office if you need to make changes.`,scheduledAt:scheduled,contactAuthorized:false,requestKey:`booking:${current.id}:${text(body.requestKey,"request key",128)}`,createdById:user.id}});
+      await audit(tx,user,"BOOKING_MESSAGE_DRAFTED","Delivery",delivery.id,{bookingId:current.id,reminder});
+      return current;
+    }
+    if (current && (action === "cancel" || (body.startAt && body.startAt !== current.startAt.toISOString()) || (body.endAt && body.endAt !== current.endAt.toISOString()))) {
+      const scope = {companyId:user.companyId,requestKey:{startsWith:`booking:${current.id}:`}};
+      if(await tx.delivery.count({where:{...scope,status:{in:["PROCESSING","UNKNOWN"]}}})) fail("Reconcile the in-flight booking message before changing this appointment",409);
+      await tx.delivery.updateMany({where:{...scope,status:{in:["DRAFT","QUEUED","REJECTED"]}},data:{status:"CANCELLED",version:{increment:1}}});
+    }
     if (action === "cancel" && current) {
       if (current.jobId) {
         const j = await tx.job.findUniqueOrThrow({

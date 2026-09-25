@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import { sendEmail, emailTemplates } from '@/lib/email'
+import { sendEmail, emailTemplates, emailConfiguration } from '@/lib/email'
 import { validateRuntimeConfig } from '@/lib/runtime-config'
 
 export async function POST(request: NextRequest) {
@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
     if (typeof password !== 'string' || password.length < 12) {
       return NextResponse.json({ error: 'Password must be at least 12 characters' }, { status: 422 })
     }
+
+    if (!emailConfiguration().configured) return NextResponse.json({ error: 'Email delivery is temporarily unavailable. Please try again later.' }, { status: 503 })
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
@@ -72,12 +74,12 @@ export async function POST(request: NextRequest) {
 
     // Send verification email
     const verifyUrl = new URL(`/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`, process.env.NEXTAUTH_URL).toString()
-    const delivery = await sendEmail(
-      emailTemplates.emailVerification({
+    const delivery = await sendEmail({
+      ...emailTemplates.emailVerification({
         name: firstName,
         verifyUrl,
-      })
-    )
+      }), to: email,
+    })
 
     if (!delivery.success) return NextResponse.json({ error: 'Account created but verification delivery failed; use resend after email service recovery' }, { status: 503 })
     return NextResponse.json({

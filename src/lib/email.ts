@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer"
+
 interface EmailOptions {
   to: string
   subject: string
@@ -11,38 +13,50 @@ interface EmailResult {
   error?: string
 }
 
+export function emailConfiguration(env = process.env) {
+  const from = env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER || ''
+  const http = !!(env.EMAIL_DELIVERY_URL && env.EMAIL_DELIVERY_TOKEN && env.EMAIL_DELIVERY_ALLOWED_HOSTS && from)
+  const smtp = !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD && from && !/your[-_ ]|example\.|placeholder/i.test(env.SMTP_USER + env.SMTP_PASSWORD))
+  return { configured: http || smtp, transport: http ? 'HTTPS' : smtp ? 'SMTP' : 'NONE', from }
+}
+export function smtpTransport(env = process.env) {
+  const port = Number(env.SMTP_PORT || 587)
+  if (![465, 587, 2525].includes(port)) throw Error('Use SMTP port 465, 587 or 2525')
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST, port, secure: port === 465, requireTLS: true,
+    auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
+    connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
+    disableFileAccess: true, disableUrlAccess: true,
+  })
+}
+export async function verifyEmailConnection() {
+  const configuration = emailConfiguration()
+  if (!configuration.configured) return { success: false, error: 'Account email delivery is not configured' }
+  if (configuration.transport === 'HTTPS') return { success: false, error: 'HTTPS email settings present; delivery requires a separate acceptance check' }
+  try { await smtpTransport().verify(); return { success: true, transport: 'SMTP' } }
+  catch { return { success: false, error: 'SMTP connection or authentication failed' } }
+}
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
-  const endpoint = process.env.EMAIL_DELIVERY_URL
-  const token = process.env.EMAIL_DELIVERY_TOKEN
-  const sender = process.env.EMAIL_FROM
-  const allowedHosts = (process.env.EMAIL_DELIVERY_ALLOWED_HOSTS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
-  if (!endpoint || !token || !sender || !allowedHosts.length) {
-    return { success: false, error: 'Email service not configured' }
-  }
-
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(options.to)) return { success: false, error: 'A valid recipient is required' }
+  const configuration = emailConfiguration()
+  if (!configuration.configured) return { success: false, error: 'Email service not configured' }
   try {
-    const url = new URL(endpoint)
-    if (url.protocol !== 'https:' || !allowedHosts.includes(url.hostname.toLowerCase())) {
-      return { success: false, error: 'Email delivery endpoint is not approved' }
+    if (configuration.transport === 'SMTP') {
+      const result = await smtpTransport().sendMail({ ...options, from: configuration.from })
+      return result.accepted.length ? { success: true, messageId: result.messageId } : { success: false, error: 'Email provider rejected delivery' }
     }
+    const url = new URL(process.env.EMAIL_DELIVERY_URL!)
+    const hosts = (process.env.EMAIL_DELIVERY_ALLOWED_HOSTS || '').split(',').map(v => v.trim().toLowerCase())
+    if (url.protocol !== 'https:' || !hosts.includes(url.hostname.toLowerCase())) return { success: false, error: 'Email delivery endpoint is not approved' }
     const response = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: sender, to: options.to, subject: options.subject, html: options.html, text: options.text }),
-      signal: AbortSignal.timeout(10_000),
+      method: 'POST', redirect: 'error',
+      headers: { Authorization: `Bearer ${process.env.EMAIL_DELIVERY_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: configuration.from, ...options }), signal: AbortSignal.timeout(10000),
     })
     if (!response.ok) return { success: false, error: 'Email provider rejected delivery' }
     const result = await response.json().catch(() => ({})) as { id?: string; messageId?: string }
-    return {
-      success: true,
-      messageId: result.id || result.messageId,
-    }
-  } catch {
-    return {
-      success: false,
-      error: 'Failed to send email',
-    }
-  }
+    return { success: true, messageId: result.id || result.messageId }
+  } catch { return { success: false, error: 'Failed to send email' } }
 }
 
 // Email Templates
@@ -166,7 +180,6 @@ export const emailTemplates = {
     name: string
     resetUrl: string
   }) => ({
-    to: '',
     subject: 'Reset Your Password - ServiceCrew',
     html: `
       <!DOCTYPE html>
@@ -207,7 +220,6 @@ export const emailTemplates = {
     name: string
     verifyUrl: string
   }) => ({
-    to: '',
     subject: 'Verify Your Email - ServiceCrew',
     html: `
       <!DOCTYPE html>

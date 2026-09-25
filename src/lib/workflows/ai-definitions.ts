@@ -1,4 +1,7 @@
 export const aiModes = [
+  { slug: "voice-job-report", name: "Voice notes to job report", instruction: "Transcribe the attached voice note in the summary. Draft a job report in the draft field, separating performed work, observations, parts mentioned and proposed follow-up. Compare with the selected job evidence. Never invent completed work, parts usage, customer authorization or safety checks. Flag unclear speech and discrepancies for technician review." },
+  { slug: "parts-order", name: "Parts order suggestions", instruction: "Suggest parts and quantities for purchasing review using recorded stock, reorder levels and usage. Cite part IDs. Do not invent supplier availability, lead times or prices. Mark unknown quantities and assumptions. No purchase is placed." },
+  { slug: "warranty-packet", name: "Warranty claim preparation", instruction: "Prepare a draft warranty claim using equipment identifiers, service history, warranty records and job notes. Separate verified evidence from missing documents. Do not invent coverage, diagnosis, dates, receipts or approval." },
   {
     slug: "job-summary",
     name: "Job summary",
@@ -93,7 +96,7 @@ export const aiModes = [
     slug: "margin-analysis",
     name: "Job margin review",
     instruction:
-      "Explain recorded revenue and parts costs; list missing labor or overhead costs instead of inventing profit.",
+      "Explain recorded invoice revenue and parts costs; compare recorded work and parts against invoice descriptions to flag potentially missing billable items for review. An unmatched description is not proof of an omission. List missing labor or overhead costs instead of inventing profit.",
   },
   {
     slug: "renewals",

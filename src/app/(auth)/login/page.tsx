@@ -132,12 +132,13 @@ function LoginForm() {
               type="button"
               onClick={async () => {
                 if (email) {
-                  await fetch('/api/auth/resend-verification', {
+                  const response = await fetch('/api/auth/resend-verification', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email }),
                   })
-                  setError('Verification email sent! Check your inbox.')
+                  const result = await response.json()
+                  setError(result.error || result.message || 'Email request failed')
                 }
               }}
               className="block mt-2 text-primary-600 hover:text-primary-500 font-medium underline"

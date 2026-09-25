@@ -213,7 +213,7 @@ export default function AIWorkspace({initialMode="job-summary", title="AI draft 
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        {["photo-intake", "voice-intake"].includes(mode) && (
+        {["photo-intake", "voice-intake", "voice-job-report"].includes(mode) && (
           <label className="block">
             {mode === "photo-intake" ? "PNG/JPEG photo" : "WAV/MP3 audio"}{" "}
             (maximum 1 MB)

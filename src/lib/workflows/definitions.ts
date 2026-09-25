@@ -122,6 +122,10 @@ export const recordModules: Record<string, Definition> = {
         type: "datetime-local",
         required: true,
       },
+      { key: "billingAmount", label: "Recurring billing amount (USD)", type: "money" },
+      { key: "billingCadenceDays", label: "Billing interval in days", type: "number" },
+      { key: "nextBillingAt", label: "Next billing date", type: "datetime-local" },
+      { key: "billingTaxPercent", label: "Billing tax percent", type: "money" },
       { key: "notes", label: "Work scope", type: "textarea" },
     ],
   },
@@ -148,6 +152,7 @@ export const recordModules: Record<string, Definition> = {
 };
 export type RecordModule = keyof typeof recordModules;
 export const operationsModules = [
+  { slug: "intake", name: "Customer intake", description: "Review online, SMS and telephone requests with AI-assisted booking drafts." },
   {
     slug: "workforce",
     name: "Working hours & leave",

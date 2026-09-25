@@ -1,4 +1,5 @@
 "use client";
+import IntegrationReadiness from "@/components/IntegrationReadiness";
 import AIFormAssistant from "@/components/AIFormAssistant";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -289,6 +290,8 @@ export default function OperationsPage({ module }: { module: string }) {
           "realmId",
           "environment",
           "incomeAccountId",
+          "handoffNumber",
+          "voiceConsent",
         ]
           .filter((k) => data[k])
           .map((k) => [k, data[k]]),
@@ -361,6 +364,7 @@ export default function OperationsPage({ module }: { module: string }) {
           Returns reopen those quantities for replacement.
         </p>
       )}
+      {module === "integrations" && <IntegrationReadiness />}
       {module === "integrations" && (
         <p>
           Credentials are encrypted on the server and never returned. Configure
@@ -557,7 +561,7 @@ export default function OperationsPage({ module }: { module: string }) {
                       "password",
                     )}
                   {form.provider === "twilio" &&
-                    field("Account SID", "accountSid", "text", true)}
+                    <>{field("Account SID", "accountSid", "text", true)}{field("Human handoff phone number", "handoffNumber", "tel")}<label><input type="checkbox" checked={form.voiceConsent === "enabled"} onChange={e => change("voiceConsent", e.target.checked ? "enabled" : "disabled")} /> Enable speech intake (callers hear a transcription notice)</label></>}
                   <label>
                     <input
                       type="checkbox"
@@ -887,6 +891,9 @@ export default function OperationsPage({ module }: { module: string }) {
                 {module === "maintenance" &&
                   row.status === "ACTIVE" &&
                   action(row, "Create next visit", "visit")}
+                {module === "maintenance" && row.status === "ACTIVE" && action(row,"Draft due invoice","bill")}
+                {module === "maintenance" && row.data?.lastInvoiceId && <Link className="btn btn-secondary" href={`/dashboard/invoices/${row.data.lastInvoiceId}`}>Open billing draft</Link>}
+                {module === "bookings" && row.status === "CONFIRMED" && <>{action(row,"Draft SMS confirmation","confirmation-draft")}{action(row,"Draft SMS reminder","reminder-draft")}<Link className="btn btn-secondary" href="/dashboard/operations/communications">Review message drafts</Link></>}
                 {module === "bookings" &&
                   ["REQUESTED", "CONFIRMED"].includes(row.status) &&
                   action(row, "Cancel booking", "cancel")}

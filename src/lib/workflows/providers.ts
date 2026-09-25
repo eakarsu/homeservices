@@ -79,7 +79,7 @@ export async function providerSettings(
     allowed: Record<string, string[]> = {
       stripe: ["webhookSecret"],
       resend: ["from", "webhookSecret"],
-      twilio: ["accountSid", "from"],
+      twilio: ["accountSid", "from", "handoffNumber", "voiceConsent"],
       quickbooks: ["realmId", "environment", "incomeAccountId"],
       maps: [],
       samsara: [],
@@ -113,6 +113,7 @@ export async function providerSettings(
       !/^\+[1-9]\d{7,14}$/.test(safe.from || ""))
   )
     fail("Twilio requires a valid account SID and sender number");
+  if (provider === "twilio" && safe.handoffNumber && (!/^\+[1-9]\d{7,14}$/.test(safe.handoffNumber) || safe.handoffNumber === safe.from)) fail("Use a different valid phone number for human handoff");
   if (provider === "resend" && !safe.from) fail("Email sender is required");
   if (typeof body.enabled !== "boolean") fail("Enabled must be true or false");
   const saved = await txFor(user, async (tx) => {

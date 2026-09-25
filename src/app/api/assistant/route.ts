@@ -57,6 +57,7 @@ export const GET = (request: NextRequest) =>
           user.role !== "TECHNICIAN" ||
           [
             "job-summary",
+            "voice-job-report",
             "diagnostics",
             "photo-intake",
             "document-search",
