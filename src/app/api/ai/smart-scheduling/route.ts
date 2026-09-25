@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { estimateTravelMinutes, toGeoPoint } from '@/lib/workflows/travel'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { prisma } from '@/lib/prisma'
@@ -240,7 +241,7 @@ Suggest 3-5 optimal appointment slots for the next 7 days in this JSON format:
       technicianName: string
       score: number
       reasons: string[]
-      travelTime: number
+      travelTime?: number
       conflicts: string[]
     }[] = []
     let bestOption = 0
@@ -301,7 +302,9 @@ Suggest 3-5 optimal appointment slots for the next 7 days in this JSON format:
             i === 0 ? 'Preferred date' : `${i} day${i > 1 ? 's' : ''} after preferred`,
             'Technician available'
           ],
-          travelTime: 15 + (i * 5),
+          // Real ETA from coordinates; null when they are unavailable.
+          // No destination coordinates are held in this context, so the
+          // estimator returns null rather than inventing an ETA.
           conflicts: []
         })
       }

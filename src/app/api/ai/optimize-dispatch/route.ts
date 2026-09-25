@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { estimateTravelMinutes, toGeoPoint } from '@/lib/workflows/travel'
 import { getAuthUser } from '@/lib/apiAuth'
 
 import { prisma } from '@/lib/prisma'
@@ -290,16 +291,22 @@ Provide optimal assignments in this exact JSON format:
         const tech = techsList[techIndex]
         const matchingTech = tech.skills.includes(job.tradeType || '') ? tech : techsList.find(t => t.skills.includes(job.tradeType || '')) || tech
 
-        const travelTime = 15 + Math.floor(Math.random() * 20)
-        const arrivalTime = addMinutes(new Date(), travelTime)
+        // Real ETA from coordinates. Never invent a number: when we have no
+        // coordinates the estimate is null and the board shows 'unknown'.
+        const est = estimateTravelMinutes(
+          toGeoPoint((matchingTech as any).location ?? (matchingTech as any).latitude != null ? matchingTech : null),
+          toGeoPoint((job as any).location ?? (job as any).latitude != null ? job : null),
+        )
+        const travelTime = est.minutes
+        const arrivalTime = travelTime == null ? null : addMinutes(new Date(), travelTime)
 
         assignments.push({
           jobId: job.id,
           jobNumber: job.jobNumber,
           technicianId: matchingTech.id,
           technicianName: matchingTech.name,
-          estimatedTravelTime: travelTime,
-          estimatedArrival: format(arrivalTime, 'h:mm a'),
+          estimatedTravelTime: travelTime ?? 0,
+          estimatedArrival: arrivalTime ? format(arrivalTime, 'h:mm a') : 'Unknown — no coordinates',
           reason: `Assigned based on availability and ${matchingTech.skills.includes(job.tradeType || '') ? 'skill match' : 'general availability'}`,
         })
 
