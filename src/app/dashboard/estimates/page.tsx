@@ -8,10 +8,10 @@ import {
   PlusIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
-  TrashIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
 import { getStatusColor, formatCurrency } from '@/lib/utils'
+import { responseErrorMessage } from '@/lib/api-error'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import SortableHeader from '@/components/SortableHeader'
@@ -40,11 +40,7 @@ export default function EstimatesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sortField, setSortField] = useState('createdAt')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [estimateToDelete, setEstimateToDelete] = useState<Estimate | null>(null)
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
-  const [bulkStatusOpen, setBulkStatusOpen] = useState(false)
-  const [bulkStatus, setBulkStatus] = useState('')
+  const [declineModalOpen, setDeclineModalOpen] = useState(false)
 
   const { selectedIds, selectedCount, toggleItem, toggleAll, clearSelection, isSelected } = useBulkSelection()
 
@@ -53,22 +49,30 @@ export default function EstimatesPage() {
     else { setSortField(field); setSortDirection('asc') }
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const res = await fetch(`/api/estimates/${id}`, { method: 'DELETE' }); if (!res.ok) throw new Error(); return res.json() },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['estimates'] }); toast.success('Estimate deleted'); setDeleteModalOpen(false); setEstimateToDelete(null) },
-    onError: () => toast.error('Failed to delete estimate')
-  })
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (ids: string[]) => { const res = await fetch('/api/estimates/bulk', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) }); if (!res.ok) throw new Error(); return res.json() },
-    onSuccess: (data) => { queryClient.invalidateQueries({ queryKey: ['estimates'] }); toast.success(`${data.deleted} estimates deleted`); clearSelection(); setBulkDeleteOpen(false) },
-    onError: () => toast.error('Failed to delete estimates')
-  })
-
-  const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => { const res = await fetch('/api/estimates/bulk', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, status }) }); if (!res.ok) throw new Error(); return res.json() },
-    onSuccess: (data) => { queryClient.invalidateQueries({ queryKey: ['estimates'] }); toast.success(`${data.updated} estimates updated`); clearSelection(); setBulkStatusOpen(false) },
-    onError: () => toast.error('Failed to update estimates')
+  // Declining is the only estimate transition the server applies in bulk. Review,
+  // delivery, customer signature, expiry and conversion require each estimate to be
+  // opened, so the page never offers those operations.
+  const bulkDeclineMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch('/api/estimates/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status: 'DECLINED' }),
+      })
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Failed to decline estimates'))
+      return res.json() as Promise<{ declined: number; skipped: number }>
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['estimates'] })
+      toast.success(
+        data.skipped > 0
+          ? `${data.declined} estimates declined; ${data.skipped} were already delivered, decided or not declinable`
+          : `${data.declined} estimates declined`
+      )
+      clearSelection()
+      setDeclineModalOpen(false)
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Failed to decline estimates')
   })
 
   const { data, isLoading } = useQuery({
@@ -146,10 +150,7 @@ export default function EstimatesPage() {
         <div className="bg-primary-50 border border-primary-200 rounded-lg px-4 py-3 flex items-center justify-between">
           <span className="text-sm font-medium text-primary-700">{selectedCount} selected</span>
           <div className="flex items-center gap-2">
-            <select className="select text-sm" value={bulkStatus} onChange={(e) => { setBulkStatus(e.target.value); if (e.target.value) setBulkStatusOpen(true) }}>
-              <option value="">Change Status...</option><option value="DRAFT">Draft</option><option value="SENT">Sent</option><option value="APPROVED">Approved</option><option value="DECLINED">Declined</option>
-            </select>
-            <button onClick={() => setBulkDeleteOpen(true)} className="btn-primary bg-red-600 hover:bg-red-700 text-sm">Delete Selected</button>
+            <button onClick={() => setDeclineModalOpen(true)} className="btn-primary bg-orange-600 hover:bg-orange-700 text-sm">Decline Selected</button>
             <button onClick={clearSelection} className="btn-secondary text-sm">Clear</button>
           </div>
         </div>
@@ -158,7 +159,7 @@ export default function EstimatesPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1"><MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Search estimates..." value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" /></div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-full sm:w-40">
-          <option value="all">All Status</option><option value="DRAFT">Draft</option><option value="SENT">Sent</option><option value="VIEWED">Viewed</option><option value="APPROVED">Approved</option><option value="DECLINED">Declined</option><option value="EXPIRED">Expired</option>
+          <option value="all">All Status</option><option value="DRAFT">Draft</option><option value="READY">Ready</option><option value="SENT">Sent</option><option value="VIEWED">Viewed</option><option value="APPROVED">Approved</option><option value="DECLINED">Declined</option><option value="EXPIRED">Expired</option>
         </select>
       </div>
 
@@ -177,7 +178,6 @@ export default function EstimatesPage() {
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Good</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Better</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Best</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -191,9 +191,6 @@ export default function EstimatesPage() {
                   <td className="px-4 py-3 text-right font-medium">{formatCurrency(estimate.goodTotal)}</td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">{formatCurrency(estimate.betterTotal)}</td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">{formatCurrency(estimate.bestTotal)}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={(e) => { e.stopPropagation(); setEstimateToDelete(estimate); setDeleteModalOpen(true) }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete estimate"><TrashIcon className="w-5 h-5" /></button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -203,9 +200,7 @@ export default function EstimatesPage() {
         <div className="card text-center py-12"><DocumentTextIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" /><h3 className="text-lg font-medium text-gray-900 mb-2">No estimates found</h3><p className="text-gray-500 mb-4">Get started by creating your first estimate</p><Link href="/dashboard/estimates/new" className="btn-primary inline-flex items-center gap-2"><PlusIcon className="w-5 h-5" />New Estimate</Link></div>
       )}
 
-      <ConfirmDialog isOpen={deleteModalOpen && !!estimateToDelete} title="Delete Estimate" message={`Delete estimate ${estimateToDelete?.estimateNumber}? This cannot be undone.`} confirmLabel="Delete" variant="danger" isLoading={deleteMutation.isPending} onConfirm={() => estimateToDelete && deleteMutation.mutate(estimateToDelete.id)} onCancel={() => { setDeleteModalOpen(false); setEstimateToDelete(null) }} />
-      <ConfirmDialog isOpen={bulkDeleteOpen} title="Delete Selected Estimates" message={`Delete ${selectedCount} estimates? This cannot be undone.`} confirmLabel="Delete All" variant="danger" isLoading={bulkDeleteMutation.isPending} onConfirm={() => bulkDeleteMutation.mutate(Array.from(selectedIds))} onCancel={() => setBulkDeleteOpen(false)} />
-      <ConfirmDialog isOpen={bulkStatusOpen} title="Update Status" message={`Change status of ${selectedCount} estimates to ${bulkStatus}?`} confirmLabel="Update" variant="info" isLoading={bulkUpdateMutation.isPending} onConfirm={() => bulkUpdateMutation.mutate({ ids: Array.from(selectedIds), status: bulkStatus })} onCancel={() => { setBulkStatusOpen(false); setBulkStatus('') }} />
+      <ConfirmDialog isOpen={declineModalOpen} title="Decline Selected Estimates" message={`Decline ${selectedCount} selected estimates? This records the decision; the records and versions are retained. Estimates that are already delivered, decided or not declinable will be skipped.`} confirmLabel="Decline" variant="warning" isLoading={bulkDeclineMutation.isPending} onConfirm={() => bulkDeclineMutation.mutate(Array.from(selectedIds))} onCancel={() => setDeclineModalOpen(false)} />
     </div>
   )
 }

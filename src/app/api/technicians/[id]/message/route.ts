@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthUser } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { sendSMS } from '@/lib/sms'
 
@@ -7,6 +8,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getAuthUser(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const { message } = await request.json()
 
@@ -17,8 +23,8 @@ export async function POST(
       )
     }
 
-    const technician = await prisma.technician.findUnique({
-      where: { id },
+    const technician = await prisma.technician.findFirst({
+      where: { id, user: { companyId: user.companyId } },
       include: {
         user: {
           select: {

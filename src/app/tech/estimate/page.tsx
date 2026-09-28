@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
+import toast from 'react-hot-toast'
 import {
   ArrowLeftIcon,
   PlusIcon,
@@ -10,6 +11,8 @@ import {
   CheckCircleIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
+import { buildTechEstimateOptions } from '@/lib/tech-estimate'
+import { responseErrorMessage } from '@/lib/api-error'
 
 interface PricebookItem {
   id: string
@@ -54,21 +57,32 @@ export default function TechEstimatePage() {
   })
 
   const createEstimateMutation = useMutation({
-    mutationFn: async (data: { jobId?: string; customerId?: string; items: LineItem[]; notes: string }) => {
+    mutationFn: async () => {
+      if (!customerId) throw new Error('Open this page from a customer or job so the estimate has a customer')
+      const options = buildTechEstimateOptions(lineItems)
+      if (!options.length) throw new Error('Add at least one pricebook item before creating the estimate')
       const res = await fetch('/api/estimates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          customerId,
+          jobId: jobId || undefined,
+          options,
+          notes: notes || undefined,
+        })
       })
-      if (!res.ok) throw new Error('Failed to create estimate')
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Failed to create estimate'))
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       if (jobId) {
         router.push(`/tech/job/${jobId}`)
       } else {
         router.back()
       }
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to create estimate')
     }
   })
 
@@ -106,12 +120,7 @@ export default function TechEstimatePage() {
   }
 
   const handleSubmit = () => {
-    createEstimateMutation.mutate({
-      jobId: jobId || undefined,
-      customerId: customerId || undefined,
-      items: lineItems,
-      notes
-    })
+    createEstimateMutation.mutate()
   }
 
   return (
@@ -248,9 +257,14 @@ export default function TechEstimatePage() {
       </div>
 
       {/* Submit Button */}
+      {!customerId && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          A customer is required. Open this page from a customer or job so the estimate can be saved to the right account.
+        </p>
+      )}
       <button
         onClick={handleSubmit}
-        disabled={lineItems.length === 0 || createEstimateMutation.isPending}
+        disabled={lineItems.length === 0 || !customerId || createEstimateMutation.isPending}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <CheckCircleIcon className="w-5 h-5" />

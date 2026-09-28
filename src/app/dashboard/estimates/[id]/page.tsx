@@ -2,21 +2,22 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeftIcon,
   PencilIcon,
-  TrashIcon,
   PaperAirplaneIcon,
   CheckCircleIcon,
   XCircleIcon,
-  DocumentDuplicateIcon,
   PrinterIcon
 } from '@heroicons/react/24/outline'
 import { formatCurrency, getStatusColor, formatDate } from '@/lib/utils'
+import { responseErrorMessage } from '@/lib/api-error'
 import toast from 'react-hot-toast'
-import ConfirmDialog from '@/components/ConfirmDialog'
+
+// Must stay identical to the attestation the review route requires.
+const REVIEW_ATTESTATION = 'I verified the scope, jurisdiction, template, prices, and customer-facing terms'
 
 interface EstimateOption {
   id: string
@@ -50,6 +51,10 @@ interface Estimate {
   totalAmount: number
   notes?: string
   terms?: string
+  jurisdiction?: string
+  templateSource?: string
+  reviewedAt?: string
+  reviewedById?: string
   customer: {
     id: string
     firstName?: string
@@ -68,16 +73,20 @@ interface Estimate {
 
 export default function EstimateDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const queryClient = useQueryClient()
   const estimateId = params.id as string
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [jurisdiction, setJurisdiction] = useState('')
+  const [templateSource, setTemplateSource] = useState('')
+  const [templateEffectiveDate, setTemplateEffectiveDate] = useState('')
+  const [manualPriceReason, setManualPriceReason] = useState('')
+  const [attested, setAttested] = useState(false)
 
   const { data: estimate, isLoading } = useQuery<Estimate>({
     queryKey: ['estimate', estimateId],
     queryFn: async () => {
       const res = await fetch(`/api/estimates/${estimateId}`)
-      if (!res.ok) throw new Error('Failed to fetch estimate')
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Failed to fetch estimate'))
       return res.json()
     },
   })
@@ -89,26 +98,40 @@ export default function EstimateDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
-      if (!res.ok) throw new Error('Failed to update status')
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Failed to update status'))
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] })
     },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to update status')
+    },
   })
 
-  const deleteMutation = useMutation({
+  const reviewMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/estimates/${estimateId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed to delete estimate')
+      const res = await fetch(`/api/estimates/${estimateId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attestation: REVIEW_ATTESTATION,
+          jurisdiction,
+          templateSource,
+          templateEffectiveDate,
+          manualPriceReason: manualPriceReason || undefined,
+        }),
+      })
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Estimate review was blocked'))
       return res.json()
     },
     onSuccess: () => {
-      toast.success('Estimate deleted successfully')
-      router.push('/dashboard/estimates')
+      queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] })
+      toast.success('Estimate reviewed; it is ready for customer delivery')
+      setReviewOpen(false)
     },
-    onError: () => {
-      toast.error('Failed to delete estimate')
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Estimate review was blocked')
     },
   })
 
@@ -117,11 +140,15 @@ export default function EstimateDetailPage() {
       const res = await fetch(`/api/estimates/${estimateId}/send`, {
         method: 'POST',
       })
-      if (!res.ok) throw new Error('Failed to send estimate')
+      if (!res.ok) throw new Error(await responseErrorMessage(res, 'Failed to send estimate'))
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', estimateId] })
+      toast.success('Estimate sent to the customer for electronic approval')
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to send estimate')
     },
   })
 
@@ -152,8 +179,24 @@ export default function EstimateDetailPage() {
     )
   }
 
-  const canSend = estimate.status === 'DRAFT'
+  // Mirrors the delivery route gate: only a reviewed READY estimate can be sent.
+  const canSend = estimate.status === 'READY'
+    && !!estimate.reviewedAt
+    && !!estimate.reviewedById
+    && !!estimate.jurisdiction
+    && !!estimate.templateSource
   const canApprove = ['SENT', 'VIEWED'].includes(estimate.status)
+  const isDraft = estimate.status === 'DRAFT'
+  const canSubmitReview = !!jurisdiction.trim()
+    && !!templateSource.trim()
+    && !!templateEffectiveDate
+    && attested
+    && !reviewMutation.isPending
+
+  // The stored selection is the option name (for example "Better"); compare it
+  // case-insensitively so the badge matches the stored value.
+  const isOptionSelected = (option: EstimateOption) =>
+    !!estimate.selectedOption && estimate.selectedOption.toLowerCase() === option.name.toLowerCase()
 
   return (
     <div className="space-y-6">
@@ -176,7 +219,16 @@ export default function EstimateDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 print:hidden">
+          {isDraft && (
+            <button
+              onClick={() => setReviewOpen(open => !open)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <CheckCircleIcon className="w-4 h-4" />
+              {reviewOpen ? 'Close Review' : 'Complete Review'}
+            </button>
+          )}
           {canSend && (
             <button
               onClick={() => sendEstimateMutation.mutate()}
@@ -207,26 +259,98 @@ export default function EstimateDetailPage() {
               </button>
             </>
           )}
-          <Link
-            href={`/dashboard/estimates/${estimateId}/edit`}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <PencilIcon className="w-4 h-4" />
-            Edit
-          </Link>
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            className="btn-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <TrashIcon className="w-4 h-4" />
-            Delete
-          </button>
-          <button className="btn-secondary flex items-center gap-2">
+          {isDraft && (
+            <Link
+              href={`/dashboard/estimates/${estimateId}/edit`}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <PencilIcon className="w-4 h-4" />
+              Edit
+            </Link>
+          )}
+          <button onClick={() => window.print()} className="btn-secondary flex items-center gap-2">
             <PrinterIcon className="w-4 h-4" />
             Print
           </button>
         </div>
       </div>
+
+      {canApprove && (
+        <p className="text-sm text-gray-500">
+          Customer approval is recorded by the customer through the signed one-time approval link. Direct status edits are rejected.
+        </p>
+      )}
+
+      {isDraft && reviewOpen && (
+        <div className="card space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Human review</h2>
+            <p className="text-sm text-gray-500">
+              Delivery is blocked until a reviewer records the jurisdiction, the authoritative template, and the exact attestation.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label className="block text-sm">
+              <span className="font-medium text-gray-700">Jurisdiction (two-letter code)</span>
+              <input
+                className="input mt-1 uppercase"
+                maxLength={2}
+                value={jurisdiction}
+                onChange={(event) => setJurisdiction(event.target.value.toUpperCase())}
+                placeholder="GA"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium text-gray-700">Template source URL</span>
+              <input
+                className="input mt-1"
+                type="url"
+                value={templateSource}
+                onChange={(event) => setTemplateSource(event.target.value)}
+                placeholder="https://templates.example.com/estimate-v2"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium text-gray-700">Template effective date</span>
+              <input
+                className="input mt-1"
+                type="date"
+                value={templateEffectiveDate}
+                onChange={(event) => setTemplateEffectiveDate(event.target.value)}
+              />
+            </label>
+          </div>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-700">Manual price justification</span>
+            <textarea
+              className="input mt-1"
+              rows={2}
+              maxLength={2000}
+              value={manualPriceReason}
+              onChange={(event) => setManualPriceReason(event.target.value)}
+              placeholder="Required when a line item is not linked to an active company pricebook item."
+            />
+          </label>
+          <label className="flex items-start gap-3 rounded-lg border p-4 text-sm">
+            <input
+              className="mt-0.5"
+              type="checkbox"
+              checked={attested}
+              onChange={(event) => setAttested(event.target.checked)}
+            />
+            <span>{REVIEW_ATTESTATION}</span>
+          </label>
+          <div className="flex justify-end">
+            <button
+              onClick={() => reviewMutation.mutate()}
+              disabled={!canSubmitReview}
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {reviewMutation.isPending ? 'Submitting review…' : 'Submit Review'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -235,13 +359,13 @@ export default function EstimateDetailPage() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Pricing Options</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {estimate.options.map((option, index) => (
+              {estimate.options.map((option) => (
                 <div
                   key={option.id}
                   className={`card relative ${
                     option.isRecommended ? 'border-2 border-primary-500 shadow-lg' : ''
                   } ${
-                    estimate.selectedOption === option.name.toLowerCase() ? 'ring-2 ring-green-500' : ''
+                    isOptionSelected(option) ? 'ring-2 ring-green-500' : ''
                   }`}
                 >
                   {option.isRecommended && (
@@ -272,7 +396,7 @@ export default function EstimateDetailPage() {
                       </div>
                     ))}
                   </div>
-                  {estimate.selectedOption === option.name.toLowerCase() && (
+                  {isOptionSelected(option) && (
                     <div className="mt-4 pt-4 border-t text-center">
                       <span className="text-green-600 font-medium flex items-center justify-center gap-1">
                         <CheckCircleIcon className="w-5 h-5" />
@@ -373,17 +497,6 @@ export default function EstimateDetailPage() {
           )}
         </div>
       </div>
-
-      <ConfirmDialog
-        isOpen={deleteModalOpen}
-        title="Delete Estimate"
-        message="Are you sure you want to delete this estimate? This action cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
-        isLoading={deleteMutation.isPending}
-        onConfirm={() => deleteMutation.mutate()}
-        onCancel={() => setDeleteModalOpen(false)}
-      />
     </div>
   )
 }

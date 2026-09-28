@@ -23,8 +23,7 @@ import {
   ingestFuelCard,
   payrollExport,
   recordFleetPing,
-  reorderSuggestions,
-  safetyQualitySignals,
+    safetyQualitySignals,
   summariseNps,
   toCsv,
   type FuelCardEntry,
@@ -64,15 +63,6 @@ export async function GET(request: NextRequest) {
           })
         }
         return NextResponse.json({ ...result, from, to })
-      }
-
-      case 'reorder': {
-        const result = await reorderSuggestions({
-          companyId: user.companyId,
-          lookbackDays: Number(searchParams.get('lookbackDays')) || undefined,
-          targetWeeksCover: Number(searchParams.get('targetWeeksCover')) || undefined,
-        })
-        return NextResponse.json(result)
       }
 
       case 'nps': {
