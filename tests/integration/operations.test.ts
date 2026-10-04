@@ -17,6 +17,7 @@ import { inventory } from "../../src/lib/workflows/stock";
 import { purchasing } from "../../src/lib/workflows/purchasing";
 import { timesheets } from "../../src/lib/workflows/time";
 import { execution, updateJob } from "../../src/lib/workflows/execution";
+import { syncOfflineJob } from "../../src/lib/workflows/offline";
 import { records } from "../../src/lib/workflows/records";
 import { workforce } from "../../src/lib/workflows/workforce";
 import {
@@ -597,6 +598,41 @@ test("field evidence, immutable completion, timers and office approvals persist 
     /append-only/,
   );
   assert.match(csv([{ name: '=HYPERLINK("bad")' }], ["name"]), /'=HYPERLINK/);
+});
+test("offline technician evidence sync is scoped, atomic and idempotent across uncertain retries", async () => {
+  const f = await fixture(), other = await fixture(), job = await f.job();
+  await assign(f.a, { jobId: job.id, technicianId: f.tech.id });
+  const assigned = await prisma.job.findUniqueOrThrow({ where: { id: job.id } });
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJ1sAAAAASUVORK5CYII=';
+  const body = {
+    ownerId: f.t.id, companyId: f.t.companyId, technicianId: f.t.technicianId,
+    updatedAt: assigned.updatedAt.toISOString(), reviewed: true,
+    workPerformed: 'Inspected fixture equipment and recorded the observed condition.',
+    items: [{ id: 'scope', label: 'Record observed scope', checked: true, notes: 'Fixture note' }],
+    checklistVersion: 1,
+    photos: [{ media: png, type: 'DURING', caption: 'Fictional fixture photo' }],
+    photoConsent: true,
+  };
+  const key = crypto.randomUUID(), action = `offline:${job.id}`;
+  const sync = () => withReceipt(f.t, key, action, body, () => syncOfflineJob(f.t, job.id, body));
+  const first = await sync() as { synced: boolean; updatedAt: Date };
+  assert.equal(first.synced, true);
+  await sync();
+  assert.equal(await prisma.jobPhoto.count({ where: { jobId: job.id } }), 1);
+  assert.equal((await prisma.job.findUniqueOrThrow({ where: { id: job.id } })).workPerformed, body.workPerformed);
+  await rejects(withReceipt(f.t, key, action, { ...body, workPerformed: 'Changed after retry' }, () => syncOfflineJob(f.t, job.id, body)), /different input/);
+  await rejects(syncOfflineJob(f.a, job.id, body), /Assigned technician/);
+  await rejects(syncOfflineJob(f.t, job.id, { ...body, ownerId: other.t.id }), /account that saved/);
+  await rejects(syncOfflineJob(f.t, job.id, { ...body, companyId: other.t.companyId }), /another company/);
+  await rejects(syncOfflineJob(other.t, job.id, { ...body, ownerId: other.t.id, companyId: other.t.companyId, technicianId: other.t.technicianId }), /not found/);
+  await rejects(syncOfflineJob(f.t, job.id, body), /changed while offline/);
+  const current = await prisma.job.findUniqueOrThrow({ where: { id: job.id } });
+  const invalid = { ...body, updatedAt: current.updatedAt.toISOString(), workPerformed: 'This must roll back.', photos: [{ media: 'not-an-image', type: 'DURING', caption: 'Invalid' }] };
+  await rejects(syncOfflineJob(f.t, job.id, invalid), /PNG or JPEG/);
+  assert.equal((await prisma.job.findUniqueOrThrow({ where: { id: job.id } })).workPerformed, body.workPerformed);
+  assert.equal(await prisma.jobPhoto.count({ where: { jobId: job.id } }), 1);
+  await prisma.jobAssignment.deleteMany({ where: { jobId: job.id } });
+  await rejects(syncOfflineJob(f.t, job.id, { ...body, updatedAt: current.updatedAt.toISOString() }), /not found/);
 });
 test("private portal links expire and revoke, customer data remains scoped, and reviews require completed jobs", async () => {
   const f = await fixture(),

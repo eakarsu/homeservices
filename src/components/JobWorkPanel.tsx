@@ -139,7 +139,7 @@ export default function JobWorkPanel({ jobId }: { jobId: string }) {
             Open timesheets and office review
           </Link>
           {!closed && job && <VoiceJobReport jobId={jobId} onApply={setWork} />}
-          {!closed && job && <OfflineJobTools job={job} work={work} items={items} checklistVersion={data.checklist?.version || 1} />}
+          {!closed && job && lookup.role === 'TECHNICIAN' && <OfflineJobTools job={job} work={work} items={items} checklistVersion={data.checklist?.version || 1} />}
           {!closed && (
             <div className="flex gap-2 flex-wrap">
               {lookup.role !== "TECHNICIAN" && (

@@ -2,7 +2,10 @@ import type { AuthContext } from '@/lib/operations-governance'
 import { audit, fail, jobFor, object, text, txFor } from './core'
 import { execution, updateJob } from './execution'
 export async function syncOfflineJob(user: AuthContext, jobId: string, body: Record<string,unknown>) {
+  if (user.role !== 'TECHNICIAN' || !user.technicianId) fail('Assigned technician access required',403)
   if (body.ownerId !== user.id) fail('Sign in with the account that saved this offline draft',403)
+  if (body.companyId !== undefined && body.companyId !== user.companyId) fail('Offline draft belongs to another company',403)
+  if (body.technicianId !== undefined && body.technicianId !== user.technicianId) fail('Offline draft belongs to another technician assignment',403)
   if (body.reviewed !== true) fail('Review the offline work before synchronization')
   return txFor(user, async tx => {
     const job = await jobFor(tx,user,jobId)

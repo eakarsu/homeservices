@@ -35,6 +35,19 @@ interface LineItem {
   tier: 'GOOD' | 'BETTER' | 'BEST'
 }
 
+interface IntakeSuggestion extends PricebookItem {
+  quantity: number
+  rationale: string
+  evidenceIds: string[]
+  updatedAt: string
+}
+
+interface IntakeResult {
+  suggestions: IntakeSuggestion[]
+  sources: { id: string; label: string; kind: 'TEXT' | 'PHOTO'; photoId?: string }[]
+  catalogTruncated: boolean
+}
+
 export default function TechEstimatePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -46,13 +59,20 @@ export default function TechEstimatePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showPricebook, setShowPricebook] = useState(false)
   const [notes, setNotes] = useState('')
+  const [includePhotos, setIncludePhotos] = useState(false)
+  const [analysisConsent, setAnalysisConsent] = useState(false)
+  const [intake, setIntake] = useState<IntakeResult | null>(null)
+  const [intakeBusy, setIntakeBusy] = useState(false)
+  const [intakeError, setIntakeError] = useState('')
 
   const { data: pricebookItems = [] } = useQuery<PricebookItem[]>({
     queryKey: ['pricebook', searchQuery],
     queryFn: async () => {
       const res = await fetch(`/api/pricebook?search=${encodeURIComponent(searchQuery)}`)
       if (!res.ok) throw new Error('Failed to fetch pricebook')
-      return res.json()
+      const rows = await res.json()
+      if (!Array.isArray(rows)) throw new Error('Pricebook response is invalid')
+      return rows.map((row: PricebookItem & { unitPrice: string | number }) => ({ ...row, unitPrice: Number(row.unitPrice) })).filter((row: PricebookItem) => Number.isFinite(row.unitPrice))
     }
   })
 
@@ -101,6 +121,26 @@ export default function TechEstimatePage() {
     setSearchQuery('')
   }
 
+  const suggest = async () => {
+    if (!jobId || intakeBusy) return
+    setIntakeBusy(true)
+    setIntakeError('')
+    try {
+      const response = await fetch('/api/ai/estimate-intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, analyzePhotos: includePhotos, evidenceAnalysisConsent: analysisConsent, photoAnalysisConsent: includePhotos }) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Suggestion request failed')
+      setIntake(data)
+    } catch (error) {
+      setIntakeError(error instanceof Error ? error.message : 'Suggestion request failed')
+    } finally {
+      setIntakeBusy(false)
+    }
+  }
+
+  const addSuggestion = (item: IntakeSuggestion) => {
+    setLineItems((old) => [...old, { id: crypto.randomUUID(), pricebookItemId: item.id, name: item.name, description: item.description || item.name, quantity: item.quantity, unitPrice: item.unitPrice, tier: activeTier }])
+  }
+
   const removeItem = (id: string) => {
     setLineItems(lineItems.filter(item => item.id !== id))
   }
@@ -138,6 +178,23 @@ export default function TechEstimatePage() {
           <p className="text-sm text-gray-500">Good / Better / Best pricing</p>
         </div>
       </div>
+
+      {jobId && <section className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+        <h2 className="font-medium text-gray-900">Job evidence → pricebook candidates</h2>
+        <p className="text-sm text-gray-600">The model reads saved job notes and may propose only active company pricebook items. Review the job evidence, scope, quantity, and price before adding a candidate. Nothing is added automatically.</p>
+        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={analysisConsent} onChange={(event) => setAnalysisConsent(event.target.checked)} /> I am authorized to send this job&apos;s saved notes to the configured AI provider.</label>
+        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={includePhotos} onChange={(event) => setIncludePhotos(event.target.checked)} /> I authorize sending up to two stored job photos to the configured AI provider for this suggestion request.</label>
+        <button className="btn btn-secondary" disabled={intakeBusy || !analysisConsent} onClick={() => void suggest()}>{intakeBusy ? 'Reviewing evidence…' : 'Suggest pricebook items'}</button>
+        {intakeError && <p role="alert" className="text-red-700">{intakeError}</p>}
+        {intake?.catalogTruncated && <p className="text-sm text-amber-700">The model saw a ranked subset of the pricebook. Search the full pricebook manually if an item is missing.</p>}
+        {intake && !intake.suggestions.length && <p>No supported suggestions. Search the pricebook manually.</p>}
+        {intake?.suggestions.map((item) => <div key={item.id} className="rounded border p-3 space-y-2">
+          <strong>{item.code} · {item.name}</strong><p className="text-sm">{item.quantity} × ${item.unitPrice.toFixed(2)} · pricebook updated {new Date(item.updatedAt).toLocaleDateString()}</p>
+          <p className="text-sm">Model rationale, verify: {item.rationale}</p>
+          <p className="text-sm">Evidence: {item.evidenceIds.map((id) => { const source = intake.sources.find((row) => row.id === id); return <span key={id} className="mr-2">{source?.kind === 'PHOTO' && source.photoId ? <a className="underline" target="_blank" rel="noreferrer" href={`/api/jobs/${jobId}/photos/${source.photoId}`}>{source.label}</a> : source?.label || id}</span> })}</p>
+          <button className="btn btn-secondary" onClick={() => addSuggestion(item)}>Add to {activeTier.toLowerCase()} draft</button>
+        </div>)}
+      </section>}
 
       {/* Tier Tabs */}
       <div className="bg-white rounded-lg border border-gray-200 p-1 flex">

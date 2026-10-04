@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/apiAuth'
 
 import { prisma } from '@/lib/prisma'
 import { generateEstimateNumber } from '@/lib/utils'
-import { canManageEstimate, retentionDate } from '@/lib/operations-governance'
+import { canManageEstimate, canReadJob, retentionDate } from '@/lib/operations-governance'
 import { appendAuditEvent, estimateSnapshot } from '@/lib/audit-events'
 
 type DraftLine = { description?: unknown; quantity?: unknown; unitPrice?: unknown; category?: unknown; isOptional?: unknown; pricebookItemId?: unknown }
@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (!canManageEstimate(user)) return NextResponse.json({ error: 'Estimate authoring role required' }, { status: 403 })
+    const technicianDraft = user.role === 'TECHNICIAN'
+    if (!canManageEstimate(user) && !technicianDraft) return NextResponse.json({ error: 'Estimate authoring role required' }, { status: 403 })
 
     const body = await request.json()
     if (typeof body.customerId !== 'string' || !Array.isArray(body.options) || body.options.length < 1 || body.options.length > 3) {
@@ -123,9 +124,10 @@ export async function POST(request: NextRequest) {
     }
     const [customer, job] = await Promise.all([
       prisma.customer.findFirst({ where: { id: body.customerId, companyId: user.companyId }, select: { id: true } }),
-      body.jobId ? prisma.job.findFirst({ where: { id: body.jobId, companyId: user.companyId, customerId: body.customerId }, select: { id: true } }) : null,
+      body.jobId ? prisma.job.findFirst({ where: { id: body.jobId, companyId: user.companyId, customerId: body.customerId }, select: { id: true, companyId: true, assignments: { select: { technicianId: true } } } }) : null,
     ])
     if (!customer || (body.jobId && !job)) return NextResponse.json({ error: 'Customer or job is outside the authenticated company' }, { status: 422 })
+    if (technicianDraft && (!job || !canReadJob(user, job))) return NextResponse.json({ error: 'Technicians can draft only for assigned jobs' }, { status: 403 })
 
     const normalizedOptions = (body.options as DraftOption[]).map((option, optionIndex) => {
       if (typeof option.name !== 'string' || !option.name.trim() || !Array.isArray(option.lineItems) || !option.lineItems.length) throw new Error(`Option ${optionIndex + 1} requires a name and line items`)
@@ -154,9 +156,14 @@ export async function POST(request: NextRequest) {
     })
     const pricebookIds = [...new Set(normalizedOptions.flatMap(option => option.lineItems.create.map(line => line.pricebookItemId).filter((id): id is string => !!id)))]
     if (pricebookIds.length) {
-      const ownedPrices = await prisma.pricebookItem.count({ where: { id: { in: pricebookIds }, companyId: user.companyId, isActive: true } })
-      if (ownedPrices !== pricebookIds.length) return NextResponse.json({ error: 'A pricebook source is outside the authenticated company or inactive' }, { status: 422 })
+      const ownedPrices = await prisma.pricebookItem.findMany({ where: { id: { in: pricebookIds }, companyId: user.companyId, isActive: true }, select: { id: true, unitPrice: true } })
+      if (ownedPrices.length !== pricebookIds.length) return NextResponse.json({ error: 'A pricebook source is outside the authenticated company or inactive' }, { status: 422 })
+      if (technicianDraft && normalizedOptions.some(option => option.lineItems.create.some(line => {
+        const source = ownedPrices.find(item => item.id === line.pricebookItemId)
+        return !source || Math.abs(line.unitPrice - Number(source.unitPrice)) > 0.005 || line.quantity > 100
+      }))) return NextResponse.json({ error: 'Technician drafts must use current company pricebook prices and quantities up to 100' }, { status: 422 })
     }
+    if (technicianDraft && normalizedOptions.some(option => option.lineItems.create.some(line => !line.pricebookItemId))) return NextResponse.json({ error: 'Technician drafts require a pricebook source for every line' }, { status: 422 })
     const selected = normalizedOptions.find(option => option.isRecommended) || normalizedOptions[0]
     const expirationDate = body.expirationDate ? new Date(body.expirationDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     if (Number.isNaN(expirationDate.getTime()) || expirationDate <= new Date()) return NextResponse.json({ error: 'Expiration date must be in the future' }, { status: 422 })

@@ -74,6 +74,13 @@ interface Job {
     }
   }>
   notes?: string
+  reconciliation?: {
+    messages: Record<string, number>
+    checkouts: Record<string, number>
+    refunds: Record<string, number>
+    invoiceCoverage: number
+    invoiceListTruncated: boolean
+  }
 }
 
 export default function JobDetailPage() {
@@ -217,6 +224,16 @@ export default function JobDetailPage() {
       </div>
 
       <JobWorkPanel jobId={jobId}/>
+      {job.reconciliation && <section className="card mb-6" aria-label="Message and payment reconciliation">
+        <h2 className="text-lg font-semibold mb-2">Message and payment reconciliation</h2>
+        <p className="text-sm text-gray-600 mb-3">Current saved outcomes for this job. Provider acceptance and payment settlement require the linked operations records.</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div><strong>Messages</strong><p className="text-sm">{Object.entries(job.reconciliation.messages).map(([status, count]) => `${status}: ${count}`).join(' · ') || 'None recorded'}</p><Link className="text-primary-600 text-sm underline" href="/dashboard/operations/communications">Review messages</Link></div>
+          <div><strong>Payment checkouts</strong><p className="text-sm">{Object.entries(job.reconciliation.checkouts).map(([status, count]) => `${status}: ${count}`).join(' · ') || 'None recorded'}</p><Link className="text-primary-600 text-sm underline" href="/dashboard/finance">Reconcile checkouts</Link></div>
+          <div><strong>Refunds</strong><p className="text-sm">{Object.entries(job.reconciliation.refunds).map(([status, count]) => `${status}: ${count}`).join(' · ') || 'None recorded'}</p><Link className="text-primary-600 text-sm underline" href="/dashboard/finance">Reconcile refunds</Link></div>
+        </div>
+        {job.reconciliation.invoiceListTruncated && <p className="text-amber-700 text-sm mt-2">This job has more than 500 invoices. Open Payments & refunds for complete coverage.</p>}
+      </section>}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">

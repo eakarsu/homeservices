@@ -63,6 +63,8 @@ export async function GET(
             },
           },
         },
+        estimates: { select: { id: true, estimateNumber: true, status: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 10 },
+        invoices: { select: { id: true, invoiceNumber: true, status: true, balanceDue: true, reviewedAt: true }, orderBy: { createdAt: 'desc' }, take: 10 },
       },
     })
 
@@ -71,7 +73,20 @@ export async function GET(
     }
     if (!canReadJob(user, job)) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
 
-    return NextResponse.json(job)
+    const invoiceRows = await prisma.invoice.findMany({ where: { jobId: job.id, customer: { companyId: user.companyId } }, select: { id: true }, take: 501 })
+    const invoiceIds = invoiceRows.slice(0, 500).map(invoice => invoice.id)
+    const [messageStatuses, checkoutStatuses, refundStatuses] = await Promise.all([
+      prisma.delivery.groupBy({ by: ['status'], where: { companyId: user.companyId, jobId: job.id }, _count: { _all: true } }),
+      invoiceIds.length ? prisma.paymentCheckout.groupBy({ by: ['status'], where: { companyId: user.companyId, invoiceId: { in: invoiceIds } }, _count: { _all: true } }) : [],
+      invoiceIds.length ? prisma.paymentRefund.groupBy({ by: ['status'], where: { companyId: user.companyId, invoiceId: { in: invoiceIds } }, _count: { _all: true } }) : [],
+    ])
+    return NextResponse.json({ ...job, reconciliation: {
+      messages: Object.fromEntries(messageStatuses.map(row => [row.status, row._count._all])),
+      checkouts: Object.fromEntries(checkoutStatuses.map(row => [row.status, row._count._all])),
+      refunds: Object.fromEntries(refundStatuses.map(row => [row.status, row._count._all])),
+      invoiceCoverage: invoiceIds.length,
+      invoiceListTruncated: invoiceRows.length > 500,
+    } })
   } catch (error) {
     console.error('Get job error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
