@@ -1,4 +1,6 @@
 'use client'
+import FullAIExamples, { useFullAIExamples } from "../../../../components/FullAIExamples";
+
 import {useEffect, useRef, useState} from 'react'
 import Link from 'next/link'
 import {useQuery} from '@tanstack/react-query'
@@ -16,6 +18,8 @@ type Result = {id:string;customerName:string;quote:Quote;provenance:{model:strin
 const money=(value:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value)
 async function read<T>(url:string):Promise<T> {const response=await fetch(url),data=await response.json();if(!response.ok)throw Error(data.error || 'Unable to load records');return data}
 export default function QuoteGeneratorPage() {
+  const fullAIExamples = useFullAIExamples();
+
   const [jobId,setJobId]=useState(''),[priceIds,setPriceIds]=useState(''),[additionalNotes,setAdditionalNotes]=useState(''),[extraInstructions,setExtraInstructions]=useState('')
   const [consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Result|null>(null),[copied,setCopied]=useState('')
   const send=useWorkflowFetch(), resultRef=useRef<HTMLElement>(null), lock=useRef(false)
@@ -53,9 +57,9 @@ export default function QuoteGeneratorPage() {
         setError('')
       }}/>
     </div>
-    <form className="grid gap-6 lg:grid-cols-2 print:hidden" onSubmit={e=>{e.preventDefault();void generate()}}>
+    <form className="grid gap-6 lg:grid-cols-2 print:hidden" onSubmit={e=>{e.preventDefault();void generate()}} data-full-ai-workspace="QuoteGeneratorPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(busy)} />
       <section className="card space-y-4"><h2 className="text-lg font-semibold">Job and customer details</h2>
-        <label className="block">Authorized job<select className="input mt-1" value={jobId} disabled={busy || records.isPending} onChange={e=>changeJob(e.target.value)}><option value="">Select a job...</option>{records.data?.jobs.map(j=><option key={j.id} value={j.id}>{j.jobNumber} · {j.title}</option>)}</select></label>
+        <label className="block">Authorized job<select className="input mt-1" value={jobId} disabled={busy || records.isPending} onChange={e=>changeJob(e.target.value)} data-full-ai-field={fullAIExamples.bind({ current: jobId, change: e=>changeJob(e.target.value), label: "jobId", manual: false, json: false, sample: '' }, "p1-5569", undefined)}><option value="">Select a job...</option>{records.data?.jobs.map(j=><option key={j.id} value={j.id}>{j.jobNumber} · {j.title}</option>)}</select></label>
         {records.data && !records.data.jobs.length && <p role="status" className="text-sm text-amber-800">Create a job before preparing a quote. <Link className="underline" href="/dashboard/jobs/new">Create job</Link></p>}
         <label className="block">Service Type<input className="input mt-1 bg-slate-50" value={job?.tradeType || ''} placeholder="Filled from the selected job" readOnly/></label>
         <label className="block">Customer Name<input className="input mt-1 bg-slate-50" value={customerName} placeholder="Filled from the selected job" readOnly/></label>
@@ -71,8 +75,8 @@ export default function QuoteGeneratorPage() {
         </div>
         <fieldset disabled={busy}><legend className="mb-2 text-sm font-medium">Service — select up to 20 pricebook items</legend><div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-3">{prices.data?.map(p=><label key={p.id} className={`flex items-start gap-3 rounded border p-2 ${selectedIds.includes(p.id)?'border-indigo-300 bg-indigo-50':'border-transparent hover:bg-slate-50'}`}><input type="checkbox" className="mt-1 accent-indigo-600" checked={selectedIds.includes(p.id)} disabled={!selectedIds.includes(p.id) && selectedIds.length>=20} onChange={e=>setPriceIds((e.target.checked?[...selectedIds,p.id]:selectedIds.filter(id=>id!==p.id)).join(','))}/><span className="min-w-0 flex-1 text-sm">{p.name}<span className="block text-xs text-slate-500">{p.code} · {p.category}</span></span><span className="text-sm font-medium">{money(Number(p.unitPrice))}</span></label>)}{prices.data?.length===0 && <p role="status" className="text-sm text-amber-800">Add an active pricebook item before generating a quote. <Link href="/dashboard/settings/pricebook" className="underline">Open pricebook</Link></p>}</div></fieldset>
         <p className="text-sm font-medium">Selected pricebook subtotal: {money(subtotal)}</p>
-        <label className="block">Additional Notes<textarea className="input mt-1" rows={5} maxLength={12000} disabled={busy} value={additionalNotes} onChange={e=>setAdditionalNotes(e.target.value)} placeholder="Requirements, existing equipment and customer preferences..."/></label>
-        <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={consent} disabled={busy} onChange={e=>setConsent(e.target.checked)}/>I am authorized to send the selected job, pricebook and notes to the configured AI provider.</label>
+        <label className="block">Additional Notes<textarea className="input mt-1" rows={5} maxLength={12000} disabled={busy} value={additionalNotes} onChange={e=>setAdditionalNotes(e.target.value)} placeholder="Requirements, existing equipment and customer preferences..." data-full-ai-field={fullAIExamples.bind({ current: additionalNotes, change: e=>setAdditionalNotes(e.target.value), label: "additionalNotes", manual: false, json: false, sample: '' }, "p1-9557", undefined)}/></label>
+        <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={consent} disabled={busy} onChange={e=>setConsent(e.target.checked)} data-full-ai-field={fullAIExamples.bind({ current: consent, change: e=>setConsent(e.target.checked), label: "consent", manual: false, json: false, sample: false }, "p1-9849", undefined)}/>I am authorized to send the selected job, pricebook and notes to the configured AI provider.</label>
         <button type="submit" disabled={busy || !ready || !consent} className="btn-primary flex w-full items-center justify-center gap-2 disabled:opacity-50"><SparklesIcon className="h-5 w-5"/>{busy?'Generating quote…':'Generate Quote'}</button>
         {!ready && <p className="text-xs text-slate-500">Choose a job and at least one priced service, or use Complete form to suggest them.</p>}
         {ready && !consent && <p className="text-xs text-slate-500">Review the selected services, then check the authorization box to enable Generate Quote.</p>}

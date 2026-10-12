@@ -39,6 +39,67 @@ export function getFormFields(form: string): AIField[] {
   if (!fields.length || fields.some(f=>f.key==='extraInstructions')) return fields
   return [...fields, prose('extraInstructions', 'Extra instructions')]
 }
+
+export const formExampleLabels = ['Service review', 'Planning draft', 'Detailed review'] as const
+
+/** Fill editable AI draft fields offline without inventing real references, personal details, dates, prices, or approvals. */
+export function createFormExampleValues(form: string, supplied: unknown, variant = 0): { values: FormValues; manual: string[] } {
+  const fields = getFormFields(form)
+  if (!fields.length) throw new Error('This form does not support AI drafting')
+  const current = pickFormValues(form, supplied)
+  const values: FormValues = {}
+  const manual: string[] = []
+  const examples = [
+    'Describe the work clearly, summarize current conditions, and list a practical next step for review.',
+    'Outline a sequenced plan, dependencies, and follow-up questions without assuming unrecorded facts.',
+    'Prepare a concise professional draft with scope, constraints, and details that still need confirmation.',
+  ]
+  for (const field of fields) {
+    const value = current[field.key]
+    const searchable = `${field.key.replace(/([a-z])([A-Z])/g, '$1 $2')} ${field.label}`.toLowerCase()
+    if (field.key === 'mode') {
+      values[field.key] = field.options?.includes(String(value ?? '')) ? String(value) : field.options?.[0] || ''
+      continue
+    }
+    if (/(?:Id|Ids)$/.test(field.key) || /\b(?:reference|customer id|property id|job id|service id|pricebook id|vendor id|technician id|equipment id|record id)\b/.test(searchable)) {
+      values[field.key] = value ?? ''
+      if (!String(values[field.key]).trim()) manual.push(field.label)
+      continue
+    }
+    const manualValue = /\b(?:phone|email|address|zip|first name|last name|company|signature|signed|approval|approved|authorization|consent|credential|password|token|secret|date|time|cost|price|amount|subtotal|tax|total|quantity|stock|inventory)\b/.test(searchable)
+    if (manualValue) {
+      values[field.key] = value ?? ''
+      if (!String(values[field.key]).trim()) manual.push(field.label)
+      continue
+    }
+    if (field.options?.length) {
+      values[field.key] = field.options[variant % field.options.length]
+      continue
+    }
+    if (field.type === 'list') {
+      values[field.key] = typeof value === 'string' && value.trim() ? value : field.options?.[variant % (field.options.length || 1)] || ''
+      if (!String(values[field.key]).trim()) manual.push(field.label)
+      continue
+    }
+    if (field.type === 'number' || field.type === 'integer') {
+      values[field.key] = value ?? [45, 60, 30][variant % 3]
+      continue
+    }
+    if (field.type === 'decimal') {
+      values[field.key] = value ?? ''
+      if (!String(values[field.key]).trim()) manual.push(field.label)
+      continue
+    }
+    if (field.type === 'date' || field.type === 'time' || field.type === 'datetime') {
+      values[field.key] = value ?? ''
+      if (!String(values[field.key]).trim()) manual.push(field.label)
+      continue
+    }
+    values[field.key] = `Example ${variant + 1} · ${field.label}: ${examples[variant % examples.length]} Fictional draft input; replace assumptions with verified details before saving.`
+  }
+  return { values, manual }
+}
+
 export function selectedAIFields(form: string, action: string): AIField[] {
   const fields = getFormFields(form)
   if (!fields.length) throw new Error('This form does not support AI drafting')

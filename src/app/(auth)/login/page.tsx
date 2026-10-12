@@ -1,4 +1,6 @@
 'use client'
+import { useRef as useNativeDemoLoginRef, useState as useNativeDemoLoginState } from 'react';
+
 
 import { useState, useEffect, Suspense } from 'react'
 import { getProviders, signIn } from 'next-auth/react'
@@ -7,6 +9,9 @@ import Link from 'next/link'
 import { WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
 
 function LoginForm() {
+const nativeDemoAuthRequestLock = useNativeDemoLoginRef(false), demoCredentialRequestLock = useNativeDemoLoginRef(false);
+const [nativeDemoLoginPending, setNativeDemoLoginPending] = useNativeDemoLoginState(false);
+
   const [ready,setReady]=useState(false)
   useEffect(()=>setReady(true),[])
   const router = useRouter()
@@ -50,6 +55,11 @@ function LoginForm() {
   }, [])
 
   const fillDemoCredentials = async () => {
+
+if (nativeDemoAuthRequestLock.current) return;
+nativeDemoAuthRequestLock.current = true; setNativeDemoLoginPending(true);
+try {
+
     setError('')
     setIsDemoLoading(true)
     try {
@@ -71,10 +81,17 @@ function LoginForm() {
     } finally {
       setIsDemoLoading(false)
     }
-  }
+
+} catch (nativeDemoFailure) { setError('Unable to sign in. Check your credentials or connection and try again.'); } finally { setIsLoading(false); nativeDemoAuthRequestLock.current = false; setNativeDemoLoginPending(false); }
+}
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+e.preventDefault()
+if (nativeDemoAuthRequestLock.current) return;
+nativeDemoAuthRequestLock.current = true; setNativeDemoLoginPending(true);
+try {
+
+
     setError('')
     setIsLoading(true)
 
@@ -99,7 +116,9 @@ function LoginForm() {
     } finally {
       setIsLoading(false)
     }
-  }
+
+} catch (nativeDemoFailure) { setError('Unable to sign in. Check your credentials or connection and try again.'); } finally { setIsLoading(false); nativeDemoAuthRequestLock.current = false; setNativeDemoLoginPending(false); }
+}
 
   const handleOAuthSignIn = async (provider: string) => {
     if (!oauthProviders.includes(provider) || isOAuthLoading) return
@@ -265,8 +284,8 @@ function LoginForm() {
 
         {demoEnabled && <button
           type="button"
-          onClick={async () => { await (fillDemoCredentials)(); window.setTimeout(() => { const form = document.querySelector("form"); if (form) form.requestSubmit(); }, 150); }}
-          disabled={!ready || isDemoLoading || isLoading}
+          onClick={async () => { if (demoCredentialRequestLock.current || nativeDemoAuthRequestLock.current) return; demoCredentialRequestLock.current = true; setNativeDemoLoginPending(true); try { await (fillDemoCredentials)();   } finally { demoCredentialRequestLock.current = false; setNativeDemoLoginPending(false); } }}
+          disabled={nativeDemoLoginPending || Boolean(!ready || isDemoLoading || isLoading)}
           aria-label="Log In as Demo"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >

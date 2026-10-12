@@ -87,5 +87,5 @@ export const POST = (request: NextRequest) =>
     return runAssistant(user, text(body.mode, "mode", 100), {
       ...body,
       requestKey: key,
-    });
+    }, fetch, { signal: request.signal });
   });

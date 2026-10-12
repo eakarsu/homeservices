@@ -384,7 +384,9 @@ export async function runAssistant(
   mode: string,
   body: Record<string, unknown>,
   fetcher: typeof fetch = fetch,
+  runtime: { signal?: AbortSignal } = {},
 ) {
+  if (runtime.signal?.aborted) fail("AI request cancelled", 499);
   const formMode = mode === "form-autofill";
   const form = formMode ? text(body.form, "form", 100) : "";
   const action = formMode ? text(body.fieldAction, "AI action", 100) : "";
@@ -506,6 +508,7 @@ export async function runAssistant(
   let receipt: string | null = null,
     actualMicros: number | null = null;
   try {
+    if (runtime.signal?.aborted) fail("AI request cancelled", 499);
     const content: unknown[] = [{ type: "text", text: JSON.stringify(input) }];
     if (media)
       content.push(
@@ -524,7 +527,7 @@ export async function runAssistant(
       {
         method: "POST",
         redirect: "error",
-        signal: AbortSignal.timeout(45000),
+        signal: runtime.signal ? AbortSignal.any([runtime.signal, AbortSignal.timeout(45000)]) : AbortSignal.timeout(45000),
         headers: {
           Authorization: `Bearer ${key}`,
           "Content-Type": "application/json",
@@ -552,6 +555,7 @@ export async function runAssistant(
     );
     if (!response.ok) fail(`AI provider returned HTTP ${response.status}`, 503);
     const provider = await boundedProviderJson(response);
+    if (runtime.signal?.aborted) fail("AI request cancelled", 499);
     receipt = typeof provider.id === "string" ? provider.id : null;
     if (
       typeof provider.usage?.cost === "number" &&
@@ -579,6 +583,7 @@ export async function runAssistant(
     const report = { ...validated, ...(formMode ? { fields: formFields, form, action } : {}) };
     if (!provider.id) fail("AI provider receipt is missing", 502);
     const saved = await txFor(user, async (tx) => {
+      if (runtime.signal?.aborted) fail("AI request cancelled", 499);
       const current = await tx.assistantRequest.findUniqueOrThrow({
         where: { id: reserved.request.id },
       });
@@ -588,6 +593,7 @@ export async function runAssistant(
           409,
         );
       if (body.jobId) await jobFor(tx, user, String(body.jobId));
+      if (runtime.signal?.aborted) fail("AI request cancelled", 499);
       const result = await tx.aIResult.create({
         data: {
           feature: mode,
@@ -626,6 +632,7 @@ export async function runAssistant(
         receipt,
         sourceIds: evidence.map((e) => e.id),
       });
+      if (runtime.signal?.aborted) fail("AI request cancelled", 499);
       return result;
     });
     return {
@@ -663,6 +670,7 @@ export async function runAssistant(
         durationMs: Date.now() - started,
       },
     });
+    if (runtime.signal?.aborted) fail("AI request cancelled", 499);
     throw error;
   }
 }

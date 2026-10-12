@@ -2,6 +2,7 @@
 import React, {useState} from 'react'
 import {CheckIcon, ClipboardDocumentIcon, PencilSquareIcon, SparklesIcon, XMarkIcon} from '@heroicons/react/24/outline'
 import AIDraftMarkdown from './AIDraftMarkdown'
+import JsonReport from './JsonReport'
 
 type Evidence = {id:string;label?:string;type?:string;facts?:unknown}
 type Draft = {
@@ -58,6 +59,7 @@ export default function AIDraftReport({draft,title,review,onReviewChange,onRecor
       {!!output.uncertainties?.length && <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-5"><h3 className="mb-3 text-sm font-semibold text-amber-950">Details to confirm</h3><ul className="list-disc space-y-3 pl-5 marker:text-amber-500">{output.uncertainties.map((item,i)=><li key={i}><AIDraftMarkdown text={item}/></li>)}</ul></section>}
       {!!sources.length && <details className="rounded-xl border border-slate-200 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">Source records ({sources.length})</summary><div className="mt-4 space-y-3">{sources.map(source=><details key={source.id} className="rounded-lg bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-medium text-slate-900">{sourceName(source)} <span className="ml-2 text-xs font-normal text-slate-500">{source.type && label(source.type)}</span></summary><div className="mt-4 text-xs leading-6 text-slate-700"><SourceFacts value={source.facts}/></div></details>)}</div></details>}
       <details className="text-xs text-slate-500"><summary className="cursor-pointer">Generation details</summary><dl className="mt-3 space-y-2"><div><dt className="inline font-medium">Model: </dt><dd className="inline">{draft.model || 'Not recorded'}</dd></div><div className="break-all"><dt className="inline font-medium">Provider receipt: </dt><dd className="inline">{draft.providerReceipt || 'Not recorded'}</dd></div></dl></details>
+      <details className="rounded-xl border border-slate-200 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">Structured JSON response</summary><div className="mt-4"><JsonReport data={draft} title="AI draft response" model={draft.model} /></div></details>
     </div>
     {draft.success && !draft.reviewedAt && <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:px-7"><p className="max-w-lg text-xs leading-5 text-slate-500">Review the draft and confirm the details before recording your review. This does not assign work or contact the customer.</p><button type="button" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" disabled={busy || !review.trim() || !draft.expectedHash} onClick={onRecordReview}><CheckIcon className="h-4 w-4"/>{busy?'Saving review…':'Record review'}</button></footer>}
   </section>

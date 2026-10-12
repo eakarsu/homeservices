@@ -1,4 +1,6 @@
 'use client'
+import FullAIExamples, { useFullAIExamples } from "../../../components/FullAIExamples";
+
 
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
@@ -49,6 +51,8 @@ interface IntakeResult {
 }
 
 export default function TechEstimatePage() {
+  const fullAIExamples = useFullAIExamples();
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const jobId = searchParams.get('jobId')
@@ -164,7 +168,7 @@ export default function TechEstimatePage() {
   }
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-20" data-full-ai-workspace="TechEstimatePage"><FullAIExamples controller={fullAIExamples} />
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -182,8 +186,8 @@ export default function TechEstimatePage() {
       {jobId && <section className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
         <h2 className="font-medium text-gray-900">Job evidence → pricebook candidates</h2>
         <p className="text-sm text-gray-600">The model reads saved job notes and may propose only active company pricebook items. Review the job evidence, scope, quantity, and price before adding a candidate. Nothing is added automatically.</p>
-        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={analysisConsent} onChange={(event) => setAnalysisConsent(event.target.checked)} /> I am authorized to send this job&apos;s saved notes to the configured AI provider.</label>
-        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={includePhotos} onChange={(event) => setIncludePhotos(event.target.checked)} /> I authorize sending up to two stored job photos to the configured AI provider for this suggestion request.</label>
+        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={analysisConsent} onChange={(event) => setAnalysisConsent(event.target.checked)} data-full-ai-field={fullAIExamples.bind({ current: analysisConsent, change: (event) => setAnalysisConsent(event.target.checked), label: "analysisConsent", manual: false, json: false, sample: false }, "p1-6602", undefined)} /> I am authorized to send this job&apos;s saved notes to the configured AI provider.</label>
+        <label className="flex gap-2 items-start text-sm"><input type="checkbox" checked={includePhotos} onChange={(event) => setIncludePhotos(event.target.checked)} data-full-ai-field={fullAIExamples.bind({ current: includePhotos, change: (event) => setIncludePhotos(event.target.checked), label: "includePhotos", manual: false, json: false, sample: false }, "p1-6866", undefined)} /> I authorize sending up to two stored job photos to the configured AI provider for this suggestion request.</label>
         <button className="btn btn-secondary" disabled={intakeBusy || !analysisConsent} onClick={() => void suggest()}>{intakeBusy ? 'Reviewing evidence…' : 'Suggest pricebook items'}</button>
         {intakeError && <p role="alert" className="text-red-700">{intakeError}</p>}
         {intake?.catalogTruncated && <p className="text-sm text-amber-700">The model saw a ranked subset of the pricebook. Search the full pricebook manually if an item is missing.</p>}
@@ -290,7 +294,7 @@ export default function TechEstimatePage() {
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          placeholder="Add any notes or recommendations..."
+          placeholder="Add any notes or recommendations..." data-full-ai-field={fullAIExamples.bind({ current: notes, change: (e) => setNotes(e.target.value), label: "notes", manual: false, json: false, sample: '' }, "p1-12253", undefined)}
         />
       </div>
 

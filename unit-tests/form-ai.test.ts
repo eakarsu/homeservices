@@ -1,12 +1,25 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { formAIActions, getFormFields, selectedAIFields, pickFormValues, validateAIFields, unchangedPatch, completeDraftFields, missingFormFields, combineDraftInstructions } from '../src/lib/form-ai'
+import { formAIActions, formExampleLabels, createFormExampleValues, getFormFields, selectedAIFields, pickFormValues, validateAIFields, unchangedPatch, completeDraftFields, missingFormFields, combineDraftInstructions } from '../src/lib/form-ai'
 import { recordModules } from '../src/lib/workflows/definitions'
 
 test('only supported fields are sent; credentials and authority fields are excluded', () => {
   assert.deepEqual(pickFormValues('technicians', {firstName:'Erol', password:'secret', role:'ADMIN', companyId:'other', hourlyRate:'200'}), {firstName:'Erol'})
   assert.deepEqual(getFormFields('__proto__'), [])
   assert.deepEqual(getFormFields('operations:constructor'), [])
+})
+test('offline example buttons fill every safe optional AI field and retain real references', () => {
+  assert.equal(formExampleLabels.length, 3)
+  const forms = ['workspace','jobs','customers','parts','technicians','agreements','estimates','invoices','operations:bookings','operations:communications','ai:quote-generator',...Object.keys(recordModules).map(key => `operations:${key}`)]
+  for (const form of forms) for (let variant=0; variant<formExampleLabels.length; variant++) {
+    const fields = getFormFields(form), existing = { customerId:'actual-customer-id', jobId:'actual-job-id', propertyId:'actual-property-id', serviceTypeId:'actual-service-id', pricebookItemIds:'actual-item-id', extraInstructions:'' }
+    const example = createFormExampleValues(form, existing, variant)
+    assert.deepEqual(Object.keys(example.values).sort(), fields.map(field=>field.key).sort(), `${form}/${variant} includes every AI field`)
+    for (const [key,value] of Object.entries(existing)) if (value && fields.some(field=>field.key===key)) assert.equal(example.values[key],value,`${form}/${variant} preserves ${key}`)
+    for (const field of fields.filter(field=>field.options?.length)) assert.ok(field.options?.includes(String(example.values[field.key])),`${form}/${variant}/${field.key} is an allowed native option`)
+    assert.ok(fields.some(field=>field.optional && String(example.values[field.key] ?? '').trim()),`${form}/${variant} includes optional drafts`)
+    assert.ok(example.manual.every(label=>fields.some(field=>field.label===label)),`${form}/${variant} names only native fields requiring real values`)
+  }
 })
 test('optional and individual actions include optional fields and limit their scope', () => {
   const fields = getFormFields('customers')
