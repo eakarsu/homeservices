@@ -101,6 +101,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-gray-50 min-h-screen antialiased">
+<script src="/feature-pack/feature-pack.js" defer />
         <Providers>
           {children}
         </Providers>

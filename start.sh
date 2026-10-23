@@ -147,8 +147,9 @@ if [ "${LOAD_DEMO_DATA:-false}" = true ] && [ "${NODE_ENV:-development}" != prod
   (cd "$PROJECT_DIR" && npm run demo-data:load)
 fi
 CHILD_PIDS=()
-(cd "$PROJECT_DIR"&&exec node runtime/api.mjs)&CHILD_PIDS+=("$!")
-(cd "$PROJECT_DIR"&&exec npm run dev -- -H 127.0.0.1 -p "$FRONTEND_PORT")&CHILD_PIDS+=("$!")
+export RUNTIME_PROXY_PORT="$FRONTEND_PORT" RUNTIME_PROXY_TARGET_PORT="$BACKEND_PORT"
+(cd "$PROJECT_DIR"&&exec npm run dev -- -H 127.0.0.1 -p "$BACKEND_PORT")&CHILD_PIDS+=("$!")
+(cd "$PROJECT_DIR"&&exec node _runtime-proxy.mjs)&CHILD_PIDS+=("$!")
 cleanup(){ trap - EXIT INT TERM;for pid in "${CHILD_PIDS[@]}";do kill "$pid" 2>/dev/null||true;done;for pid in "${CHILD_PIDS[@]}";do wait "$pid" 2>/dev/null||true;done; }
 trap cleanup EXIT INT TERM
 wait "${CHILD_PIDS[@]}"
